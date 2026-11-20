@@ -17,6 +17,35 @@ implementationState: >
   the existing public/data publication scope; Timestamps.json[ScheduleOutlook] is stamped only on a semantic change.
   The Angular view is a separate change.
 
+strengthOfSchedule:
+  issue: 1589
+  architectureDecision: ADR-091
+  model: schedule-outlook-v2 (tools/derived_data_lib/models/schedule_outlook/v2.py), chosen per season in data-meta Models.ScheduleOutlook; v1 stays immutable
+  principle: >
+    Strength is a pure statement about points scored, never a projection: the RelativeScoringStrength of the season-statistics
+    product (team points per game / league points per team-game at the cutoff) is blended with the same team's value at the end
+    of its previous regular season (matched by TeamID = provider roster identity, as in the all-time standings). With g games
+    played the current season counts with g / (g + K), K = 3 (PARAMS.CurrentSeasonWeightK, a model parameter); before game 1
+    only the previous season counts. Without a previous season the value is null before game 1 and the current season counts
+    alone from game 1; a team without a previous value behaves the same. Missing facts give null, never league average.
+  remainingSchedule: >
+    RemainingSoS = mean strength of the remaining opponents / mean strength of the other teams (the team's own strength is
+    excluded from the baseline, otherwise a strong team's schedule looks easier in small leagues). 1.0 = average schedule.
+    Null when any opponent strength is unknown or no game remains. There is no displayed rank.
+  classification: >
+    Thresholds live in the model (PARAMS.OpponentBand 0.05, ScheduleBand 0.03; provisional, a change is a new model
+    version): per opponent weaker (< 0.95) / similar / stronger (> 1.05) relative to league average 1.0; for the rest of the
+    schedule easier (< 0.97) / average / harder (> 1.03). The frontend only displays these classes.
+  documentShape: |
+    RegularSeason.StrengthParams { CurrentSeasonWeightK, OpponentBand, ScheduleBand };
+    RegularSeason.Teams[] { TeamID, CanonicalLeagueRosterID, RemainingGames,
+      Strength { Value, CurrentRelative, PreviousRelative, CurrentWeight, GamesPlayed },
+      KnownOpponentStrengthGames, RemainingSoS, RemainingSoSClass,
+      Upcoming[] { Week, CanonicalLeagueMatchupID, OpponentCanonicalLeagueRosterID, OpponentTeamID, OpponentStrength, OpponentClass } }.
+    Playoff paths and the PlayoffOdds block are unchanged (v1 semantics, reused).
+  inputs: season-statistics product of the season (Weeks[].Teams[].RelativeScoringStrength) and of the previous season (final regular-season week); canonical pairings and week structure. ProjectedBestBallStrength is no input of v2 and does not invalidate its fingerprint.
+  invalidation: input fingerprint of v2 additionally covers the previous-season strengths per TeamID and the model parameters; changing K or a band is a new model version.
+
 playoffOdds:
   issue: 1588
   architectureDecision: ADR-090

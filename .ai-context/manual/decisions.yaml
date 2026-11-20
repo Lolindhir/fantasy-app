@@ -3197,3 +3197,27 @@ decisions:
         - The 50/50 view ignores real strength; its numbers are scenario shares, not forecasts.
         - Large leagues exceed the exact-count limit and show unavailable until the algorithm is improved.
         - Documents of all seasons are rewritten once by the next full run (fingerprint bump).
+
+  - id: ADR-091
+    title: Strength of schedule is fact-based (points, previous season early on) in schedule-outlook-v2
+    status: accepted
+    amends: [ADR-088]
+    context: >-
+      schedule-outlook-v1 ranked the remaining schedule by RelativeScoringStrength and the projection-based ProjectedBestBallStrength.
+      The projection measure follows the season average of the pregame projection and is sluggish; both are noisy early in the season
+      and unknown at week 0 (Issue #1589, analysis 2026-11-20).
+    decision: >-
+      Robert decided on 2026-11-20 (Issue #1589, k=3 confirmed): a new immutable model schedule-outlook-v2, chosen per season in data-meta.
+      Strength is points per game relative to the league, blended with the same team's previous regular season with weight g/(g+3) for the
+      current season (before game 1 only the previous season; no previous season = null until game 1). The remaining schedule is the mean
+      strength of the remaining opponents over the mean of the other teams (self-exclusion), with classification thresholds inside the model
+      and no displayed rank. No projection is an input. The previous-season base value is read from the persisted season-statistics product
+      (existing owner of RelativeScoringStrength), so season-statistics needs no new field. Reuses the existing league-live and update-transactions
+      writers; no new writer, prefix or permission. Contract: .ai-context/manual/league-schedule-outlook.yaml (strengthOfSchedule).
+    consequences:
+      positive:
+        - Early-season and week-0 schedules are meaningful and explainable; the frontend only displays classes.
+        - K and the bands are model parameters; a better rule is a new version.
+      negative:
+        - Documents of all seasons are rewritten once by the next full run (model switch); the documented v1 rank fields are gone for v2.
+        - Previous-season matching by TeamID assumes stable provider roster IDs across seasons (same convention as all-time standings).
