@@ -22,18 +22,16 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 from derived_data_lib.models.registry import get_model  # noqa: E402
+from derived_data_lib.nfl_games import kickoff_epoch as shared_kickoff_epoch  # noqa: E402
 from league_metadata import data_meta_root, load_all_league_metadata, model_for  # noqa: E402
 
-EASTERN = ZoneInfo("America/New_York")
 POSTSEASON_TYPES = {"WC", "DIV", "CON", "SB"}
 
 # Games that happened (or were scheduled and cancelled) but are missing in the canonical nflverse schedule.
@@ -89,18 +87,13 @@ class TeamRegistry:
 
 
 def kickoff_epoch(game_day: str, game_time: str | None) -> str | None:
+    """Kickoff as App epoch text; the conversion is owned by the nfl-games product module (Issue #1572)."""
     if not game_time or not game_time.strip():
         return None
-    text = f"{game_day.strip()} {game_time.strip()}"
     try:
-        local = datetime.strptime(text, "%Y-%m-%d %H:%M")
+        return shared_kickoff_epoch("schedule-archive", game_day, game_time)
     except ValueError as exc:
-        raise ScheduleArchiveError(f"Canonical kickoff '{text}' is not a valid yyyy-MM-dd HH:mm value.") from exc
-    first = local.replace(tzinfo=EASTERN, fold=0)
-    second = local.replace(tzinfo=EASTERN, fold=1)
-    if first.utcoffset() != second.utcoffset():
-        raise ScheduleArchiveError(f"Canonical kickoff '{text}' is ambiguous or does not exist in Eastern time.")
-    return f"{int(first.timestamp())}.0"
+        raise ScheduleArchiveError(str(exc)) from exc
 
 
 def game_time_text(game_time: str | None) -> str:

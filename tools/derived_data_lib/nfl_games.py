@@ -40,6 +40,15 @@ def kickoff_utc(game_id: str, game_day: str, game_time: str | None) -> str | Non
     return first.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def kickoff_epoch(game_id: str, game_day: str, game_time: str | None) -> str | None:
+    """UTC epoch seconds as text (``"1788999600.0"``, the App Schedule contract) of the same conversion; None when unknown."""
+    instant = kickoff_utc(game_id, game_day, game_time)
+    if instant is None:
+        return None
+    moment = datetime.strptime(instant, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    return f"{int(moment.timestamp())}.0"
+
+
 def _index(payload: Mapping[str, Any], *, season: int, dataset: str) -> dict[str, Mapping[str, Any]]:
     if payload.get("Season") != season or payload.get("SourceDataset") != dataset:
         raise ValueError(f"{dataset}: incompatible season or source")

@@ -41,7 +41,7 @@ Assert-CsrTrue ($null -eq (ConvertTo-NflKickoffEpoch -GameDay '2030-12-15' -Game
 Assert-CsrTrue ($null -eq (ConvertTo-NflKickoffEpoch -GameDay '2030-12-15' -GameTime $null)) 'Null GameTime must give an unknown (null) kickoff.'
 Assert-CsrThrows { ConvertTo-NflKickoffEpoch -GameDay '2030-03-10' -GameTime '02:30' } 'does not exist' 'Non-existent DST-gap time must fail closed.'
 Assert-CsrThrows { ConvertTo-NflKickoffEpoch -GameDay '2030-11-03' -GameTime '01:30' } 'ambiguous' 'Ambiguous DST-overlap time must fail closed.'
-Assert-CsrThrows { ConvertTo-NflKickoffEpoch -GameDay '2030-13-45' -GameTime '13:00' } 'not a valid' 'Invalid GameDay must fail closed.'
+Assert-CsrThrows { ConvertTo-NflKickoffEpoch -GameDay '2030-13-45' -GameTime '13:00' } 'not yyyy-MM-dd' 'Invalid GameDay must fail closed.'
 
 # --- 2. Kickoff text ---
 Assert-CsrEqual '8:20p' (Format-NflGameTimeText -GameTime '20:20') 'Evening time.'

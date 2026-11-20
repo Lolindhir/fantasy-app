@@ -6,9 +6,9 @@ Import-Module "$PSScriptRoot\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 #   data-source/nfl/schedules/<season>.json   (nflverse.schedules)
 #   data-source/nfl/game-finality/<season>.json (nflverse.game-finality)
 # No provider call is involved. Timing rule: the canonical GameTime is Eastern local time (America/New_York)
-# without a zone marker (nflverse convention); it is converted with the IANA zone, never with a fixed offset.
+# without a zone marker (nflverse convention). The conversion to UTC is owned by the nfl-games product module
+# (derived_data_lib/nfl_games.py, Issue #1572) and reached through tools/nfl_kickoff_times.py.
 
-$script:EasternTimeZone = $null
 $script:CsuTeamRegistry = $null
 
 function Get-CsuTeamRegistry {
@@ -19,20 +19,25 @@ function Get-CsuTeamRegistry {
     return $script:CsuTeamRegistry
 }
 
-function Get-NflEasternTimeZone {
-    if ($null -eq $script:EasternTimeZone) {
-        foreach ($id in @('America/New_York', 'Eastern Standard Time')) {
-            try {
-                $script:EasternTimeZone = [TimeZoneInfo]::FindSystemTimeZoneById($id)
-                break
-            }
-            catch { continue }
-        }
-        if ($null -eq $script:EasternTimeZone) {
-            throw "Eastern time zone (America/New_York) is not available on this system."
-        }
+# Runs tools/nfl_kickoff_times.py. The Eastern-to-UTC conversion is owned by the nfl-games product module
+# (derived_data_lib/nfl_games.py, Issue #1572); PowerShell keeps no conversion of its own. Returns the stdout lines.
+function Invoke-NflKickoffTool {
+    param([Parameter(Mandatory = $true)][string[]]$Arguments)
+
+    $toolPath = Join-Path $PSScriptRoot '../../../../tools/nfl_kickoff_times.py'
+    if (-not (Test-Path $toolPath)) { throw "NFL kickoff tool missing at '$toolPath'." }
+    $python = $null
+    foreach ($name in @('python3', 'python')) {
+        $command = Get-Command $name -ErrorAction SilentlyContinue
+        if ($command) { $python = $command.Source; break }
     }
-    return $script:EasternTimeZone
+    if (-not $python) { throw 'Python is required for the NFL kickoff conversion.' }
+
+    $output = & $python $toolPath @Arguments 2>&1
+    $exitCode = $LASTEXITCODE
+    $text = (@($output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ($exitCode -ne 0) { throw "NFL kickoff conversion failed: $text" }
+    return $text.Trim()
 }
 
 # Converts a canonical GameDay (yyyy-MM-dd) and GameTime (HH:mm, Eastern local time) into UTC epoch seconds as the
@@ -45,24 +50,23 @@ function ConvertTo-NflKickoffEpoch {
     )
 
     if ([string]::IsNullOrWhiteSpace($GameTime)) { return $null }
+    $text = Invoke-NflKickoffTool -Arguments @('epoch', '--game-day', $GameDay.Trim(), '--game-time', $GameTime.Trim())
+    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+    return $text
+}
 
-    $local = [datetime]::MinValue
-    $text = "$($GameDay.Trim()) $($GameTime.Trim())"
-    if (-not [datetime]::TryParseExact(
-            $text, 'yyyy-MM-dd HH:mm',
-            [System.Globalization.CultureInfo]::InvariantCulture,
-            [System.Globalization.DateTimeStyles]::None, [ref]$local)) {
-        throw "Canonical kickoff '$text' is not a valid yyyy-MM-dd HH:mm value."
-    }
+# GameID -> epoch text (or $null when the kickoff time is unknown) for one canonical season, in one process call.
+function Get-NflKickoffEpochMap {
+    param(
+        [Parameter(Mandatory = $true)][int]$Season,
+        [Parameter(Mandatory = $true)][string]$RepoRoot
+    )
 
-    $local = [datetime]::SpecifyKind($local, [DateTimeKind]::Unspecified)
-    $zone = Get-NflEasternTimeZone
-    if ($zone.IsInvalidTime($local)) { throw "Canonical kickoff '$text' does not exist in Eastern time (daylight-saving gap)." }
-    if ($zone.IsAmbiguousTime($local)) { throw "Canonical kickoff '$text' is ambiguous in Eastern time (daylight-saving overlap)." }
-
-    $utc = [TimeZoneInfo]::ConvertTimeToUtc($local, $zone)
-    $seconds = [DateTimeOffset]::new($utc, [TimeSpan]::Zero).ToUnixTimeSeconds()
-    return ([string]$seconds + '.0')
+    $json = Invoke-NflKickoffTool -Arguments @('--repo-root', $RepoRoot, 'season', '--season', [string]$Season)
+    $map = @{}
+    $parsed = $json | ConvertFrom-Json
+    foreach ($property in $parsed.PSObject.Properties) { $map[[string]$property.Name] = $property.Value }
+    return $map
 }
 
 # Tank01-compatible kickoff text such as "8:20p" or "1:00p"; empty/unknown time -> "TBD".
@@ -147,7 +151,8 @@ function New-AppScheduleGame {
     param(
         [Parameter(Mandatory = $true)][object]$CanonicalGame,
         [Parameter(Mandatory = $true)][bool]$Final,
-        [Parameter(Mandatory = $true)][int]$Season
+        [Parameter(Mandatory = $true)][int]$Season,
+        [hashtable]$KickoffEpochByGameID = $null
     )
 
     $espnID = [string](Get-CsuValue -Object (Get-CsuValue -Object $CanonicalGame -Name 'ProviderGameIDs') -Name 'ESPN')
@@ -166,7 +171,12 @@ function New-AppScheduleGame {
     $gameID = "${dateKey}_$(Get-NflTeamProviderSpelling -Team $awayTeam)@$(Get-NflTeamProviderSpelling -Team $homeTeam)"
     $cbsID = "${dateKey}_$(Get-NflTeamCbsSpelling -Team $awayTeam)@$(Get-NflTeamCbsSpelling -Team $homeTeam)"
 
-    $epoch = ConvertTo-NflKickoffEpoch -GameDay $gameDay -GameTime ([string](Get-CsuValue -Object $CanonicalGame -Name 'GameTime'))
+    if ($null -ne $KickoffEpochByGameID -and $KickoffEpochByGameID.ContainsKey([string]$CanonicalGame.GameID)) {
+        $epoch = $KickoffEpochByGameID[[string]$CanonicalGame.GameID]
+    }
+    else {
+        $epoch = ConvertTo-NflKickoffEpoch -GameDay $gameDay -GameTime ([string](Get-CsuValue -Object $CanonicalGame -Name 'GameTime'))
+    }
     $overtime = [string](Get-CsuValue -Object $CanonicalGame -Name 'Overtime')
     $hasOvertime = -not [string]::IsNullOrWhiteSpace($overtime) -and $overtime -ne '0'
 
@@ -255,13 +265,14 @@ function Get-CanonicalAppSchedule {
         if (-not $scheduleIDs.ContainsKey($id)) { throw "Canonical NFL finality lists GameID '$id' that is not in the schedule." }
     }
 
+    $kickoffEpochs = Get-NflKickoffEpochMap -Season $Season -RepoRoot $RepoRoot
     $games = @()
     $seenEspn = @{}
     $seenGameIDs = @{}
     foreach ($canonical in $allGames) {
         if ([string]$canonical.GameType -notin $GameTypes) { continue }
         $final = [bool](Get-CsuValue -Object $finalityByGame[[string]$canonical.GameID] -Name 'Final')
-        $record = New-AppScheduleGame -CanonicalGame $canonical -Final $final -Season $Season
+        $record = New-AppScheduleGame -CanonicalGame $canonical -Final $final -Season $Season -KickoffEpochByGameID $kickoffEpochs
         if ($seenEspn.ContainsKey($record.espnID)) { throw "Duplicate ESPN game ID '$($record.espnID)' in canonical NFL schedule." }
         if ($seenGameIDs.ContainsKey($record.gameID)) { throw "Duplicate App gameID '$($record.gameID)' in canonical NFL schedule." }
         $seenEspn[$record.espnID] = $true
