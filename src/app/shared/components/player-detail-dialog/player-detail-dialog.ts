@@ -74,6 +74,14 @@ export class PlayerDetailDialogComponent implements OnInit {
   readonly awardDisplay = PLAYER_AWARD_DISPLAY;
   injuryHistory: InjuryHistorySeasonView[] = [];
   injuryCurrentSeason: number | null = null;
+
+  /** Same colour logic as the team injury report chips: IR/Out/PUP red, Doubtful rose, Questionable yellow. */
+  injuryChipKind(designation: string): string {
+    const d = designation.trim().toLowerCase();
+    if (d === 'ir' || d === 'out' || d === 'pup') return d;
+    if (d === 'doubtful' || d === 'questionable') return d;
+    return 'other';
+  }
   injuryHistoryState: 'idle' | 'loading' | 'ready' | 'unavailable' = 'idle';
   journey: PlayerJourney | null = null;
   journeyState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
