@@ -17,7 +17,7 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 # current-season snapshot of the live rosters, Issue #1571).
 OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook", "team-cap-outlook"})
 # Documented before the first productive fill created the directory (Issue #1571).
-NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps"})
+NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps", "nfl-player-availability"})
 
 
 def _readme_rows() -> dict[str, tuple[str, str, list[str]]]:
