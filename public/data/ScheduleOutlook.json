@@ -5,7 +5,7 @@
   "CanonicalLeagueSeasonID": "nfl-reise-2026",
   "Season": 2026,
   "Models": {
-    "ScheduleOutlook": "schedule-outlook-v1",
+    "ScheduleOutlook": "schedule-outlook-v2",
     "SeasonStats": "season-stats-v1",
     "PlayoffOdds": "playoff-odds-v1"
   },
@@ -15,11 +15,16 @@
   },
   "Provenance": {
     "Reconstruction": "reconstructed-from-accepted-sources",
-    "InputFingerprint": "52c6eb3b947bd2c810c20207d5a4e9da48a6b0be702ea12d4f2c455813a2d66a"
+    "InputFingerprint": "c0b4935a176b895046b75112e0c54241282a7cc69e183dbe71babd7e6170ebd0"
   },
   "RegularSeason": {
     "AfterWeek": 10,
     "RatingWeek": 10,
+    "StrengthParams": {
+      "CurrentSeasonWeightK": 3.0,
+      "OpponentBand": 0.05,
+      "ScheduleBand": 0.03
+    },
     "UpcomingMatchups": [
       {
         "Week": 11,
@@ -81,223 +86,247 @@
         "TeamID": 1,
         "CanonicalLeagueRosterID": "clr-a8e576139994570d82e9ea2ed3f42b1b",
         "RemainingGames": 3,
+        "Strength": {
+          "Value": 1.0269,
+          "CurrentRelative": 1.0246,
+          "PreviousRelative": 1.0346,
+          "CurrentWeight": 0.7692,
+          "GamesPlayed": 10
+        },
+        "KnownOpponentStrengthGames": 3,
+        "RemainingSoS": 0.9482,
+        "RemainingSoSClass": "easier",
         "Upcoming": [
           {
             "Week": 11,
             "CanonicalLeagueMatchupID": "clmup-ba7a3af7074b59dcb5e898312a3b1a37",
             "OpponentCanonicalLeagueRosterID": "clr-22f57dc372bd55a1879e544de7c72e8e",
             "OpponentTeamID": 6,
-            "OpponentRelativeScoringStrength": 1.0093,
-            "OpponentProjectedBestBallStrength": 206.5493
+            "OpponentStrength": 0.9993,
+            "OpponentClass": "similar"
           },
           {
             "Week": 12,
             "CanonicalLeagueMatchupID": "clmup-40f0cb4ca64c553c928624467be10fc1",
             "OpponentCanonicalLeagueRosterID": "clr-4077e6e9e5d25bcfa45e3842f808bbab",
             "OpponentTeamID": 5,
-            "OpponentRelativeScoringStrength": 0.8262,
-            "OpponentProjectedBestBallStrength": 174.2922
+            "OpponentStrength": 0.85,
+            "OpponentClass": "weaker"
           },
           {
             "Week": 13,
             "CanonicalLeagueMatchupID": "clmup-7d21e3eb2a025fe78e99e01f24cc0a1a",
             "OpponentCanonicalLeagueRosterID": "clr-c775f7f9a751554eaa9f59b080911dad",
             "OpponentTeamID": 2,
-            "OpponentRelativeScoringStrength": 0.9707,
-            "OpponentProjectedBestBallStrength": 203.7742
+            "OpponentStrength": 0.98,
+            "OpponentClass": "similar"
           }
-        ],
-        "KnownRelativeScoringStrengthGames": 3,
-        "RemainingSoSRelativeStrength": 0.9354,
-        "RemainingSoSRelativeStrengthRank": 1,
-        "KnownProjectedBestBallStrengthGames": 3,
-        "RemainingOpponentBestBallStrength": 194.8719,
-        "RemainingOpponentBestBallStrengthRank": 3
+        ]
       },
       {
         "TeamID": 2,
         "CanonicalLeagueRosterID": "clr-c775f7f9a751554eaa9f59b080911dad",
         "RemainingGames": 3,
+        "Strength": {
+          "Value": 0.98,
+          "CurrentRelative": 0.9707,
+          "PreviousRelative": 1.0112,
+          "CurrentWeight": 0.7692,
+          "GamesPlayed": 10
+        },
+        "KnownOpponentStrengthGames": 3,
+        "RemainingSoS": 0.9658,
+        "RemainingSoSClass": "easier",
         "Upcoming": [
           {
             "Week": 11,
             "CanonicalLeagueMatchupID": "clmup-ba667cf369fa5fc5b3de95919d78c980",
             "OpponentCanonicalLeagueRosterID": "clr-4077e6e9e5d25bcfa45e3842f808bbab",
             "OpponentTeamID": 5,
-            "OpponentRelativeScoringStrength": 0.8262,
-            "OpponentProjectedBestBallStrength": 174.2922
+            "OpponentStrength": 0.85,
+            "OpponentClass": "weaker"
           },
           {
             "Week": 12,
             "CanonicalLeagueMatchupID": "clmup-0bbcf89981cc5e068e686796ebf43c35",
             "OpponentCanonicalLeagueRosterID": "clr-9bfadc1205835f8c8db815513f78ec8f",
             "OpponentTeamID": 4,
-            "OpponentRelativeScoringStrength": 1.0385,
-            "OpponentProjectedBestBallStrength": 190.7016
+            "OpponentStrength": 1.0321,
+            "OpponentClass": "similar"
           },
           {
             "Week": 13,
             "CanonicalLeagueMatchupID": "clmup-7d21e3eb2a025fe78e99e01f24cc0a1a",
             "OpponentCanonicalLeagueRosterID": "clr-a8e576139994570d82e9ea2ed3f42b1b",
             "OpponentTeamID": 1,
-            "OpponentRelativeScoringStrength": 1.0246,
-            "OpponentProjectedBestBallStrength": 198.7338
+            "OpponentStrength": 1.0269,
+            "OpponentClass": "similar"
           }
-        ],
-        "KnownRelativeScoringStrengthGames": 3,
-        "RemainingSoSRelativeStrength": 0.9631,
-        "RemainingSoSRelativeStrengthRank": 3,
-        "KnownProjectedBestBallStrengthGames": 3,
-        "RemainingOpponentBestBallStrength": 187.9092,
-        "RemainingOpponentBestBallStrengthRank": 1
+        ]
       },
       {
         "TeamID": 3,
         "CanonicalLeagueRosterID": "clr-dc35c0c936175f68a694e7b05bd6861d",
         "RemainingGames": 3,
+        "Strength": {
+          "Value": 1.1115,
+          "CurrentRelative": 1.1306,
+          "PreviousRelative": 1.0479,
+          "CurrentWeight": 0.7692,
+          "GamesPlayed": 10
+        },
+        "KnownOpponentStrengthGames": 3,
+        "RemainingSoS": 0.9824,
+        "RemainingSoSClass": "average",
         "Upcoming": [
           {
             "Week": 11,
             "CanonicalLeagueMatchupID": "clmup-1f84a4adc7795b289f23e9feb3ccc0d9",
             "OpponentCanonicalLeagueRosterID": "clr-9bfadc1205835f8c8db815513f78ec8f",
             "OpponentTeamID": 4,
-            "OpponentRelativeScoringStrength": 1.0385,
-            "OpponentProjectedBestBallStrength": 190.7016
+            "OpponentStrength": 1.0321,
+            "OpponentClass": "similar"
           },
           {
             "Week": 12,
             "CanonicalLeagueMatchupID": "clmup-1a83e6933bc35b9187ec074087b305ad",
             "OpponentCanonicalLeagueRosterID": "clr-22f57dc372bd55a1879e544de7c72e8e",
             "OpponentTeamID": 6,
-            "OpponentRelativeScoringStrength": 1.0093,
-            "OpponentProjectedBestBallStrength": 206.5493
+            "OpponentStrength": 0.9993,
+            "OpponentClass": "similar"
           },
           {
             "Week": 13,
             "CanonicalLeagueMatchupID": "clmup-2d98ddfd603559c7b98a375b9010bcc0",
             "OpponentCanonicalLeagueRosterID": "clr-4077e6e9e5d25bcfa45e3842f808bbab",
             "OpponentTeamID": 5,
-            "OpponentRelativeScoringStrength": 0.8262,
-            "OpponentProjectedBestBallStrength": 174.2922
+            "OpponentStrength": 0.85,
+            "OpponentClass": "weaker"
           }
-        ],
-        "KnownRelativeScoringStrengthGames": 3,
-        "RemainingSoSRelativeStrength": 0.958,
-        "RemainingSoSRelativeStrengthRank": 2,
-        "KnownProjectedBestBallStrengthGames": 3,
-        "RemainingOpponentBestBallStrength": 190.5144,
-        "RemainingOpponentBestBallStrengthRank": 2
+        ]
       },
       {
         "TeamID": 4,
         "CanonicalLeagueRosterID": "clr-9bfadc1205835f8c8db815513f78ec8f",
         "RemainingGames": 3,
+        "Strength": {
+          "Value": 1.0321,
+          "CurrentRelative": 1.0385,
+          "PreviousRelative": 1.0109,
+          "CurrentWeight": 0.7692,
+          "GamesPlayed": 10
+        },
+        "KnownOpponentStrengthGames": 3,
+        "RemainingSoS": 1.037,
+        "RemainingSoSClass": "harder",
         "Upcoming": [
           {
             "Week": 11,
             "CanonicalLeagueMatchupID": "clmup-1f84a4adc7795b289f23e9feb3ccc0d9",
             "OpponentCanonicalLeagueRosterID": "clr-dc35c0c936175f68a694e7b05bd6861d",
             "OpponentTeamID": 3,
-            "OpponentRelativeScoringStrength": 1.1306,
-            "OpponentProjectedBestBallStrength": 211.3174
+            "OpponentStrength": 1.1115,
+            "OpponentClass": "stronger"
           },
           {
             "Week": 12,
             "CanonicalLeagueMatchupID": "clmup-0bbcf89981cc5e068e686796ebf43c35",
             "OpponentCanonicalLeagueRosterID": "clr-c775f7f9a751554eaa9f59b080911dad",
             "OpponentTeamID": 2,
-            "OpponentRelativeScoringStrength": 0.9707,
-            "OpponentProjectedBestBallStrength": 203.7742
+            "OpponentStrength": 0.98,
+            "OpponentClass": "similar"
           },
           {
             "Week": 13,
             "CanonicalLeagueMatchupID": "clmup-58826b717cbc5358802e245092c44947",
             "OpponentCanonicalLeagueRosterID": "clr-22f57dc372bd55a1879e544de7c72e8e",
             "OpponentTeamID": 6,
-            "OpponentRelativeScoringStrength": 1.0093,
-            "OpponentProjectedBestBallStrength": 206.5493
+            "OpponentStrength": 0.9993,
+            "OpponentClass": "similar"
           }
-        ],
-        "KnownRelativeScoringStrengthGames": 3,
-        "RemainingSoSRelativeStrength": 1.0369,
-        "RemainingSoSRelativeStrengthRank": 4,
-        "KnownProjectedBestBallStrengthGames": 3,
-        "RemainingOpponentBestBallStrength": 207.2136,
-        "RemainingOpponentBestBallStrengthRank": 6
+        ]
       },
       {
         "TeamID": 5,
         "CanonicalLeagueRosterID": "clr-4077e6e9e5d25bcfa45e3842f808bbab",
         "RemainingGames": 3,
+        "Strength": {
+          "Value": 0.85,
+          "CurrentRelative": 0.8262,
+          "PreviousRelative": 0.9293,
+          "CurrentWeight": 0.7692,
+          "GamesPlayed": 10
+        },
+        "KnownOpponentStrengthGames": 3,
+        "RemainingSoS": 1.0092,
+        "RemainingSoSClass": "average",
         "Upcoming": [
           {
             "Week": 11,
             "CanonicalLeagueMatchupID": "clmup-ba667cf369fa5fc5b3de95919d78c980",
             "OpponentCanonicalLeagueRosterID": "clr-c775f7f9a751554eaa9f59b080911dad",
             "OpponentTeamID": 2,
-            "OpponentRelativeScoringStrength": 0.9707,
-            "OpponentProjectedBestBallStrength": 203.7742
+            "OpponentStrength": 0.98,
+            "OpponentClass": "similar"
           },
           {
             "Week": 12,
             "CanonicalLeagueMatchupID": "clmup-40f0cb4ca64c553c928624467be10fc1",
             "OpponentCanonicalLeagueRosterID": "clr-a8e576139994570d82e9ea2ed3f42b1b",
             "OpponentTeamID": 1,
-            "OpponentRelativeScoringStrength": 1.0246,
-            "OpponentProjectedBestBallStrength": 198.7338
+            "OpponentStrength": 1.0269,
+            "OpponentClass": "similar"
           },
           {
             "Week": 13,
             "CanonicalLeagueMatchupID": "clmup-2d98ddfd603559c7b98a375b9010bcc0",
             "OpponentCanonicalLeagueRosterID": "clr-dc35c0c936175f68a694e7b05bd6861d",
             "OpponentTeamID": 3,
-            "OpponentRelativeScoringStrength": 1.1306,
-            "OpponentProjectedBestBallStrength": 211.3174
+            "OpponentStrength": 1.1115,
+            "OpponentClass": "stronger"
           }
-        ],
-        "KnownRelativeScoringStrengthGames": 3,
-        "RemainingSoSRelativeStrength": 1.042,
-        "RemainingSoSRelativeStrengthRank": 5,
-        "KnownProjectedBestBallStrengthGames": 3,
-        "RemainingOpponentBestBallStrength": 204.6085,
-        "RemainingOpponentBestBallStrengthRank": 5
+        ]
       },
       {
         "TeamID": 6,
         "CanonicalLeagueRosterID": "clr-22f57dc372bd55a1879e544de7c72e8e",
         "RemainingGames": 3,
+        "Strength": {
+          "Value": 0.9993,
+          "CurrentRelative": 1.0093,
+          "PreviousRelative": 0.9661,
+          "CurrentWeight": 0.7692,
+          "GamesPlayed": 10
+        },
+        "KnownOpponentStrengthGames": 3,
+        "RemainingSoS": 1.0567,
+        "RemainingSoSClass": "harder",
         "Upcoming": [
           {
             "Week": 11,
             "CanonicalLeagueMatchupID": "clmup-ba7a3af7074b59dcb5e898312a3b1a37",
             "OpponentCanonicalLeagueRosterID": "clr-a8e576139994570d82e9ea2ed3f42b1b",
             "OpponentTeamID": 1,
-            "OpponentRelativeScoringStrength": 1.0246,
-            "OpponentProjectedBestBallStrength": 198.7338
+            "OpponentStrength": 1.0269,
+            "OpponentClass": "similar"
           },
           {
             "Week": 12,
             "CanonicalLeagueMatchupID": "clmup-1a83e6933bc35b9187ec074087b305ad",
             "OpponentCanonicalLeagueRosterID": "clr-dc35c0c936175f68a694e7b05bd6861d",
             "OpponentTeamID": 3,
-            "OpponentRelativeScoringStrength": 1.1306,
-            "OpponentProjectedBestBallStrength": 211.3174
+            "OpponentStrength": 1.1115,
+            "OpponentClass": "stronger"
           },
           {
             "Week": 13,
             "CanonicalLeagueMatchupID": "clmup-58826b717cbc5358802e245092c44947",
             "OpponentCanonicalLeagueRosterID": "clr-9bfadc1205835f8c8db815513f78ec8f",
             "OpponentTeamID": 4,
-            "OpponentRelativeScoringStrength": 1.0385,
-            "OpponentProjectedBestBallStrength": 190.7016
+            "OpponentStrength": 1.0321,
+            "OpponentClass": "similar"
           }
-        ],
-        "KnownRelativeScoringStrengthGames": 3,
-        "RemainingSoSRelativeStrength": 1.0646,
-        "RemainingSoSRelativeStrengthRank": 6,
-        "KnownProjectedBestBallStrengthGames": 3,
-        "RemainingOpponentBestBallStrength": 200.2509,
-        "RemainingOpponentBestBallStrengthRank": 4
+        ]
       }
     ]
   },
