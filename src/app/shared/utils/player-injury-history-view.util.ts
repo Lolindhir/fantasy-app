@@ -42,7 +42,6 @@ const ROSTER_LABEL: Record<string, string> = {
   RES: 'Reserve list',
   PUP: 'Physically unable to perform',
   INA: 'Inactive',
-  ACT: 'Active',
   CUT: 'Released',
   DEV: 'Practice squad'
 };
@@ -93,7 +92,7 @@ export function buildInjuryHistoryView(player: PlayerInjuryHistoryPlayer | null)
           stateLabel: w.State === 'unknown' ? 'Result pending' : (STATE_LABEL[w.State] ?? 'Unknown'),
           stateClass: STATE_CLASS[w.State] ?? 'unknown',
           report: reportText(entries),
-          roster: w.Roster?.Status ? (ROSTER_LABEL[w.Roster.Status] ?? w.Roster.Status) : '—'
+          roster: w.Roster?.Status && w.Roster.Status !== 'ACT' ? (ROSTER_LABEL[w.Roster.Status] ?? w.Roster.Status) : ''
         });
       }
       return { season: season.Season, rows, affectedWeeks: rows.filter(r => r.stateClass === 'out').length };

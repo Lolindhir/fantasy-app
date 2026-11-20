@@ -243,8 +243,11 @@ host {
 .injury-state--bye { background: #f8fafc; color: #64748b; }
 .injury-state--unknown { background: #fffbeb; border: 1px dashed var(--lifecycle-review); color: var(--lifecycle-review-fg); }
 @media (max-width: 600px) {
-  .injury-row { grid-template-columns: 38px 1fr; }
-  .injury-report, .injury-roster { grid-column: 2; text-align: left; }
+  .injury-row { grid-template-columns: auto auto 1fr; gap: 0 8px; padding: 3px 0; }
+  .injury-week { white-space: nowrap; min-width: 30px; }
+  .injury-report { grid-column: 3; grid-row: 1; font-size: 12px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .injury-roster { grid-column: 2 / -1; grid-row: 2; text-align: left; }
+  .injury-roster:empty { display: none; }
 }
 
 /* ---------- Links ---------- */
