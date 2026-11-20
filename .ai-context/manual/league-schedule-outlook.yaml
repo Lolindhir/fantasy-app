@@ -17,6 +17,68 @@ implementationState: >
   the existing public/data publication scope; Timestamps.json[ScheduleOutlook] is stamped only on a semantic change.
   The Angular view is a separate change.
 
+strengthOfSchedule:
+  issue: 1589
+  architectureDecision: ADR-091
+  model: schedule-outlook-v2 (tools/derived_data_lib/models/schedule_outlook/v2.py), chosen per season in data-meta Models.ScheduleOutlook; v1 stays immutable
+  principle: >
+    Strength is a pure statement about points scored, never a projection: the RelativeScoringStrength of the season-statistics
+    product (team points per game / league points per team-game at the cutoff) is blended with the same team's value at the end
+    of its previous regular season (matched by TeamID = provider roster identity, as in the all-time standings). With g games
+    played the current season counts with g / (g + K), K = 3 (PARAMS.CurrentSeasonWeightK, a model parameter); before game 1
+    only the previous season counts. Without a previous season the value is null before game 1 and the current season counts
+    alone from game 1; a team without a previous value behaves the same. Missing facts give null, never league average.
+  remainingSchedule: >
+    RemainingSoS = mean strength of the remaining opponents / mean strength of the other teams (the team's own strength is
+    excluded from the baseline, otherwise a strong team's schedule looks easier in small leagues). 1.0 = average schedule.
+    Null when any opponent strength is unknown or no game remains. There is no displayed rank.
+  classification: >
+    Thresholds live in the model (PARAMS.OpponentBand 0.05, ScheduleBand 0.03; provisional, a change is a new model
+    version): per opponent weaker (< 0.95) / similar / stronger (> 1.05) relative to league average 1.0; for the rest of the
+    schedule easier (< 0.97) / average / harder (> 1.03). The frontend only displays these classes.
+  documentShape: |
+    RegularSeason.StrengthParams { CurrentSeasonWeightK, OpponentBand, ScheduleBand };
+    RegularSeason.Teams[] { TeamID, CanonicalLeagueRosterID, RemainingGames,
+      Strength { Value, CurrentRelative, PreviousRelative, CurrentWeight, GamesPlayed },
+      KnownOpponentStrengthGames, RemainingSoS, RemainingSoSClass,
+      Upcoming[] { Week, CanonicalLeagueMatchupID, OpponentCanonicalLeagueRosterID, OpponentTeamID, OpponentStrength, OpponentClass } }.
+    Playoff paths and the PlayoffOdds block are unchanged (v1 semantics, reused).
+  inputs: season-statistics product of the season (Weeks[].Teams[].RelativeScoringStrength) and of the previous season (final regular-season week); canonical pairings and week structure. ProjectedBestBallStrength is no input of v2 and does not invalidate its fingerprint.
+  invalidation: input fingerprint of v2 additionally covers the previous-season strengths per TeamID and the model parameters; changing K or a band is a new model version.
+
+playoffOdds:
+  issue: 1588
+  architectureDecision: ADR-090
+  model: playoff-odds-v1 (tools/derived_data_lib/models/playoff_odds/v1.py), chosen per season in data-meta Models.PlayoffOdds (no default)
+  principle: >
+    Purely statistical and exact: every open regular-season game is an independent 50/50 win/loss, all outcome
+    combinations are counted exactly (dynamic program over team scores, no Monte Carlo), no team strength and no
+    projection. The 50/50 basis is the combinatorial scenario view; calibrated, strength-based probabilities stay with
+    Issue #1536 and may reuse the output shape. Team count, playoff size (WeekStructure.PlayoffTeams), the regular-season
+    end and the open pairings come from canonical league facts; nothing is hard-wired to 6 teams / 4 playoff places.
+  documentShape: |
+    Root "Models.PlayoffOdds": "playoff-odds-v1" and root block "PlayoffOdds":
+    { "Model", "Available", "Reason": null | "unknown-playoff-teams" | "state-limit-exceeded",
+      "Provenance": { "OpenGames", "OutcomeCount" (string, 2^OpenGames), "PlayoffTeams", "RegularSeasonComplete",
+                      "TieRule": "equal-record-teams-share-places", "Method": "exact-enumeration-50-50" },
+      "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "Record": { "Wins", "Losses", "Ties" },
+                   "PlaceProbabilities": [ ... length = team count, index 0 = place 1 ... ],
+                   "PlayoffProbability", "EliminationProbability", "Status": "clinched" | "eliminated" | "alive" } ] }
+    Probabilities are rounded to 10 digits in the product (rounding for display belongs to the consumer);
+    each team's places sum to 1 and each place sums to 1 across teams (within rounding).
+  rules:
+    - Played results (wins, losses, ties; ties count 0.5) come from the scored regular-season weeks up to the cutoff. Points are used only once the regular season is complete.
+    - Equal-record teams share the affected places evenly because future points are unknown; no extrapolation of current points.
+    - Status is strict. clinched = a playoff place in every outcome even if every tiebreak is lost; eliminated = no playoff place in any outcome even if every tiebreak is won; otherwise alive.
+    - After the regular-season end the official table (standings-v1 tiebreak, with points) decides and all probabilities are 0 or 1.
+    - Unknown playoff size or an exceeded state limit (MAX_STATES) yields Available false with null values, never an approximation or an invented 50 percent.
+    - A missing PlayoffOdds block (documents before this change) is unavailable to consumers.
+  invalidation: >
+    The input fingerprint (FINGERPRINT_VERSION 2) additionally covers the played records (points only after the regular
+    season is complete) and the playoff-odds model ID; a played result dirties only the cutoffs that count it.
+  performance: Measured 2026-11-20 for nfl-reise (6 teams, 3 games per week) - all 47 cutoffs 2024-2026 in about 20 s; the full 14-week season alone in about 3 s. Larger leagues hit MAX_STATES and report unavailable until a better algorithm is approved.
+  noNewWriter: Runs inside the existing league-live (incremental) and update-transactions (full) outlook writers; same prefix data-derived/league-schedule-outlook, same App file ScheduleOutlook.json (unchanged transfer).
+
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
   regular-season schedule, two separately explained opponent-strength metrics,

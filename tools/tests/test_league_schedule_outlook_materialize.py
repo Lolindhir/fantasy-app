@@ -21,11 +21,18 @@ import league_schedule_outlook_preview as source  # noqa: E402
 from derived_data_lib.league_schedule_outlook import assemble  # noqa: E402
 
 MODEL = "schedule-outlook-v1"
+ODDS = "playoff-odds-v1"
 LEAGUE, SEASON = "test-league", 2030
 ROSTERS = ["r1", "r2", "r3", "r4"]
 
 
 def facts() -> dict:
+    data = _facts()
+    data["results"] = played(data["pairings"])
+    return data
+
+
+def _facts() -> dict:
     def game(i, a, b):
         return {"CanonicalLeagueMatchupID": f"m{i}", "Team1CanonicalLeagueRosterID": a, "Team2CanonicalLeagueRosterID": b}
     rating = lambda i: {"RelativeScoringStrength": 0.8 + i / 10, "ProjectedBestBallStrength": 100.0 + i}
@@ -56,13 +63,25 @@ def facts() -> dict:
     }
 
 
+def played(pairings: dict) -> dict:
+    out = {}
+    for week, rows in pairings.items():
+        out[week] = {}
+        for g in rows:
+            for n, key in enumerate(("Team1CanonicalLeagueRosterID", "Team2CanonicalLeagueRosterID")):
+                out[week][g[key]] = (g["CanonicalLeagueMatchupID"], 100.0 + 10 * ROSTERS.index(g[key]) + week + n)
+    return out
+
+
 def inputs_from(data: dict) -> source.SeasonInputs:
     teams = [{"TeamID": i + 1, "CanonicalLeagueRosterID": rid} for i, rid in enumerate(ROSTERS)]
     result = source.SeasonInputs(Path("."), LEAGUE, SEASON, Path("."), f"{LEAGUE}-{SEASON}",
                                  copy.deepcopy(data["structure"]), 3, teams, data["scored"])
     result._pairings = {w: copy.deepcopy(rows) for w, rows in data["pairings"].items()}
+    result._results = copy.deepcopy(data["results"])
     result._stats = copy.deepcopy(data["stats"])
     result._brackets = (copy.deepcopy(data["winners"]), copy.deepcopy(data["losers"]))
+    result._previous = copy.deepcopy(data.get("previous", {}))
     return result
 
 
@@ -84,13 +103,55 @@ class Harness(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def run_season(self, **kwargs):
-        return mat.materialize_season(self.root, self.out, LEAGUE, SEASON, MODEL, **kwargs)
+        return mat.materialize_season(self.root, self.out, LEAGUE, SEASON, MODEL, odds_model_id=ODDS, **kwargs)
 
     def folder(self) -> Path:
         return mat.product_dir(self.out, LEAGUE, SEASON)
 
     def read(self, week: int) -> str:
         return (self.folder() / mat.snapshot_name(week)).read_text(encoding="utf-8")
+
+
+class FactStrengthModelTests(Harness):
+    """schedule-outlook-v2 (#1589): previous-season strength is an input; projection strengths are not."""
+
+    def setUp(self):
+        super().setUp()
+        self.data["previous"] = {1: 1.2, 2: 1.0, 3: 0.9, 4: 0.9}
+
+    def run_season(self, **kwargs):
+        return mat.materialize_season(self.root, self.out, LEAGUE, SEASON, "schedule-outlook-v2", odds_model_id=ODDS, **kwargs)
+
+    def test_documents_carry_the_v2_shape_and_noop_on_rerun(self):
+        self.run_season()
+        doc = json.loads(self.read(0))
+        self.assertEqual("schedule-outlook-v2", doc["Models"]["ScheduleOutlook"])
+        self.assertEqual(1.2, doc["RegularSeason"]["Teams"][0]["Strength"]["Value"])
+        self.assertEqual(3, doc["RegularSeason"]["StrengthParams"]["CurrentSeasonWeightK"])
+        again = self.run_season()
+        self.assertEqual((6, 0, 0), (again["Unchanged"], again["Recomputed"], again["Written"]))
+
+    def test_previous_season_change_dirties_every_cutoff(self):
+        self.run_season()
+        before = [self.read(w) for w in range(6)]
+        self.data["previous"][1] = 1.5
+        summary = self.run_season()
+        self.assertEqual(6, summary["Recomputed"])
+        self.assertTrue(all(self.read(w) != before[w] for w in range(3)))  # strength blends the previous season
+        self.assertNotEqual(before[0], self.read(0))
+
+    def test_projection_strength_change_does_not_invalidate_v2(self):
+        self.run_season()
+        self.data["stats"]["Weeks"][0]["Teams"][1]["ProjectedBestBallStrength"] = 55.5
+        self.assertEqual(0, self.run_season()["Recomputed"])
+
+    def test_no_previous_season_gives_unknown_strength_at_week_zero(self):
+        self.data["previous"] = {}
+        self.run_season()
+        doc = json.loads(self.read(0))
+        self.assertTrue(all(t["Strength"]["Value"] is None and t["RemainingSoS"] is None
+                            for t in doc["RegularSeason"]["Teams"]))
+        self.assertIsNotNone(json.loads(self.read(1))["RegularSeason"]["Teams"][0]["Strength"]["Value"])
 
 
 class IncrementalTests(Harness):
@@ -111,6 +172,24 @@ class IncrementalTests(Harness):
         summary = self.run_season()
         self.assertEqual(6 - summary["Recomputed"], summary["Unchanged"])
         return [w for w in range(6) if self.read(w) != before[w]]
+
+    def test_played_result_only_dirties_cutoffs_that_count_it(self):
+        def mutate(d):
+            # flip who won week 3 (r1/r2 swap points); earlier cutoffs must not notice it
+            week = d["results"][3]
+            for a, b in (("r1", "r2"), ("r3", "r4")):
+                week[a], week[b] = (week[a][0], week[b][1]), (week[b][0], week[a][1])
+        self.assertEqual([3, 4, 5], self.changed_weeks(mutate))
+
+    def test_documents_carry_the_playoff_odds_block_and_model(self):
+        self.run_season()
+        doc = json.loads(self.read(2))
+        self.assertEqual(ODDS, doc["Models"]["PlayoffOdds"])
+        self.assertEqual(ODDS, doc["PlayoffOdds"]["Model"])
+        self.assertTrue(doc["PlayoffOdds"]["Available"])
+        self.assertEqual(4, len(doc["PlayoffOdds"]["Teams"][0]["PlaceProbabilities"]))
+        self.assertAlmostEqual(4.0, sum(t["PlayoffProbability"] for t in doc["PlayoffOdds"]["Teams"]), places=8)
+        self.assertTrue(json.loads(self.read(5))["PlayoffOdds"]["Provenance"]["RegularSeasonComplete"])
 
     def test_future_pairing_change_only_dirties_earlier_cutoffs(self):
         def mutate(d):
@@ -247,8 +326,9 @@ class ConsistencyTests(Harness):
     def test_model_comes_from_data_meta_and_fails_closed(self):
         repo = TOOLS.parent
         league = "nfl-reise"
-        self.assertEqual(MODEL, mat.selected_model_id(repo, league, 2025))
-        self.assertEqual(MODEL, mat.selected_model_id(repo, league, 2025, asserted=MODEL))
+        selected = "schedule-outlook-v2"
+        self.assertEqual(selected, mat.selected_model_id(repo, league, 2025))
+        self.assertEqual(selected, mat.selected_model_id(repo, league, 2025, asserted=selected))
         with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "not the asserted"):
             mat.selected_model_id(repo, league, 2025, asserted="schedule-outlook-v0")
         with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "No usable"):
@@ -263,15 +343,15 @@ class RepositorySmokeTests(unittest.TestCase):
             year = max(source.preview_all.__globals__["data_source_dir"](repo).joinpath("leagues", "nfl-reise", "seasons").iterdir(),
                        key=lambda p: p.name).name
             season = int(year) - 1  # a completed season with a full history
-            first = mat.materialize_season(repo, out, "nfl-reise", season, MODEL, mode="full")
-            second = mat.materialize_season(repo, out, "nfl-reise", season, MODEL, mode="full")
+            first = mat.materialize_season(repo, out, "nfl-reise", season, MODEL, odds_model_id=ODDS, mode="full")
+            second = mat.materialize_season(repo, out, "nfl-reise", season, MODEL, odds_model_id=ODDS, mode="full")
             self.assertEqual(0, second["Written"])
             replay = source.preview_all(repo, "nfl-reise", season)
             for week, snapshot in enumerate(replay["Snapshots"]):
                 persisted = json.loads((mat.product_dir(out, "nfl-reise", season) / mat.snapshot_name(week)).read_text(encoding="utf-8"))
                 fingerprint = persisted["Provenance"].pop("InputFingerprint")
                 self.assertEqual(64, len(fingerprint))
-                self.assertEqual(assemble(snapshot, selected_model_id=MODEL), persisted)
+                self.assertEqual(assemble(source.snapshot(source.load_season_inputs(repo, 'nfl-reise', season), week, ODDS), selected_model_id=MODEL), persisted)
             self.assertEqual(len(replay["Snapshots"]), first["Snapshots"])
 
 
