@@ -1,5 +1,6 @@
 import csv
 import gzip
+import hashlib
 import json
 import sys
 import tempfile
