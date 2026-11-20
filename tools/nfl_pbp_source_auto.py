@@ -4,7 +4,8 @@
 The *current* season follows authoritative Source-season discovery, not a
 hard-coded calendar year. Each accepted upstream revision is immutable in a
 digest-addressed GitHub Release. Only the per-season Source manifest pointer
-advances after an exact provider-digest check and full source/game/metric audit.
+advances after an exact provider-digest and Source game/play identity audit.
+The diagnostic team-metric/PlayerStats replay is downstream, not a Source gate.
 
 Frozen seasons and accepted originals are never deleted or overwritten. No new
 workflow, branch writer, schedule, credential, or Derived write scope.
@@ -18,7 +19,6 @@ import json
 import os
 from pathlib import Path
 import re
-import subprocess
 import sys
 import tempfile
 import urllib.error
@@ -27,6 +27,7 @@ import urllib.request
 from typing import Any
 
 from nfl_source_data_lib.common import current_source_season, download, load_json, write_json_if_changed
+from nfl_source_data_lib.pbp_original import audit_original_pbp
 
 _SOURCE_REPOSITORY = "nflverse/nflverse-data"
 _PBP_RELEASE = "pbp"
@@ -35,14 +36,6 @@ _SOURCE_MANIFEST_DIR = Path(
     "data-source/providers/nflverse/play-by-play-original"
 )
 _SHA = re.compile(r"^sha256:([0-9a-f]{64})$")
-_REQUIRED_MVP = frozenset((
-    "offensive_dropbacks_faced", "pass_attempts_faced", "rush_attempts_faced",
-    "dropback_epa_per_play_allowed", "pass_epa_per_attempt_allowed",
-    "rush_epa_per_play_allowed", "dropback_success_rate_allowed",
-    "rush_success_rate_allowed", "pass_explosive_20_rate_allowed",
-    "rush_explosive_10_rate_allowed",
-))
-
 
 def api_json(
     url: str, token: str, *, method: str = "GET",
@@ -205,65 +198,9 @@ def _sha(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def _run_audit(root: Path, args: list[str]) -> dict[str, Any]:
-    cmd = [sys.executable, *args]
-    completed = subprocess.run(
-        cmd, cwd=root, text=True, capture_output=True, timeout=480,
-        check=False,
-    )
-    if completed.returncode:
-        raise ValueError(
-            f"Original PBP source audit failed ({args[0]}): "
-            + completed.stderr[-2000:]
-        )
-    result = json.loads(completed.stdout)
-    if not isinstance(result, dict):
-        raise ValueError("Original PBP source audit response malformed")
-    return result
-
-
 def _audit(root: Path, season: int, original: Path, sha: str) -> dict[str, Any]:
-    field = _run_audit(root, [
-        "tools/nfl_pbp_metric_field_audit.py",
-        "--season", str(season),
-        "--pbp-csv-gz", str(original),
-        "--expected-sha256", sha,
-        "--game-index-json", f"data-derived/nfl-games/{season}.json",
-    ])
-    join = field.get("CanonicalGameContextReconciliation") or {}
-    if (field.get("SourceAssetSHA256") != sha
-            or not field.get("GzipStreamReadToEOF")
-            or not type(field.get("RawSeasonRowCount")) is int
-            or field["RawSeasonRowCount"] <= 0
-            or not type(field.get("DistinctGameIDs")) is int
-            or field["DistinctGameIDs"] <= 0
-            or not join.get("AllObservedSourceRowsJoinCanonicalGames")
-            or join.get("UnknownGameIDRows")
-            or join.get("MismatchedContextRows")
-            or field.get("BinaryFieldInvalidCounts")):
-        raise ValueError("Official PBP source game/field/byte audit was not accepted")
-    metric = _run_audit(root, [
-        "tools/nfl_pbp_team_metric_reconcile.py",
-        "--season", str(season),
-        "--pbp-csv-gz", str(original),
-        "--expected-sha256", sha,
-    ])
-    if (metric.get("PBPAssetSHA256") != sha
-            or metric.get("PBPSourceRowsScanned") != field["RawSeasonRowCount"]
-            or not _REQUIRED_MVP.issubset(
-                set(metric.get("TeamOnlyMetricCandidateIDs") or [])
-            )):
-        raise ValueError("Original PBP season metric replay failed")
-    return {
-        "SourceRowCount": field["RawSeasonRowCount"],
-        "ObservedGameIDs": field["DistinctGameIDs"],
-        "OriginalColumnCount": field["CsvColumnCount"],
-        "UnmatchedCanonicalGameRows": 0,
-        "PBPMetricCandidateCount": len(metric["TeamOnlyMetricCandidateIDs"]),
-        "PBPMetricMVPCount": len(_REQUIRED_MVP),
-        "PBPMetricValidationStatus": "provisional-source-observed-not-certified-full-source",
-        "UpstreamFullGameCompletenessVerified": False,
-    }
+    """Source-only acceptance: no Derived index or future PlayerStats dependency."""
+    return audit_original_pbp(root, season, original, sha)
 
 
 def run(root: Path, repository: str, token: str, *, season: int | None = None) -> dict[str, Any]:
@@ -376,7 +313,7 @@ def main() -> int:
         )
     except (
         OSError, ValueError, KeyError, TypeError, urllib.error.URLError,
-        subprocess.TimeoutExpired, json.JSONDecodeError,
+        EOFError, json.JSONDecodeError,
     ) as exc:
         print(f"nfl_pbp_source_auto failed: {exc}", file=sys.stderr)
         return 1
