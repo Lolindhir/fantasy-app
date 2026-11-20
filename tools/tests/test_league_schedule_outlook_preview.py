@@ -124,7 +124,7 @@ class PreviewAdapterTests(unittest.TestCase):
 
     def test_replay_fails_closed_for_any_bad_cutoff_without_skipping(self):
         with mock.patch.object(preview, "resolve_week_finality", return_value={"LeagueScoredWeek": 3}):
-            with mock.patch.object(preview, "preview", side_effect=lambda root, league, season, week:
+            with mock.patch.object(preview, "preview", side_effect=lambda root, league, season, week, *rest:
                                    {"AsOf": {"AfterWeek": week}} if week != 2 else
                                    (_ for _ in ()).throw(preview.ScheduleOutlookSourceError("missing Week 2"))) as build:
                 with self.assertRaisesRegex(preview.ScheduleOutlookSourceError, "Week 2"):

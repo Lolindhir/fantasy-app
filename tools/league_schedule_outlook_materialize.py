@@ -109,9 +109,15 @@ def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str, odds
     rating_week = source.rating_week_for(inputs, after_week)
     stats = inputs.stats() if rating_week else {}
     ratings = source.ratings_for_week(stats, inputs.teams, rating_week=rating_week)
+    model = get_model(model_id, kind="schedule-outlook")
+    fact_strength = getattr(model, "USES_PREVIOUS_SEASON", False)
+    if fact_strength:  # v2 reads only points-based strength; projection-based strengths must not invalidate it
+        ratings = {k: {"RelativeScoringStrength": v.get("RelativeScoringStrength")} for k, v in ratings.items()}
     winners, losers = inputs.brackets()
     windows = round_windows(inputs.week_structure)
     kwargs = {"after_week": after_week, "regular_end": inputs.regular_end}
+    previous = ({str(t["TeamID"]): inputs.previous_strengths().get(t["TeamID"]) for t in inputs.teams}
+                if fact_strength else None)
     return _digest({
         "FingerprintVersion": FINGERPRINT_VERSION,
         "SchemaVersion": SCHEMA_VERSION,
@@ -129,13 +135,14 @@ def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str, odds
         "Pairings": {str(w): inputs.pairings(w) for w in range(max(1, after_week + 1), inputs.regular_end + 1)},
         "SeasonStatsModel": stats.get("Models", {}).get("SeasonStats") if stats else None,
         "Ratings": {k: ratings[k] for k in sorted(ratings)},
+        **({"PreviousSeasonStrength": previous, "ModelParams": dict(model.PARAMS)} if fact_strength else {}),
         "Winners": _bracket_projection(winners, windows, **kwargs),
         "Losers": _bracket_projection(losers, windows, **kwargs),
     })
 
 
 def build_document(inputs: SeasonInputs, after_week: int, model_id: str, fingerprint: str, odds_model_id: str) -> dict[str, Any]:
-    return assemble(source.snapshot(inputs, after_week, odds_model_id), selected_model_id=model_id, input_fingerprint=fingerprint)
+    return assemble(source.snapshot(inputs, after_week, odds_model_id, model_id=model_id), selected_model_id=model_id, input_fingerprint=fingerprint)
 
 
 def _read_existing(path: Path) -> tuple[str, dict[str, Any] | None]:

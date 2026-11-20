@@ -81,6 +81,7 @@ def inputs_from(data: dict) -> source.SeasonInputs:
     result._results = copy.deepcopy(data["results"])
     result._stats = copy.deepcopy(data["stats"])
     result._brackets = (copy.deepcopy(data["winners"]), copy.deepcopy(data["losers"]))
+    result._previous = copy.deepcopy(data.get("previous", {}))
     return result
 
 
@@ -109,6 +110,48 @@ class Harness(unittest.TestCase):
 
     def read(self, week: int) -> str:
         return (self.folder() / mat.snapshot_name(week)).read_text(encoding="utf-8")
+
+
+class FactStrengthModelTests(Harness):
+    """schedule-outlook-v2 (#1589): previous-season strength is an input; projection strengths are not."""
+
+    def setUp(self):
+        super().setUp()
+        self.data["previous"] = {1: 1.2, 2: 1.0, 3: 0.9, 4: 0.9}
+
+    def run_season(self, **kwargs):
+        return mat.materialize_season(self.root, self.out, LEAGUE, SEASON, "schedule-outlook-v2", odds_model_id=ODDS, **kwargs)
+
+    def test_documents_carry_the_v2_shape_and_noop_on_rerun(self):
+        self.run_season()
+        doc = json.loads(self.read(0))
+        self.assertEqual("schedule-outlook-v2", doc["Models"]["ScheduleOutlook"])
+        self.assertEqual(1.2, doc["RegularSeason"]["Teams"][0]["Strength"]["Value"])
+        self.assertEqual(3, doc["RegularSeason"]["StrengthParams"]["CurrentSeasonWeightK"])
+        again = self.run_season()
+        self.assertEqual((6, 0, 0), (again["Unchanged"], again["Recomputed"], again["Written"]))
+
+    def test_previous_season_change_dirties_every_cutoff(self):
+        self.run_season()
+        before = [self.read(w) for w in range(6)]
+        self.data["previous"][1] = 1.5
+        summary = self.run_season()
+        self.assertEqual(6, summary["Recomputed"])
+        self.assertTrue(all(self.read(w) != before[w] for w in range(3)))  # strength blends the previous season
+        self.assertNotEqual(before[0], self.read(0))
+
+    def test_projection_strength_change_does_not_invalidate_v2(self):
+        self.run_season()
+        self.data["stats"]["Weeks"][0]["Teams"][1]["ProjectedBestBallStrength"] = 55.5
+        self.assertEqual(0, self.run_season()["Recomputed"])
+
+    def test_no_previous_season_gives_unknown_strength_at_week_zero(self):
+        self.data["previous"] = {}
+        self.run_season()
+        doc = json.loads(self.read(0))
+        self.assertTrue(all(t["Strength"]["Value"] is None and t["RemainingSoS"] is None
+                            for t in doc["RegularSeason"]["Teams"]))
+        self.assertIsNotNone(json.loads(self.read(1))["RegularSeason"]["Teams"][0]["Strength"]["Value"])
 
 
 class IncrementalTests(Harness):
@@ -283,8 +326,9 @@ class ConsistencyTests(Harness):
     def test_model_comes_from_data_meta_and_fails_closed(self):
         repo = TOOLS.parent
         league = "nfl-reise"
-        self.assertEqual(MODEL, mat.selected_model_id(repo, league, 2025))
-        self.assertEqual(MODEL, mat.selected_model_id(repo, league, 2025, asserted=MODEL))
+        selected = "schedule-outlook-v2"
+        self.assertEqual(selected, mat.selected_model_id(repo, league, 2025))
+        self.assertEqual(selected, mat.selected_model_id(repo, league, 2025, asserted=selected))
         with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "not the asserted"):
             mat.selected_model_id(repo, league, 2025, asserted="schedule-outlook-v0")
         with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "No usable"):
