@@ -159,6 +159,16 @@ class StateTests(unittest.TestCase):
         doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, {1: snaps(gid, played=[player(9)], unresolved_team="BBB")})
         self.assertEqual(one(doc, 1, p)["State"], "not-played-reported")
 
+    def test_reserve_player_with_snap_identity_gap_is_not_played_reserve(self):
+        p = player(1)
+        gid = game(1, "AAA", "BBB")["GameID"]
+        doc = build([], {1: [roster(p, "AAA", "RES", "R01")]}, {1: snaps(gid, played=[player(9)], unresolved_team="AAA")})
+        rec = one(doc, 1, p)
+        self.assertEqual(rec["State"], "not-played-reserve")
+        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": "snap-counts-identity-gap"})
+        doc = build([report(p, 1, None, "Did Not Participate In Practice")], {1: [roster(p, "AAA", "RES", "R01")]}, {1: snaps(gid, played=[player(9)], unresolved_team="AAA")})
+        self.assertEqual(one(doc, 1, p)["State"], "not-played-reported")
+
     def test_postseason_week_without_game_is_skipped(self):
         games = [game(1, "AAA", "BBB"), game(19, "CCC", "BBB", "WC")]
         p = player(1)

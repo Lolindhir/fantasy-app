@@ -36,6 +36,17 @@ describe('player injury history view', () => {
     expect(view[0].rows[0].stateClass).toBe('unknown');
   });
 
+  it('ignores report notes with full practice participation and no game designation', () => {
+    const view = buildInjuryHistoryView({
+      ID: '1',
+      Seasons: [{ Season: 2026, Weeks: [
+        { Week: 11, GameType: 'REG', Team: 'KC', State: 'unknown', Participation: 'unknown', Report: [{ Game: null, Practice: 'Full Participation in Practice', Reasons: ['Knee'] }], Roster: null },
+        { Week: 10, GameType: 'REG', Team: 'KC', State: 'played', Participation: 'played', Report: [{ Game: null, Practice: 'Full Participation in Practice', Reasons: ['Knee'] }], Roster: null }
+      ] }]
+    });
+    expect(view).toEqual([]);
+  });
+
   it('finds a player by id and handles a missing history', () => {
     const p = { ID: '1', Seasons: [] };
     expect(findPlayerInjuryHistory({ ContractVersion: 1, Product: 'x', Coverage: [], Players: [p] }, 1)).toBe(p);

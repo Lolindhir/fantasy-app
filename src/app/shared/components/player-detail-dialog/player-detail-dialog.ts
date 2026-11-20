@@ -73,6 +73,7 @@ export class PlayerDetailDialogComponent implements OnInit {
   weeklyAwardGroups: PlayerAwardSeasonGroup[] = [];
   readonly awardDisplay = PLAYER_AWARD_DISPLAY;
   injuryHistory: InjuryHistorySeasonView[] = [];
+  injuryCurrentSeason: number | null = null;
   injuryHistoryState: 'idle' | 'loading' | 'ready' | 'unavailable' = 'idle';
   journey: PlayerJourney | null = null;
   journeyState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
@@ -110,6 +111,7 @@ export class PlayerDetailDialogComponent implements OnInit {
     this.injuryHistoryState = 'loading';
     this.dataService.getPlayerInjuryHistory().subscribe(history => {
       this.injuryHistory = buildInjuryHistoryView(findPlayerInjuryHistory(history, this.player.ID));
+      this.injuryCurrentSeason = history?.Coverage.length ? Math.max(...history.Coverage.map(c => c.Season)) : null;
       this.injuryHistoryState = history ? 'ready' : 'unavailable';
     });
   }

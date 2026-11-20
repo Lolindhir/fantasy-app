@@ -214,6 +214,9 @@ def derive_nfl_player_availability(
                     state = "played"
                 elif part == "not-played":
                     state = "not-played-reported" if report else "not-played-reserve" if reserve else "not-played-unexplained"
+                elif reserve and evidence == "snap-counts-identity-gap":
+                    # A player on the NFL reserve list cannot have played; the snap rows of his team only miss an identity.
+                    state = "not-played-reported" if report else "not-played-reserve"
                 else:
                     state = "unknown"
         else:

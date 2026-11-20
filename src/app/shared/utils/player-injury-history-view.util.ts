@@ -62,7 +62,9 @@ function injuryEntries(week: PlayerInjuryHistoryWeek): { status: string; reasons
   for (const r of week.Report ?? []) {
     const reasons = r.Reasons.filter(x => !NOT_INJURY.test(x));
     const status = r.Game && INJURY_GAME_STATUSES.has(r.Game) ? r.Game : '';
-    if (status || reasons.length) entries.push({ status, reasons });
+    // Full practice participation without a game designation is a note, not an injury signal.
+    const fullPractice = !!r.Practice && /^full participation/i.test(r.Practice);
+    if (status || (reasons.length && !fullPractice)) entries.push({ status, reasons });
   }
   return entries;
 }
