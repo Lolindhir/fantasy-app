@@ -1205,6 +1205,10 @@ consumerReadClassification:
         legacy:SeasonStatistics: app-output-owner
         legacy:Timestamps: app-output-owner
       note: 'Consumer generator of the season statistics (Issue #506). write renders SeasonStatistics.json from the persisted Shared Derived product season-statistics (materialized beforehand by derived_data.py materialize --product season-statistics --scope ..., Issue #1571 L4) and renders and the past_seasons SeasonStatistics files from it, only on a semantic difference. It reads the existing App file only to detect that difference and updates the SeasonStatistics key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+    tools/league_schedule_outlook_app_publish.py:
+      reads:
+        legacy:Timestamps: app-output-owner
+      note: 'Consumer generator of the schedule outlook (Issue #1519). write renders ScheduleOutlook.json from the newest snapshot of the persisted Shared Derived product league-schedule-outlook (read through its completeness index and verified against the recorded SHA-256, materialized beforehand by tools/league_schedule_outlook_materialize.py), only on a semantic difference. It reads the existing App file only to detect that difference and updates the ScheduleOutlook key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/rivalry_app_publish.py:
       reads:
         legacy:Rivalry: app-output-owner

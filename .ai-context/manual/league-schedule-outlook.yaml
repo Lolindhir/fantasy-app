@@ -1,5 +1,5 @@
 schemaVersion: 1
-status: active-derived-product-no-app-consumer-yet
+status: active-derived-product-app-file-generator
 trackingIssue: 1519
 architectureDecision: ADR-088
 implementationState: >
@@ -9,8 +9,13 @@ implementationState: >
   Activated by Robert's approval of 2026-11-19 (ADR-088): data-meta Models.ScheduleOutlook selects
   schedule-outlook-v1 for every season, and the existing writers league-live.yml (current season, incremental,
   fail-soft) and update-transactions.yml (all seasons, full) publish data-derived/league-schedule-outlook.
-  The initial fill comes from a normal update-transactions run. No App file and no Angular consumer exist yet;
-  they need a separate approved step (tools/league_schedule_outlook_app_publish.py, public/data/ScheduleOutlook.json).
+  The initial fill came from a normal update-transactions run (2026-11-19, 47 snapshots 2024-2026).
+  App delivery (Robert 2026-11-20, "Freigabe für alles"): tools/league_schedule_outlook_app_publish.py renders
+  public/data/ScheduleOutlook.json = the newest snapshot of the current season, unchanged, read through the completeness
+  index and verified against the recorded SHA-256 (missing/inconsistent product = unavailable, the last App file stays).
+  It runs in league-live (after the incremental materializer) and update-transactions (after the full materializer) inside
+  the existing public/data publication scope; Timestamps.json[ScheduleOutlook] is stamped only on a semantic change.
+  The Angular view is a separate change.
 
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
