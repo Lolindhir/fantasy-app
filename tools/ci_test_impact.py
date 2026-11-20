@@ -241,6 +241,8 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return {"league-pwf-twp", "consumer-restore"}, "Schedule-outlook-document"
     if path.startswith("tools/derived_data_lib/models/schedule_outlook/"):
         return {"league-pwf-twp", "consumer-restore"}, "Schedule-outlook-derivation"
+    if path.startswith("tools/derived_data_lib/models/playoff_odds/"):
+        return {"league-pwf-twp", "consumer-restore"}, "Playoff-odds-derivation"
     if path.startswith(("data-meta/", "tools/data_roots.py", "tools/derived_data_lib/")):
         return ALL.copy(), "shared-state-or-model"
     if path.startswith(("data-source/nfl/identities/", "data-source/nfl/providers/",

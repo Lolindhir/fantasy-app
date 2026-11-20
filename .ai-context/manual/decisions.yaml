@@ -3168,3 +3168,32 @@ decisions:
         - Three more data-derived prefixes in the League Live commit; runtime is measured and documented in Issue #1571.
         - The running-season documents are current snapshots and not byte-reproducible from a clean root.
         - Until each step is merged the computed function and the App generator stay the productive path.
+
+  - id: ADR-090
+    title: Playoff odds are an exact 50/50 combinatorial model inside the schedule outlook product
+    status: accepted
+    amends: [ADR-088]
+    context: >-
+      Standings show records but not who can still reach the playoffs. Robert asked on 2026-11-20 (Issue #1588) for the probability of every
+      regular-season place, the probability to reach or miss the playoffs and a strict clinched/eliminated status, purely statistical and
+      dynamic in team count and playoff size, without strength models. Calibrated model-based probabilities remain Issue #1536.
+    decision: >-
+      Robert decided on 2026-11-20 (Issue #1588): the central, league-independent, versioned model playoff-odds-v1 counts every outcome of the
+      open regular-season games exactly under independent 50/50 results (no simulation, no strength, no projection). Equal-record teams share
+      the affected places evenly because future points are unknown; clinched and eliminated are strict (tiebreaks lost / won). After the
+      regular season the official standings-v1 table decides. The model is chosen per season in data-meta (Models.PlayoffOdds) and its output is an
+      additive PlayoffOdds block (with Models.PlayoffOdds) of the existing league-schedule-outlook documents; schedule-outlook-v1 stays immutable and the
+      fingerprint is bumped to version 2 (records and odds model are inputs). No new writer, prefix, workflow or permission; the App file
+      ScheduleOutlook.json passes the block unchanged. If the playoff size is unknown or the exact count exceeds MAX_STATES the block is explicitly
+      unavailable. Contract: .ai-context/manual/league-schedule-outlook.yaml (playoffOdds).
+    rationale: >-
+      Exact counting is cheap for small leagues, explainable and free of model assumptions; keeping it in the outlook product reuses the existing
+      cutoff, fingerprint and publication machinery and lets later strength-based models reuse the same output shape.
+    consequences:
+      positive:
+        - Every consumer reads the same place probabilities, playoff/elimination chances and strict status per outlook cutoff.
+        - Works for any team count and playoff size within the state limit.
+      negative:
+        - The 50/50 view ignores real strength; its numbers are scenario shares, not forecasts.
+        - Large leagues exceed the exact-count limit and show unavailable until the algorithm is improved.
+        - Documents of all seasons are rewritten once by the next full run (fingerprint bump).

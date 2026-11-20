@@ -76,16 +76,30 @@ def assemble(preview: Mapping[str, Any], *, selected_model_id: str, input_finger
     if any(key in preview for key in ("ObservedAt", "GeneratedAt")):
         raise LeagueScheduleOutlookError("Volatile observation/build timestamps are not historical inputs")
 
-    return {
+    odds = preview.get("PlayoffOdds")
+    odds_model = models.get("PlayoffOdds")
+    if (odds is None) != (odds_model is None):
+        raise LeagueScheduleOutlookError("PlayoffOdds block and model evidence must appear together")
+    if odds is not None:
+        get_model(odds_model, kind="playoff-odds")
+        if not isinstance(odds, Mapping) or odds.get("Model") != odds_model or not isinstance(odds.get("Teams"), list):
+            raise LeagueScheduleOutlookError("Invalid PlayoffOdds block")
+    model_block = {"ScheduleOutlook": selected_model_id, "SeasonStats": season_stats}
+    if odds_model is not None:
+        model_block["PlayoffOdds"] = odds_model
+    document = {
         "SchemaVersion": SCHEMA_VERSION,
         "Product": PRODUCT,
         "CanonicalLeagueID": league_id,
         "CanonicalLeagueSeasonID": season_id,
         "Season": season,
-        "Models": {"ScheduleOutlook": selected_model_id, "SeasonStats": season_stats},
+        "Models": model_block,
         "AsOf": {"AfterWeek": week, "RatingWeek": rating_week},
         "Provenance": ({"Reconstruction": RECONSTRUCTION} if input_fingerprint is None else
                        {"Reconstruction": RECONSTRUCTION, "InputFingerprint": input_fingerprint}),
         "RegularSeason": dict(regular),
         "Playoffs": dict(playoffs),
     }
+    if odds is not None:
+        document["PlayoffOdds"] = dict(odds)
+    return document

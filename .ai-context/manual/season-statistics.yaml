@@ -63,7 +63,7 @@ definitions:
   ProjectedBestBallPoints: per game best possible lineup of the whole matchup player pool by PlayerWeekFantasy projection (slots from league.json RosterPositions, positions from the canonical weekly roster, shared optimizer tools/weekly_lineup_optimizer.py); players without a usable projection or position are excluded and counted (BestBallExcludedPlayers); a starter without a projection makes the value null; the pool includes Taxi/IR because the provider exposes no weekly placement; season value is the mean (BestBallGames)
   LineupEfficiencyProjected: per game ProjectedStarterPoints (= PregameProjection) / ProjectedBestBallPoints in percent; season value is the mean
   LineupEfficiencyActual: EfficiencyPercent taken over from the team-week-performance product (hindsight), not recomputed; season value is the mean
-  ProjectedBestBallStrength: season mean ProjectedBestBallPoints x season mean LineupEfficiencyProjected / 100 (lineup-independent roster strength); weekly progression carries it too; stored only, not shown in the App
+  ProjectedBestBallStrength: season mean ProjectedBestBallPoints x season mean LineupEfficiencyProjected / 100. Despite the earlier wording this is NOT a lineup-independent roster strength; it is approximately the season mean of the pregame projection of the starters actually fielded (deviation below 0.2 points, checked 2026-11-20 in Issue #1588), hence inert and tied to our projection model; weekly progression carries it too; stored only, not shown in the App
   thresholds: 0.5 and 0.35 belong to season-stats-v1 (Thresholds in the document)
 
 contract:

@@ -59,6 +59,7 @@ identity:
       - win-prob-v1
       - season-stats-v1
       - schedule-outlook-v1
+      - playoff-odds-v1
       - rivalry-v1
       - weekly-recap-v1
       - weekly-recap-v2
@@ -92,6 +93,9 @@ identity:
       module: tools/derived_data_lib/models/schedule_outlook/v1.py
       produces: Future regular-season matchups, separate historical relative-scoring/best-ball SoS figures and cutoff-safe playoff paths using canonical round windows/advancement routing
       status: staged-I1-read-only-not-yet-a-published-derived-product
+    playoff-odds:
+      module: tools/derived_data_lib/models/playoff_odds/v1.py
+      produces: Exact 50/50 combinatorial playoff chances per team (probability of every regular-season place, playoff and elimination probability, strict clinched/eliminated/alive status); no strength, no projection (Issue #1588, ADR-090)
     team-range:
       module: tools/derived_data_lib/models/team_range/v1.py
       produces: Team projection (ProjectedFinalScore, StandardDeviation, 50/80/90 percent Ranges) from the starters' PlayerWeekFantasy projections (computed, not persisted, ADR-075)
@@ -128,7 +132,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats, Rivalry, WeeklyRecap, ScheduleOutlook } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats, Rivalry, WeeklyRecap, ScheduleOutlook, PlayoffOdds } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
