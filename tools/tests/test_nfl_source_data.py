@@ -12,6 +12,7 @@ sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib import common as common_mod
 import nfl_pbp_source_archive as pbp_archive
 import nfl_pbp_source_auto as pbp_auto
+from nfl_source_data_lib.pbp_original import audit_original_pbp
 import nfl_pbp_2025_quality_report as pbp_quality
 from nfl_source_data_lib.draft import classify_draft_status
 from nfl_source_data_lib.materialize import materialize
@@ -417,6 +418,114 @@ class NflPbpCurrentSourceTests(unittest.TestCase):
                 third = pbp_auto.run(root, "Lolindhir/fantasy-app", "token")
                 self.assertEqual(third["Status"], "original-current-noop")
                 self.assertEqual(metadata.read_bytes(), stable)
+
+    @staticmethod
+    def _identity_schedule(root):
+        path = root / "data-source/nfl/schedules/2026.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({
+            "SchemaVersion": 2, "Season": 2026,
+            "SourceDataset": "nflverse.schedules",
+            "Games": [
+                {"GameID": "2026_01_ARI_LAC", "GameType": "REG",
+                 "Week": 1, "AwayTeam": "ARI", "HomeTeam": "LAC"},
+                {"GameID": "2026_18_ARI_LAC", "GameType": "REG",
+                 "Week": 18, "AwayTeam": "ARI", "HomeTeam": "LAC"},
+            ],
+        }), encoding="utf-8")
+
+    @staticmethod
+    def _identity_original(rows):
+        import io
+        stream = io.BytesIO()
+        with gzip.open(stream, "wt", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=[
+                "game_id", "play_id", "season", "week", "season_type",
+                "away_team", "home_team", "posteam", "defteam", "play_type",
+                "epa", "pass_attempt",
+            ])
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({
+                    "game_id": "2026_01_ARI_LAC", "play_id": "1",
+                    "season": "2026", "week": "1", "season_type": "REG",
+                    "away_team": "ARI", "home_team": "LAC",
+                    "posteam": "ARI", "defteam": "LAC",
+                    "play_type": "pass", "epa": "0.25", "pass_attempt": "1",
+                    **row,
+                })
+        return stream.getvalue()
+
+    def test_real_source_intake_accepts_active_partial_season_without_derived_or_future_stats(self):
+        """A W18 schedule must not require W18 PlayerStats or Derived games."""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._identity_schedule(root)
+            data = self._identity_original([{}, {"play_id": "2"}])
+            official = self._official(2026, data)
+            def download(_url, target):
+                target.write_bytes(data)
+            def upload(_token, _release, _file, season, _sha, _size):
+                return self._archived(season, data)
+            with patch.object(pbp_auto, "current_source_season", return_value=2026), \
+                 patch.object(pbp_auto, "upstream_asset", return_value=official), \
+                 patch.object(pbp_auto, "download", side_effect=download), \
+                 patch.object(pbp_auto, "_get_release", return_value=None), \
+                 patch.object(pbp_auto, "_create_release", return_value={
+                     "upload_url": "https://uploads.github.com/repos/Lolindhir/fantasy-app/releases/111/assets{?name,label}"
+                 }), \
+                 patch.object(pbp_auto, "_upload", side_effect=upload):
+                result = pbp_auto.run(root, "Lolindhir/fantasy-app", "token")
+            self.assertEqual(result["Status"], "original-current-accepted")
+            manifest = json.loads((root / (
+                "data-source/providers/nflverse/play-by-play-original/metadata-2026.json"
+            )).read_text())
+            self.assertEqual(manifest["Audit"]["SourceRowCount"], 2)
+            self.assertEqual(manifest["Audit"]["ObservedGameIDs"], 1)
+            self.assertEqual(manifest["Audit"]["UnmatchedCanonicalGameRows"], 0)
+            self.assertEqual(
+                manifest["Audit"]["SourceValidationStatus"],
+                "original-byte-and-source-game-identity-accepted",
+            )
+            self.assertFalse(manifest["SourceCompletenessCertified"])
+            self.assertNotIn("PBPMetricMVPCount", manifest["Audit"])
+            self.assertFalse((root / "data-derived").exists())
+            self.assertFalse((root / "data-source/nfl/player-stats").exists())
+
+    def test_original_source_identity_rejects_unknown_game_context_and_duplicate_play(self):
+        cases = (
+            ([{"game_id": "2026_02_ARI_LAC"}], "unknown Source GameID"),
+            ([{"week": "18"}], "mismatched Source week"),
+            ([{"season": "2025"}], "wrong season"),
+            ([{"home_team": "SEA"}], "mismatched Source teams"),
+            ([{"play_id": "1"}, {"play_id": "1"}], "Duplicate original PBP GameID/PlayID"),
+        )
+        for rows, error in cases:
+            with self.subTest(error=error), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                self._identity_schedule(root)
+                path = root / "original.csv.gz"
+                data = self._identity_original(rows)
+                path.write_bytes(data)
+                with self.assertRaisesRegex(ValueError, error):
+                    audit_original_pbp(
+                        root, 2026, path, hashlib.sha256(data).hexdigest(),
+                    )
+
+    def test_original_source_identity_rejects_malformed_bytes_before_archive(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._identity_schedule(root)
+            path = root / "original.csv.gz"
+            path.write_bytes(b"not gzip")
+            with self.assertRaises(OSError):
+                audit_original_pbp(
+                    root, 2026, path, hashlib.sha256(b"not gzip").hexdigest(),
+                )
+            valid = self._identity_original([{}])
+            path.write_bytes(valid)
+            with self.assertRaisesRegex(ValueError, "pinned SHA256"):
+                audit_original_pbp(root, 2026, path, "0" * 64)
 
     def test_source_digest_mismatch_fails_before_any_release_or_manifest(self):
         with tempfile.TemporaryDirectory() as temp, \
