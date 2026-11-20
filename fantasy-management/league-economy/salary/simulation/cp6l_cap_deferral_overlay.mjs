@@ -45,7 +45,7 @@ function debtOverlay(run,option,term,early){
    mandatoryDue:due,paid,earlyPaid:Math.max(0,paid-due),dueShortfall:deficit,unpaid:balance,overLimit});
  }
  return {seed:run.seed,supply:run.supply,regime:run.regime,option:option.name,term:'H'+term,
-  repayment:'minimum-only'=== (early?'early-max':'minimum-only')?'minimum-only':'early-max',
+  repayment:early?'early-max':'minimum-only',
   borrow,originalH5:run.h5,projectedSportsGain:null,
   firstYearExtraPayrollEnvelope:details[0].incrementalOneYearSalaryEnvelope,
   paidByYear5:balance===0,compliantWithoutExtraRosterAction:errors.length===0&&balance===0,
