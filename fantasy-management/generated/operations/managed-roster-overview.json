@@ -2,12 +2,12 @@
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
   "generated_at": "2026-11-20T04:21:52.597975Z",
-  "input_fingerprint": "d08c5c558b89c3c5e11cc50247bc8daf072efab265e7de584793eb1ba9db4e5d",
+  "input_fingerprint": "94f0914c36dfcc29f0c6d3526928c64d59ddff87f00100e0bfe2ff6308527f21",
   "sources": [
     {
       "id": "canonical_league_settings",
       "path": "data-source/leagues/nfl-reise/seasons/2026/league.json",
-      "content_sha256": "446aaabb267f9b94d4d3958acb1fbb3c8ca58753fb6a96cbc42145f7857fbb0c"
+      "content_sha256": "d3abf8b40000f44a45536a137c411947d56b502972d5c897dff5cec712a491d3"
     },
     {
       "id": "canonical_league_members",
@@ -17,7 +17,7 @@
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "c3dc658d53ecb229c74f5cea439bf847874e62caff20084fbfc463569b2d4261"
+      "content_sha256": "9bb2c07ab41d8cb8486619c546c1aa8b7f4cf89d9c4c74cb42654a75dbc42965"
     },
     {
       "id": "roster_evaluation_state",
@@ -1279,13 +1279,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Hamstring",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."

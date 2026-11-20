@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
   "generated_at": "2026-11-20T04:21:52.597975Z",
-  "input_fingerprint": "6ae682c98cd01287db5cc4d5075dac44caffeb7e430a016a1c58da58177f3d76",
+  "input_fingerprint": "4801855289ad4d527d2b6a38c079c057864eaebfc40a360ba5ab4be1875a1e22",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -19,7 +19,7 @@
     {
       "id": "canonical_league",
       "path": "data-source/leagues/nfl-reise/seasons/2026/league.json",
-      "content_sha256": "446aaabb267f9b94d4d3958acb1fbb3c8ca58753fb6a96cbc42145f7857fbb0c",
+      "content_sha256": "d3abf8b40000f44a45536a137c411947d56b502972d5c897dff5cec712a491d3",
       "source_timestamp": null
     },
     {
@@ -49,7 +49,7 @@
     {
       "id": "canonical_nfl_rosters",
       "path": "data-source/nfl/rosters/2026.json",
-      "content_sha256": "0c8121be193bf3b3b09425aa1c5ed10961091be06b747b424abf8cafc331115f",
+      "content_sha256": "036bbd814e9b1f0b5757990e7dbd3f84b16dc4352c3b658b05bec980e817d746",
       "source_timestamp": null
     },
     {
@@ -115,7 +115,7 @@
     {
       "id": "canonical_nfl_weekly_rosters_11",
       "path": "data-source/nfl/weekly-rosters/2026/11.json",
-      "content_sha256": "3485e43c581729010798eff67605cb3750f85e3f74bc827340754b09de9f2510",
+      "content_sha256": "ab3d600980d1dbe9e129e2ba2d9e5e87efa1a852501777e92161718d9d2f7887",
       "source_timestamp": null
     },
     {
@@ -127,13 +127,13 @@
     {
       "id": "canonical_player_identities",
       "path": "data-source/nfl/identities/players.json",
-      "content_sha256": "1c285e7b9e69b0a0d579bf15813ff247b18a96e2a440073ee9643e1e50ae7ab0",
+      "content_sha256": "864ae0272f217e1bd08484b0ee40e021d2fc2145606a5fef568d4e7f8b571387",
       "source_timestamp": null
     },
     {
       "id": "canonical_sleeper_players",
       "path": "data-source/nfl/platform/sleeper/players.json",
-      "content_sha256": "52993ed2676dbde8e150c0f9c90bf71b1faa911dea398ac6cd0688a4714948a2",
+      "content_sha256": "517b9431cf5589df4e3f5def57232949dc36e18d6035051b47e96edc69a2bd87",
       "source_timestamp": null
     },
     {
@@ -9201,13 +9201,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Hamstring",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -9423,9 +9423,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -9452,7 +9453,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 12,
+      "players_with_current_injury_signal": 13,
       "primary_adp_applicable": 4,
       "primary_adp_listed": 3,
       "sources": {
