@@ -1,4 +1,5 @@
 import csv
+import gzip
 import json
 import sys
 import tempfile
