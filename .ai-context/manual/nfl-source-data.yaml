@@ -514,8 +514,11 @@ fullPlayByPlayTarget:
     immutableStorage: >-
       Validate official Github release asset ID, URL, sha256 digest, size and
       uploaded state, download full original compressed bytes, check identical
-      digest and byte length, then complete original CSV/identity/metric audit
-      against canonical game context before persisting. Each accepted revision
+      digest and byte length, then perform the Source-only original identity
+      audit (complete GZIP/CSV stream, GameID/PlayID uniqueness, season/week/
+      team/type context against data-source/nfl/schedules/<season>.json)
+      before persisting. No data-derived/nfl-games index, future PlayerStats
+      partition or team-metric research replay is an original archive gate. Each accepted revision
       receives a separate immutable content-addressed repository GitHub
       Release and is never overwritten. A per-season manifest under
       data-source/providers/nflverse/play-by-play-original/metadata-<season>.json
@@ -526,15 +529,19 @@ fullPlayByPlayTarget:
       The existing full NFL Source cadence already checks official upstream
       release metadata. Unchanged digest and intact previous archive is a
       no-op with no download, audit or manifest commit. Source revisions
-      trigger full in-memory original/play/game audit. Missing official assets
+      trigger the original-byte and Source schedule/play identity audit;
+      the Source manifest retains SourceScheduleSHA256 and observed counts,
+      not a certificate that the upstream covers every game/play. Missing official assets
       remain unavailable rather than zero; inconsistency in any accepted
       existing asset or new official digest fails closed for this intake.
     downstream: >-
       Existing nfl_games_derived job automatically sees newly accepted current
       Source metadata on successful full Source Sync, retrieves the immutable
       PBP asset and recomputes GameDetail v2 only for source-backed game records.
-      NFL Games season index stays SchemaVersion=1, and Derived writes stay
-      limited to data-derived/nfl-games/details/**.
+      Separate read-only team-metric/PlayerStats reconciliation is a downstream
+      diagnostic and never blocks original Source evidence admission. NFL Games
+      season index stays SchemaVersion=1, and Derived writes stay limited to
+      data-derived/nfl-games/details/**.
     failureIsolation: >-
       Any failed current original PBP audit, GitHub read/release/upload or
       checksum blocks only the new PBP Source manifest and emits explicit
