@@ -18,14 +18,13 @@ from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 
+from .nfl_games import kickoff_utc as shared_kickoff_utc
 from .playoff_brackets import load_season_brackets
 
 UTC = timezone.utc
-EASTERN = ZoneInfo("America/New_York")
 NON_STARTER_POSITIONS = ("BN", "IR", "TAXI", "RESERVE")
 
 
@@ -378,16 +377,15 @@ def _legacy_row(row: Any, week: int) -> dict[str, Any]:
 
 
 def kickoff_utc(game: Any) -> str | None:
-    """Eastern wall-clock GameDay/GameTime of a canonical schedule game as ``yyyy-MM-ddTHH:mm:ssZ``."""
+    """Kickoff of a canonical schedule game as ``yyyy-MM-ddTHH:mm:ssZ``; the conversion is owned by the nfl-games product module (Issue #1572)."""
     day = _text(value_of(game, "GameDay"))
     time = _text(value_of(game, "GameTime"))
     if day.strip() == "" or time.strip() == "":
         return None
     try:
-        parsed = datetime.strptime(f"{day} {time}", "%Y-%m-%d %H:%M")
+        return shared_kickoff_utc(_text(value_of(game, "GameID")), day, time)
     except ValueError:
         return None
-    return parsed.replace(tzinfo=EASTERN).astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def schedule_games(repo_root: Path, season: int) -> list[dict[str, Any]]:

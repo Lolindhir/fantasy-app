@@ -13,13 +13,12 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
+from derived_data_lib.nfl_games import kickoff_epoch  # noqa: E402
 from nfl_source_data_lib.teams import NflTeamRegistry, NflTeamRegistryError  # noqa: E402
 
 from analyze_kicker_streaming import (
@@ -37,7 +36,6 @@ SCHEMA_VERSION = 1
 DATASET_ID = "kicker-weekly-research-plan"
 
 
-NFL_TIME_ZONE = ZoneInfo("America/New_York")
 SEASON_TYPES = {"REG": "Regular Season", "WC": "Post Season", "DIV": "Post Season", "CON": "Post Season", "SB": "Post Season"}
 CBS_SPELLING = {"JAX": "JAC", "WSH": "WAS"}
 
@@ -54,18 +52,14 @@ def _provider_spelling(registry: NflTeamRegistry, team: str) -> str:
     return team
 
 
-def _kickoff_epoch(game_day: str, game_time: str | None) -> str:
-    """UTC epoch seconds as text for a canonical GameDay plus Eastern GameTime; empty when the time is unknown."""
+def _kickoff_epoch(game_day: str, game_time: str | None, game_id: str = "") -> str:
+    """UTC epoch seconds as text; the conversion is owned by the nfl-games product module. Empty when the time is unknown."""
     if not game_time:
         return ""
-    local = datetime.strptime(f"{game_day} {game_time}", "%Y-%m-%d %H:%M")
-    first = local.replace(tzinfo=NFL_TIME_ZONE, fold=0)
-    second = local.replace(tzinfo=NFL_TIME_ZONE, fold=1)
-    roundtrip = datetime.fromtimestamp(first.timestamp(), NFL_TIME_ZONE).replace(tzinfo=None)
-    if first.utcoffset() != second.utcoffset() or roundtrip != local:
-        raise KickerWeeklyResearchPlanError(f"Canonical kickoff {game_day} {game_time} is not unambiguous in Eastern time")
-    zoned = first
-    return f"{zoned.timestamp()}"
+    try:
+        return kickoff_epoch(game_id, game_day, game_time) or ""
+    except ValueError as exc:
+        raise KickerWeeklyResearchPlanError(str(exc)) from exc
 
 
 def load_canonical_schedule(repo_root: Path, season: int, registry: NflTeamRegistry) -> list[dict[str, Any]]:
@@ -109,7 +103,7 @@ def load_canonical_schedule(repo_root: Path, season: int, registry: NflTeamRegis
                 "gameWeek": f"Week {int(game['Week'])}",
                 "gameDate": date_key,
                 "gameTime": hour_text or "TBD",
-                "gameTime_epoch": _kickoff_epoch(day, game_time),
+                "gameTime_epoch": _kickoff_epoch(day, game_time, str(game_id)),
                 "away": away,
                 "home": home,
                 "neutralSite": "True" if game.get("Location") == "Neutral" else "False",
