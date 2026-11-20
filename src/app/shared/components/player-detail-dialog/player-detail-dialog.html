@@ -376,11 +376,11 @@
           @case ('unavailable') { <p class="injury-muted">Injury history is currently unavailable.</p> }
           @default {
             @if (injuryHistory.length === 0) {
-              <p class="injury-muted">No injury reports or reserve-list periods on record.</p>
+              <p class="injury-muted">No injuries or missed games on record.</p>
             }
             @for (season of injuryHistory; track season.season; let first = $first) {
               <details class="injury-season" [open]="first">
-                <summary>{{ season.season }} <span class="injury-muted">· {{ season.affectedWeeks }} week(s) not played or unknown</span></summary>
+                <summary>{{ season.season }} <span class="injury-muted">· {{ season.affectedWeeks }} game(s) missed</span></summary>
                 <div class="injury-rows">
                   @for (row of season.rows; track row.week) {
                     <div class="injury-row">
@@ -393,7 +393,7 @@
                 </div>
               </details>
             }
-            <p class="injury-muted injury-note">Weeks without a report show the NFL roster status. Unknown means the evidence is missing, not that the player was healthy.</p>
+            <p class="injury-muted injury-note">Listed are weeks with an injury report or a missed game. Result pending or unknown means the outcome is not available yet or the evidence is missing, not that the player was healthy.</p>
           }
         }
       </div>
