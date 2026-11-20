@@ -29,6 +29,7 @@ import type { RawTransaction, Transaction } from '../models/transaction.models';
 import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
+import type { PlayerInjuryHistoryReadModel } from '../models/player-injury-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
 import { buildPlayerWeekProjections, type PlayerWeekProjectionView } from '../../shared/utils/player-week-projection.util';
@@ -338,6 +339,11 @@ export class DataService {
   /** Weekly player award history; null when the file is unavailable so callers hide the feature. */
   getPlayerAwardHistory(): Observable<PlayerAwardHistoryReadModel | null> {
     return this.dataApiService.getPlayerAwardHistoryRaw().pipe(catchError(() => of(null)));
+  }
+
+  /** Weekly availability history per player; null when the file is unavailable so the tab only shows the current status. */
+  getPlayerInjuryHistory(): Observable<PlayerInjuryHistoryReadModel | null> {
+    return this.dataApiService.getPlayerInjuryHistoryRaw().pipe(catchError(() => of(null)));
   }
 
   getSeasonStatistics(): Observable<SeasonStatisticsReadModel> {
