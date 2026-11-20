@@ -22,7 +22,8 @@ param(
         "team-week-performance",
         "nfl-games",
         "nfl-injuries",
-        "nfl-player-availability"
+        "nfl-player-availability",
+        "nfl-availability-derived"
     )]
     [string]$Scope
 )
@@ -52,6 +53,8 @@ function Get-GeneratedDataLabel {
         "^data-derived/team-week-performance/" { return "TeamWeekPerformance derived" }
         "^data-derived/nfl-games/" { return "NFL Games derived" }
         "^data-derived/nfl-injuries/" { return "NFL Injuries derived" }
+        "^data-derived/nfl-player-availability/" { return "NFL Player Availability derived" }
+        "/PlayerInjuryHistory\.json$" { return "Player injury history" }
         "^data-derived/league-standings/" { return "Standings derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
         "/MatchupProjections\.json$" { return "MatchupProjections" }

@@ -51,6 +51,7 @@ from datetime import datetime, timezone
 from weekly_recaps_materialize import EXPECTED_ERRORS as WEEKLY_RECAPS_ERRORS, PRODUCT as WEEKLY_RECAPS, materialize as materialize_weekly_recaps
 from nfl_games_materialize import discover_seasons, materialize as materialize_nfl_games
 from nfl_injuries_phase import plan_injury_phase
+from nfl_player_availability_materialize import discover_seasons as discover_availability_seasons, materialize as materialize_nfl_availability
 from team_week_performance_materialize import materialize_all_finalized
 
 PLAYER_VALUATION = "player-valuation"
@@ -58,6 +59,7 @@ PLAYER_WEEK_FANTASY = "player-week-fantasy"
 TEAM_WEEK_PERFORMANCE = "team-week-performance"
 NFL_GAMES = "nfl-games"
 NFL_INJURIES = "nfl-injuries"
+NFL_PLAYER_AVAILABILITY = "nfl-player-availability"
 
 # Stable build and report order, upstream before downstream; official TeamWeekPerformance is independent of PWF score
 # parity. The clean-root variant starts empty, so a product that reads another persisted product (awards-v2/v3 of
@@ -65,10 +67,10 @@ NFL_INJURIES = "nfl-injuries"
 # productive-like variant where the published products are already visible.
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS,
-    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, SEASON_STATISTICS,
+    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, NFL_PLAYER_AVAILABILITY, SEASON_STATISTICS,
     LEAGUE_STANDINGS, LEAGUE_RIVALRY, MATCHUP_CONTEXT, WEEKLY_RECAPS,
 )
-GLOBAL_PRODUCTS = frozenset({NFL_GAMES, NFL_INJURIES})
+GLOBAL_PRODUCTS = frozenset({NFL_GAMES, NFL_INJURIES, NFL_PLAYER_AVAILABILITY})
 
 FAILING = frozenset({"blocked", "nondeterministic", "restore-defect"})
 HINTS = frozenset({"stale-published", "latent-blocker"})
@@ -193,6 +195,12 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
         ), 0
     if product == NFL_INJURIES:
         return _build_nfl_injuries(root), 0
+    if product == NFL_PLAYER_AVAILABILITY:
+        # Reads the injury product built just before it in the same root (upstream before downstream).
+        return sum(
+            int(materialize_nfl_availability(root, season, out_root=output, write=True)["Written"])
+            for season in discover_availability_seasons(root, output)
+        ), 0
     if product == MATCHUP_CONTEXT:
         try:
             summaries = materialize_matchup_context(root, output, league, "history", datetime.now(timezone.utc))

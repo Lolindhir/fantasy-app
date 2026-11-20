@@ -21,6 +21,7 @@ the read-only restore probe `tools/derived_clean_root_audit.py`.
 |---|---|---|---|
 | `nfl-games` | `.ai-context/manual/nfl-games.yaml` | `tools/nfl_games_materialize.py` | `sync-nfl-source-data.yml` |
 | `nfl-injuries` | `.ai-context/manual/nfl-injuries.yaml` | `tools/nfl_injuries_phase.py` | `sync-nfl-source-data.yml` |
+| `nfl-player-availability` | `.ai-context/manual/nfl-player-availability.yaml` | `tools/nfl_player_availability_materialize.py` | `sync-nfl-source-data.yml` |
 | `player-week-fantasy` | `.ai-context/manual/player-week-fantasy.yaml` | `tools/player_week_fantasy_materialize.py` | `league-live.yml`, `update-standings.yml` |
 | `team-week-performance` | `.ai-context/manual/team-week-performance.yaml` | `tools/team_week_performance_materialize.py` | `league-live.yml`, `update-standings.yml` |
 | `player-valuation` | `.ai-context/manual/player-valuation.yaml` | `tools/derived_data.py` | `update-players.yml` |
@@ -47,6 +48,15 @@ Derived result through the independent scoped rebuild-and-retry job. The daily
 current-season importer is active; supported historical backfill and weekly
 reconciliation remain tracked in #1421. The read-only clean-root audit restores
 this product from accepted canonical input and verifies semantic no-op behavior.
+
+## NFL Player Availability
+
+`data-derived/nfl-player-availability/<season>.json` is the global, league-independent
+`nfl-player-availability-v1` product (Issue #1590). Per player-week it keeps separate evidence
+fields (observed report from `nfl-injuries-v1`, NFL roster status and code, participation from
+snap counts or player stats, game/bye/final) and a documented `State`. It is the availability
+layer for the player-detail injury history (`public/data/PlayerInjuryHistory.json`) and for
+Fantasy Injury Impact (#1584). Contract: `.ai-context/manual/nfl-player-availability.yaml`.
 
 ## Global NFL Game
 

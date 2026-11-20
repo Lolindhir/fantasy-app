@@ -126,6 +126,12 @@ class RoutingTests(unittest.TestCase):
                 selected = set(self.choose(path)["selected"])
                 self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
 
+    def test_player_availability_materializer_and_app_publisher_select_derived_families(self):
+        for path in ("tools/nfl_player_availability_materialize.py", "tools/player_injury_history_app_publish.py"):
+            with self.subTest(path=path):
+                selected = set(self.choose(path)["selected"])
+                self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
+
     def test_league_live_derived_refresh_selects_derived_families(self):
         selected = set(self.choose("tools/league_live_derived_refresh.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
