@@ -128,6 +128,7 @@ class SeasonInputs:
         self.teams, self.scored = teams, scored
         self.roster_ids = {team["CanonicalLeagueRosterID"] for team in teams}
         self._pairings: dict[int, list[dict[str, str]]] = {}
+        self._results: dict[int, dict[str, tuple[str, float]]] = {}
         self._stats: dict[str, Any] | None = None
         self._brackets: tuple[Any, Any] | None = None
 
@@ -136,6 +137,42 @@ class SeasonInputs:
             raw = _document(self.season_dir / "matchups" / f"week-{week}.json")
             self._pairings[week] = normalize_week_pairings(raw, week=week, canonical_rosters=self.roster_ids)
         return self._pairings[week]
+
+    def results(self, week: int) -> dict[str, tuple[str, float]]:
+        """Played result of one scored week: roster -> (matchup, points). Points are used only for W/L/T."""
+        if week not in self._results:
+            raw = _document(self.season_dir / "matchups" / f"week-{week}.json")
+            found: dict[str, tuple[str, float]] = {}
+            for row in raw if isinstance(raw, list) else []:
+                rid, match, points = (row.get("CanonicalLeagueRosterID"), row.get("CanonicalLeagueMatchupID"),
+                                      row.get("Points")) if isinstance(row, dict) else (None, None, None)
+                if (rid not in self.roster_ids or not _nonempty(match) or isinstance(points, bool)
+                        or not isinstance(points, (int, float))):
+                    raise ScheduleOutlookSourceError(f"Week {week}: missing points or identity for a scored result")
+                found[rid] = (match, float(points))
+            if set(found) != self.roster_ids:
+                raise ScheduleOutlookSourceError(f"Week {week}: scored result coverage incomplete")
+            self._results[week] = found
+        return self._results[week]
+
+    def records(self, after_week: int) -> list[dict[str, Any]]:
+        """Wins/losses/ties (and points) per team over the scored regular-season weeks up to the cutoff."""
+        state = {rid: {"Wins": 0, "Losses": 0, "Ties": 0, "Points": 0.0, "PointsAgainst": 0.0} for rid in self.roster_ids}
+        for week in range(1, min(after_week, self.regular_end) + 1):
+            week_results = self.results(week)
+            by_match: dict[str, list[str]] = {}
+            for rid, (match, _) in week_results.items():
+                by_match.setdefault(match, []).append(rid)
+            for rids in by_match.values():
+                if len(rids) != 2:
+                    raise ScheduleOutlookSourceError(f"Week {week}: scored game must have exactly two rosters")
+                for own, other in (rids, rids[::-1]):
+                    mine, theirs = week_results[own][1], week_results[other][1]
+                    state[own]["Wins" if mine > theirs else "Losses" if mine < theirs else "Ties"] += 1
+                    state[own]["Points"] = round(state[own]["Points"] + mine, 2)
+                    state[own]["PointsAgainst"] = round(state[own]["PointsAgainst"] + theirs, 2)
+        return [{"CanonicalLeagueRosterID": t["CanonicalLeagueRosterID"], "TeamID": t["TeamID"], **state[t["CanonicalLeagueRosterID"]]}
+                for t in sorted(self.teams, key=lambda x: x["TeamID"])]
 
     def stats(self) -> dict[str, Any]:
         if self._stats is None:
@@ -190,7 +227,7 @@ def rating_week_for(inputs: SeasonInputs, after_week: int) -> int:
     return min(after_week, inputs.regular_end)
 
 
-def snapshot(inputs: SeasonInputs, after_week: int) -> dict[str, Any]:
+def snapshot(inputs: SeasonInputs, after_week: int, playoff_odds_model_id: str | None = None) -> dict[str, Any]:
     """Derive a single as-of preview from already loaded season inputs; no future result inputs."""
     rating_week = rating_week_for(inputs, after_week)
     stats = inputs.stats() if rating_week else {}
@@ -214,8 +251,18 @@ def snapshot(inputs: SeasonInputs, after_week: int) -> dict[str, Any]:
         after_week=after_week,
         regular_season_last_week=inputs.regular_end,
     )
+    odds = None
+    if playoff_odds_model_id is not None:
+        odds_model = get_model(playoff_odds_model_id, kind="playoff-odds")
+        complete = after_week >= inputs.regular_end
+        records = inputs.records(after_week)
+        open_games = [(g["Team1CanonicalLeagueRosterID"], g["Team2CanonicalLeagueRosterID"])
+                      for g in value["UpcomingMatchups"]]
+        odds = odds_model.compute(teams=records, open_games=open_games,
+                                  playoff_teams=inputs.week_structure.get("PlayoffTeams"),
+                                  regular_season_complete=complete)
     # Preview-only shape: no production model choice, publishing or contract yet.
-    return {
+    result = {
         "PreviewOnly": True,
         "CanonicalLeagueID": inputs.league_id,
         "CanonicalLeagueSeasonID": inputs.season_id,
@@ -225,6 +272,10 @@ def snapshot(inputs: SeasonInputs, after_week: int) -> dict[str, Any]:
         "RegularSeason": value,
         "Playoffs": playoffs,
     }
+    if odds is not None:
+        result["Models"]["PlayoffOdds"] = playoff_odds_model_id
+        result["PlayoffOdds"] = odds
+    return result
 
 
 def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> dict[str, Any]:

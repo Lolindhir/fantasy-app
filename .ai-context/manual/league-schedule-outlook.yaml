@@ -17,6 +17,39 @@ implementationState: >
   the existing public/data publication scope; Timestamps.json[ScheduleOutlook] is stamped only on a semantic change.
   The Angular view is a separate change.
 
+playoffOdds:
+  issue: 1588
+  architectureDecision: ADR-090
+  model: playoff-odds-v1 (tools/derived_data_lib/models/playoff_odds/v1.py), chosen per season in data-meta Models.PlayoffOdds (no default)
+  principle: >
+    Purely statistical and exact: every open regular-season game is an independent 50/50 win/loss, all outcome
+    combinations are counted exactly (dynamic program over team scores, no Monte Carlo), no team strength and no
+    projection. The 50/50 basis is the combinatorial scenario view; calibrated, strength-based probabilities stay with
+    Issue #1536 and may reuse the output shape. Team count, playoff size (WeekStructure.PlayoffTeams), the regular-season
+    end and the open pairings come from canonical league facts; nothing is hard-wired to 6 teams / 4 playoff places.
+  documentShape: |
+    Root "Models.PlayoffOdds": "playoff-odds-v1" and root block "PlayoffOdds":
+    { "Model", "Available", "Reason": null | "unknown-playoff-teams" | "state-limit-exceeded",
+      "Provenance": { "OpenGames", "OutcomeCount" (string, 2^OpenGames), "PlayoffTeams", "RegularSeasonComplete",
+                      "TieRule": "equal-record-teams-share-places", "Method": "exact-enumeration-50-50" },
+      "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "Record": { "Wins", "Losses", "Ties" },
+                   "PlaceProbabilities": [ ... length = team count, index 0 = place 1 ... ],
+                   "PlayoffProbability", "EliminationProbability", "Status": "clinched" | "eliminated" | "alive" } ] }
+    Probabilities are rounded to 10 digits in the product (rounding for display belongs to the consumer);
+    each team's places sum to 1 and each place sums to 1 across teams (within rounding).
+  rules:
+    - Played results (wins, losses, ties; ties count 0.5) come from the scored regular-season weeks up to the cutoff. Points are used only once the regular season is complete.
+    - Equal-record teams share the affected places evenly because future points are unknown; no extrapolation of current points.
+    - Status is strict. clinched = a playoff place in every outcome even if every tiebreak is lost; eliminated = no playoff place in any outcome even if every tiebreak is won; otherwise alive.
+    - After the regular-season end the official table (standings-v1 tiebreak, with points) decides and all probabilities are 0 or 1.
+    - Unknown playoff size or an exceeded state limit (MAX_STATES) yields Available false with null values, never an approximation or an invented 50 percent.
+    - A missing PlayoffOdds block (documents before this change) is unavailable to consumers.
+  invalidation: >
+    The input fingerprint (FINGERPRINT_VERSION 2) additionally covers the played records (points only after the regular
+    season is complete) and the playoff-odds model ID; a played result dirties only the cutoffs that count it.
+  performance: Measured 2026-11-20 for nfl-reise (6 teams, 3 games per week) - all 47 cutoffs 2024-2026 in about 20 s; the full 14-week season alone in about 3 s. Larger leagues hit MAX_STATES and report unavailable until a better algorithm is approved.
+  noNewWriter: Runs inside the existing league-live (incremental) and update-transactions (full) outlook writers; same prefix data-derived/league-schedule-outlook, same App file ScheduleOutlook.json (unchanged transfer).
+
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
   regular-season schedule, two separately explained opponent-strength metrics,

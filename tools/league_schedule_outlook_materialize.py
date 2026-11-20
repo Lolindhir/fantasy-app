@@ -46,7 +46,7 @@ from derived_data_lib.playoff_brackets import round_windows  # noqa: E402
 import league_schedule_outlook_preview as source  # noqa: E402
 from league_schedule_outlook_preview import ScheduleOutlookSourceError, SeasonInputs  # noqa: E402
 
-FINGERPRINT_VERSION = 1
+FINGERPRINT_VERSION = 2
 INDEX_PRODUCT = "league-schedule-outlook-index"
 INDEX_NAME = "index.json"
 MODES = ("incremental", "full")
@@ -98,12 +98,13 @@ def _bracket_projection(rows: Any, windows: list[tuple[int, ...]] | None, *, aft
     return projected
 
 
-def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str) -> str:
+def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str, odds_model_id: str) -> str:
     """SHA-256 over exactly the accepted facts and versions this cutoff depends on.
 
     Included: schema/fingerprint/model versions, identities, week structure, team identity, the future
     regular-season pairings, the ratings of the cutoff's rating week only, and the cutoff-visible
-    bracket facts. Excluded (by design): scores, lineups, later ratings, masked bracket results.
+    bracket facts, the played win/loss/tie records (points only once the regular season is complete,
+    for the official tiebreak) and the playoff-odds model. Excluded (by design): scores, lineups, later ratings, masked bracket results.
     """
     rating_week = source.rating_week_for(inputs, after_week)
     stats = inputs.stats() if rating_week else {}
@@ -115,6 +116,11 @@ def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str) -> s
         "FingerprintVersion": FINGERPRINT_VERSION,
         "SchemaVersion": SCHEMA_VERSION,
         "ModelID": model_id,
+        "PlayoffOddsModelID": odds_model_id,
+        "Records": [(r["CanonicalLeagueRosterID"], r["Wins"], r["Losses"], r["Ties"],
+                     r["Points"] if after_week >= inputs.regular_end else None,
+                     r["PointsAgainst"] if after_week >= inputs.regular_end else None)
+                    for r in sorted(inputs.records(after_week), key=lambda r: r["CanonicalLeagueRosterID"])],
         "League": [inputs.league_id, inputs.season_id, inputs.season],
         "AfterWeek": after_week,
         "RatingWeek": rating_week or None,
@@ -128,8 +134,8 @@ def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str) -> s
     })
 
 
-def build_document(inputs: SeasonInputs, after_week: int, model_id: str, fingerprint: str) -> dict[str, Any]:
-    return assemble(source.snapshot(inputs, after_week), selected_model_id=model_id, input_fingerprint=fingerprint)
+def build_document(inputs: SeasonInputs, after_week: int, model_id: str, fingerprint: str, odds_model_id: str) -> dict[str, Any]:
+    return assemble(source.snapshot(inputs, after_week, odds_model_id), selected_model_id=model_id, input_fingerprint=fingerprint)
 
 
 def _read_existing(path: Path) -> tuple[str, dict[str, Any] | None]:
@@ -167,13 +173,24 @@ def selected_model_id(repo_root: Path, league_id: str, season: int, asserted: st
     return model_id
 
 
+def selected_odds_model_id(repo_root: Path, league_id: str, season: int) -> str:
+    """The data-meta PlayoffOdds choice of one season; missing or unknown selections fail closed."""
+    try:
+        return model_for(load_league_metadata(league_id, data_meta_root(repo_root)), season, "PlayoffOdds")
+    except LeagueMetadataError as exc:
+        raise ScheduleOutlookMaterializeError(f"No usable PlayoffOdds model selection for {season}: {exc}") from exc
+
+
 def materialize_season(
     repo_root: Path, out_root: Path, league_id: str, season: int, model_id: str,
-    *, mode: str = "incremental", check_only: bool = False,
+    *, odds_model_id: str | None = None, mode: str = "incremental", check_only: bool = False,
 ) -> dict[str, Any]:
     if mode not in MODES:
         raise ScheduleOutlookMaterializeError(f"Unknown mode {mode!r}")
     get_model(model_id, kind="schedule-outlook")
+    if odds_model_id is None:
+        odds_model_id = selected_odds_model_id(repo_root, league_id, season)
+    get_model(odds_model_id, kind="playoff-odds")
     folder = product_dir(out_root, league_id, season)
 
     inputs = source.load_season_inputs(repo_root, league_id, season)
@@ -181,7 +198,7 @@ def materialize_season(
     if type(scored) is not int or scored < 0:
         raise ScheduleOutlookMaterializeError("Unknown LeagueScoredWeek")
     weeks = list(range(scored + 1))
-    fingerprints = {w: input_fingerprint(inputs, w, model_id) for w in weeks}
+    fingerprints = {w: input_fingerprint(inputs, w, model_id, odds_model_id) for w in weeks}
 
     texts: dict[int, str] = {}
     unchanged = recomputed = 0
@@ -192,12 +209,13 @@ def materialize_season(
                    and existing.get("Provenance", {}).get("InputFingerprint") == fingerprints[week]
                    and existing.get("AsOf", {}).get("AfterWeek") == week
                    and existing.get("Models", {}).get("ScheduleOutlook") == model_id
+                   and existing.get("Models", {}).get("PlayoffOdds") == odds_model_id
                    and existing.get("SchemaVersion") == SCHEMA_VERSION)
         if current:
             texts[week] = existing_text
             unchanged += 1
             continue
-        text = serialize(build_document(inputs, week, model_id, fingerprints[week]))
+        text = serialize(build_document(inputs, week, model_id, fingerprints[week], odds_model_id))
         recomputed += 1
         texts[week] = text
         if text != existing_text:
@@ -205,13 +223,13 @@ def materialize_season(
 
     # Source-change guard: re-read everything; any fingerprint movement aborts the season untouched.
     fresh = source.load_season_inputs(repo_root, league_id, season)
-    if fresh.scored != scored or any(input_fingerprint(fresh, w, model_id) != fingerprints[w] for w in weeks):
+    if fresh.scored != scored or any(input_fingerprint(fresh, w, model_id, odds_model_id) != fingerprints[w] for w in weeks):
         raise ScheduleOutlookMaterializeError(f"Season {season}: inputs changed during the run; nothing written")
 
     index = {
         "SchemaVersion": SCHEMA_VERSION, "Product": INDEX_PRODUCT, "CanonicalLeagueID": league_id,
         "CanonicalLeagueSeasonID": inputs.season_id, "Season": season,
-        "Models": {"ScheduleOutlook": model_id}, "LeagueScoredWeek": scored,
+        "Models": {"ScheduleOutlook": model_id, "PlayoffOdds": odds_model_id}, "LeagueScoredWeek": scored,
         "Snapshots": [{"AfterWeek": w, "File": snapshot_name(w), "InputFingerprint": fingerprints[w],
                        "Sha256": hashlib.sha256(texts[w].encode("utf-8")).hexdigest()} for w in weeks],
     }
