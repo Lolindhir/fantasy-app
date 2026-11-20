@@ -47,6 +47,19 @@ describe('player injury history view', () => {
     expect(view).toEqual([]);
   });
 
+  it('uses one label for missed games and explains reserve or missing reports in the text', () => {
+    const view = buildInjuryHistoryView({
+      ID: '1',
+      Seasons: [{ Season: 2026, Weeks: [
+        { Week: 3, GameType: 'REG', Team: 'SF', State: 'not-played-unexplained', Participation: 'not-played', Report: null, Roster: null },
+        { Week: 2, GameType: 'REG', Team: 'SF', State: 'not-played-reserve', Participation: 'not-played', Report: null, Roster: { Status: 'RES', Code: 'R01' } },
+        { Week: 1, GameType: 'REG', Team: 'SF', State: 'not-played-reported', Participation: 'not-played', Report: [{ Game: 'Out', Practice: null, Reasons: ['Knee'] }], Roster: null }
+      ] }]
+    });
+    expect(view[0].rows.map(r => r.stateLabel)).toEqual(['Did not play', 'Did not play', 'Did not play']);
+    expect(view[0].rows.map(r => r.report)).toEqual(['No report', 'Reserve list', 'Out · Knee']);
+  });
+
   it('finds a player by id and handles a missing history', () => {
     const p = { ID: '1', Seasons: [] };
     expect(findPlayerInjuryHistory({ ContractVersion: 1, Product: 'x', Coverage: [], Players: [p] }, 1)).toBe(p);

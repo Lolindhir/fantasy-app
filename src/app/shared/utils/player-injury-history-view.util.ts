@@ -22,9 +22,9 @@ export interface InjuryHistorySeasonView {
 
 const STATE_LABEL: Record<PlayerAvailabilityState, string> = {
   played: 'Played',
-  'not-played-reported': 'Did not play (reported)',
-  'not-played-reserve': 'Did not play (reserve list)',
-  'not-played-unexplained': 'Did not play (no report)',
+  'not-played-reported': 'Did not play',
+  'not-played-reserve': 'Did not play',
+  'not-played-unexplained': 'Did not play',
   bye: 'Bye',
   unknown: 'Result unknown'
 };
@@ -93,7 +93,7 @@ export function buildInjuryHistoryView(player: PlayerInjuryHistoryPlayer | null)
           postseason: w.GameType !== null && w.GameType !== 'REG',
           stateLabel: w.State === 'unknown' ? 'Result pending' : (STATE_LABEL[w.State] ?? 'Unknown'),
           stateClass: STATE_CLASS[w.State] ?? 'unknown',
-          report: reportText(entries),
+          report: entries.length ? reportText(entries) : w.State === 'not-played-reserve' ? 'Reserve list' : w.State === 'not-played-unexplained' ? 'No report' : '—',
           roster: w.Roster?.Status && w.Roster.Status !== 'ACT' ? (ROSTER_LABEL[w.Roster.Status] ?? w.Roster.Status) : ''
         });
       }
