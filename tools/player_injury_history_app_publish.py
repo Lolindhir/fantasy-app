@@ -62,6 +62,32 @@ def sleeper_to_canonical(identity_payload: dict[str, Any]) -> dict[str, str]:
     return bridge
 
 
+def league_week_caps(repo_root: Path) -> dict[int, int]:
+    """Last fantasy-relevant NFL week per season from the canonical league WeekStructure (FinalLeagueWeek, else ExpectedLastLeagueWeek).
+
+    The maximum over all leagues is used. Seasons without league data take the value of the earliest known league season;
+    without any league data no cap applies (all regular-season weeks stay).
+    """
+    caps: dict[int, int] = {}
+    for path in sorted((repo_root / DATA_SOURCE_ROOT / "leagues").glob("*/seasons/*/league.json")):
+        if not path.parent.name.isdigit():
+            continue
+        structure = _load(path).get("WeekStructure") or {}
+        last = structure.get("FinalLeagueWeek") or structure.get("ExpectedLastLeagueWeek")
+        if isinstance(last, int):
+            season = int(path.parent.name)
+            caps[season] = max(caps.get(season, 0), last)
+    return caps
+
+
+def _cap_for(season: int, caps: dict[int, int]) -> int | None:
+    if not caps:
+        return None
+    if season in caps:
+        return caps[season]
+    return caps[max(caps)] if season > max(caps) else None
+
+
 def _entry(record: dict[str, Any]) -> dict[str, Any]:
     entry: dict[str, Any] = {
         "Week": record["Week"],
@@ -79,6 +105,7 @@ def build_document(
     seasons: dict[int, dict[str, Any]],
     players: list[dict[str, Any]],
     bridge: dict[str, str],
+    week_caps: dict[int, int] | None = None,
 ) -> dict[str, Any]:
     wanted: dict[str, str] = {}
     for player in players:
@@ -90,7 +117,13 @@ def build_document(
     for season, document in sorted(seasons.items()):
         if document.get("ProductVersion") != PRODUCT_VERSION or document.get("Season") != season:
             raise InjuryHistoryError(f"unsupported {PRODUCT} document for season {season}")
+        cap = _cap_for(season, week_caps or {})
+        if week_caps and cap is None:
+            continue  # only league seasons are shown; the product keeps every season
         for record in document.get("Records", []):
+            # Only fantasy-relevant weeks: regular season up to the league's last week (the product keeps every NFL week).
+            if record.get("GameType") != "REG" or (cap is not None and record["Week"] > cap):
+                continue
             sleeper = wanted.get(record["CanonicalPlayerID"])
             if sleeper is not None:
                 per_player.setdefault(sleeper, {}).setdefault(season, []).append(_entry(record))
@@ -109,6 +142,7 @@ def build_document(
             "SnapCountsAvailable": document["Inputs"]["SnapCountsAvailable"],
         }
         for season, document in sorted(seasons.items())
+        if not week_caps or _cap_for(season, week_caps) is not None
     ]
     return {
         "ContractVersion": CONTRACT_VERSION,
@@ -125,7 +159,7 @@ def publish(repo_root: Path, writer: Writer) -> None:
         raise InjuryHistoryError(f"{PRODUCT} product is not materialized")
     players = _load(repo_root / "public" / "data" / "Players.json")
     bridge = sleeper_to_canonical(_load(repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"))
-    writer.put(APP_FILE, build_document(seasons, players, bridge), TIMESTAMP_KEY)
+    writer.put(APP_FILE, build_document(seasons, players, bridge, league_week_caps(repo_root)), TIMESTAMP_KEY)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

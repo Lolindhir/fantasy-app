@@ -40,6 +40,26 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(doc["Coverage"][1]["ReportsAvailable"], False)
         self.assertEqual(doc["Players"][0]["Seasons"][0]["Weeks"][0]["State"], "played")
 
+    def test_only_fantasy_relevant_weeks_are_published(self):
+        post = dict(record("NFLP-a", 2), GameType="POST")
+        seasons = {2024: season_doc(2024, [record("NFLP-a", 17), record("NFLP-a", 18), post]),
+                   2010: season_doc(2010, [record("NFLP-a", 17), record("NFLP-a", 18)])}
+        doc = publisher.build_document(seasons, [{"ID": "S1"}], {"S1": "NFLP-a"}, {2024: 17})
+        by_season = {s["Season"]: [w["Week"] for w in s["Weeks"]] for s in doc["Players"][0]["Seasons"]}
+        self.assertEqual(by_season, {2024: [17]})
+
+    def test_league_week_caps_and_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for season, ws in ((2024, {"ExpectedLastLeagueWeek": 17}), (2026, {"FinalLeagueWeek": 16, "ExpectedLastLeagueWeek": 17})):
+                d = Path(tmp) / "data-source" / "leagues" / "x" / "seasons" / str(season)
+                d.mkdir(parents=True)
+                (d / "league.json").write_text(json.dumps({"WeekStructure": ws}))
+            caps = publisher.league_week_caps(Path(tmp))
+        self.assertEqual(caps, {2024: 17, 2026: 16})
+        self.assertIsNone(publisher._cap_for(2015, caps))
+        self.assertEqual(publisher._cap_for(2027, caps), 16)
+        self.assertIsNone(publisher._cap_for(2015, {}))
+
     def test_state_is_copied_not_derived(self):
         seasons = {2024: season_doc(2024, [record("NFLP-a", 1, "unknown")])}
         doc = publisher.build_document(seasons, [{"ID": "S1"}], {"S1": "NFLP-a"})
