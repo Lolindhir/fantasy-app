@@ -46,7 +46,7 @@ class PublisherTests(unittest.TestCase):
                    2010: season_doc(2010, [record("NFLP-a", 17), record("NFLP-a", 18)])}
         doc = publisher.build_document(seasons, [{"ID": "S1"}], {"S1": "NFLP-a"}, {2024: 17})
         by_season = {s["Season"]: [w["Week"] for w in s["Weeks"]] for s in doc["Players"][0]["Seasons"]}
-        self.assertEqual(by_season, {2010: [17], 2024: [17]})
+        self.assertEqual(by_season, {2024: [17]})
 
     def test_league_week_caps_and_fallback(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -56,7 +56,7 @@ class PublisherTests(unittest.TestCase):
                 (d / "league.json").write_text(json.dumps({"WeekStructure": ws}))
             caps = publisher.league_week_caps(Path(tmp))
         self.assertEqual(caps, {2024: 17, 2026: 16})
-        self.assertEqual(publisher._cap_for(2015, caps), 17)
+        self.assertIsNone(publisher._cap_for(2015, caps))
         self.assertEqual(publisher._cap_for(2027, caps), 16)
         self.assertIsNone(publisher._cap_for(2015, {}))
 

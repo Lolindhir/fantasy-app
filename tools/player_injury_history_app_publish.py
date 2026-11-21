@@ -85,8 +85,7 @@ def _cap_for(season: int, caps: dict[int, int]) -> int | None:
         return None
     if season in caps:
         return caps[season]
-    earliest = min(caps)
-    return caps[earliest] if season < earliest else caps[max(caps)]
+    return caps[max(caps)] if season > max(caps) else None
 
 
 def _entry(record: dict[str, Any]) -> dict[str, Any]:
@@ -119,6 +118,8 @@ def build_document(
         if document.get("ProductVersion") != PRODUCT_VERSION or document.get("Season") != season:
             raise InjuryHistoryError(f"unsupported {PRODUCT} document for season {season}")
         cap = _cap_for(season, week_caps or {})
+        if week_caps and cap is None:
+            continue  # only league seasons are shown; the product keeps every season
         for record in document.get("Records", []):
             # Only fantasy-relevant weeks: regular season up to the league's last week (the product keeps every NFL week).
             if record.get("GameType") != "REG" or (cap is not None and record["Week"] > cap):
@@ -141,6 +142,7 @@ def build_document(
             "SnapCountsAvailable": document["Inputs"]["SnapCountsAvailable"],
         }
         for season, document in sorted(seasons.items())
+        if not week_caps or _cap_for(season, week_caps) is not None
     ]
     return {
         "ContractVersion": CONTRACT_VERSION,
