@@ -21,6 +21,7 @@ describe('Handbook navigation', () => {
       'Offseason_Flow',
       'Offseason_Schedule',
       'Draft_Waiver_Order',
+      'Playoff_Odds_Schedule',
       'Projections_Explanation'
     ]);
     expect(new Set(component.tabs.map(tab => tab.id)).size).toBe(component.tabs.length);

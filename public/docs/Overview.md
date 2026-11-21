@@ -25,6 +25,11 @@ Hier findest du unsere **Sonderregeln und eigenen Berechnungen** auf einen Blick
 - Fehlen für den Best-Ball-Ersatzwert vollständige Starterprognosen, kann die Siegchance als **„EST.“** gekennzeichnete, grobe Schätzung aus bisherigen Wochenpunkten erscheinen; die reguläre Siegchance und historische Auswertungen bleiben davon getrennt.
 - Abgeschlossene NFL-Spiele zählen im Verlauf mit echten Punkten. Die persönliche Ausfallwahrscheinlichkeit ist in Spielerprognosen nicht automatisch eingerechnet.
 
+## 🎯 Playoff-Chancen & Gegnerstärke
+- In der Tabelle zeigen wir, wie die Playoff-Chancen aussähen, wenn **jedes offene Spiel eine Münze wirft** (50/50). Das ist ein Rechenspiel, **keine Prognose**.
+- **Clinched** und **Eliminated** sind sicher: Das Team ist in jedem möglichen Ausgang dabei bzw. draußen.
+- Im Spielplan eines Teams ordnen wir kommende Gegner nach ihren **erzielten Punkten** ein. Früh in der Saison fließt die Vorsaison mit ein.
+
 ## 📊 Rankings & Auswertungen
 - Fantasy-Leistung bildet die Grundlage unserer Spieler- und Positionsrankings.
 - Standings, Wochenrückblicke und weitere Statistiken machen die Entwicklung unserer Liga nachvollziehbar.

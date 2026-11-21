@@ -972,3 +972,31 @@ app-league-matchups {
   .weekly-recap-player-award { padding: 8px; }
   .weekly-recap-list--players .weekly-recap-player-owner-logo { display: none; }
 }
+
+/* #1588: compact playoff status flags next to the team name; no percentages on the Overview. */
+.weekly-standing-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  height: 1.4em;
+  margin-left: 4px;
+  padding: 0 0.25em;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1px solid var(--lifecycle-final-border);
+  background: var(--lifecycle-final-bg);
+  color: var(--lifecycle-final-fg);
+  font-size: 0.95em;
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: middle;
+}
+.weekly-standing-row--eliminated .weekly-standing-flag {
+  background: #f1f5f9; border-color: rgba(148, 163, 184, 0.34); color: #475569;
+}
+.weekly-standing-legend {
+  display: flex; gap: 10px; margin: 0; padding: 4px 8px 5px;
+  color: #94a3b8; font-size: 0.58rem; font-weight: 650;
+}
+.weekly-standing-legend b { color: #64748b; font-weight: 900; }

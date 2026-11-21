@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { OverviewComponent } from './features/overview/overview';
 import { TeamListComponent } from './features/teams/team-list/team-list';
-import { StandingsPageComponent } from './features/standings/standings-page';
 import { WeeksPageComponent } from './features/weeks/weeks-page';
 import { PlayersPageComponent } from './features/players/players-page/players-page';
 import { DraftsPageComponent } from './features/drafts/drafts-page';
@@ -15,7 +14,7 @@ export const routes: Routes = [
   { path: 'weeks', redirectTo: 'schedule', pathMatch: 'full' },
   { path: 'teams', loadComponent: () => import('./features/teams/teams-page/teams-page').then(m => m.TeamsPageComponent) },
   { path: 'teams/legacy', component: TeamListComponent },
-  { path: 'standings', component: StandingsPageComponent },
+  { path: 'standings', loadComponent: () => import('./features/standings/standings-page').then(m => m.StandingsPageComponent) },
   { path: 'players', component: PlayersPageComponent },
   { path: 'drafts', component: DraftsPageComponent },
   { path: 'moves', component: LeagueActivityComponent },

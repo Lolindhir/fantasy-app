@@ -1,0 +1,41 @@
+<section class="picture">
+  <button type="button" class="picture-toggle" [attr.aria-expanded]="expanded" aria-controls="playoff-picture-body" (click)="toggle()">
+    <span class="picture-title">Playoff Picture</span>
+    <span class="picture-sub">Chance of every final place</span>
+    <span class="picture-chevron" [class.picture-chevron--open]="expanded" aria-hidden="true"></span>
+  </button>
+
+  @if (expanded) {
+    <div class="picture-body" id="playoff-picture-body">
+      <div class="picture-scroll">
+        <table class="picture-table">
+          <thead>
+            <tr>
+              <th scope="col" class="picture-team-col">Team</th>
+              @for (place of placeNumbers; track place) {
+                <th scope="col" class="picture-place-col" [class.picture-place-col--playoff]="odds.playoffTeams !== null && place <= odds.playoffTeams">{{ place }}</th>
+              }
+              <th scope="col" class="picture-total-col">Playoffs</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of rows; track entry.row.team.TeamID) {
+              <tr [class.picture-row--eliminated]="teamView(entry.row).status === 'eliminated'">
+                <th scope="row" class="picture-team-col">
+                  <span class="picture-rank">{{ entry.row.displayPlace }}</span>
+                  <app-team-identity [team]="entry.row.team" [elements]="identityElements" size="small" />
+                </th>
+                @for (cell of entry.cells; track cell.place) {
+                  <td class="picture-cell" [class.picture-cell--playoff]="cell.inPlayoffs" [class.picture-cell--line]="odds.playoffTeams !== null && cell.place === odds.playoffTeams + 1"
+                    [style.--cell-strength]="cell.intensity" [attr.title]="cell.label" [attr.aria-label]="cell.label">{{ cell.text }}</td>
+                }
+                <td class="picture-total-col"><app-playoff-odds-pill [team]="teamView(entry.row)" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="picture-note">Share of each final regular-season place in percent, counting every remaining game as a coin flip. Equal records share the places.</p>
+    </div>
+  }
+</section>

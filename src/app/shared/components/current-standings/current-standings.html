@@ -59,7 +59,7 @@
           >{{ movementText(row) }}</span>
         </div>
 
-        <div class="standing-detailed-team">
+        <div class="standing-detailed-team" [class.standing-detailed-team--odds]="!!playoffTeamOdds(row)" [class.standing-detailed-team--decided]="playoffTeamOdds(row)?.status !== 'alive'">
           <app-team-identity
             [championBadge]="true"
             class="standing-detailed-identity"
@@ -67,7 +67,7 @@
             [elements]="detailedTeamIdentityElements"
             size="small"
           ></app-team-identity>
-          <div class="standing-detailed-form-line">
+          <div class="standing-detailed-form-line" [class.standing-detailed-form-line--odds]="!!playoffTeamOdds(row)">
             <span class="standing-detailed-owner" [title]="row.team.Owner">{{ row.team.Owner }}</span>
             <span class="standing-detailed-record">{{ formatRecord(row) }}</span>
             <span class="standing-detailed-streak" *ngIf="row.team.Streak">{{ row.team.Streak }}</span>
@@ -89,6 +89,7 @@
                 ></span>
               </span>
             </ng-container>
+            <app-playoff-odds-pill *ngIf="playoffTeamOdds(row) as odds" class="standing-detailed-playoffs" [team]="odds"></app-playoff-odds-pill>
           </div>
         </div>
 
@@ -156,6 +157,18 @@
             <strong>{{ formatAllPlay(stats) }}</strong>
           </div>
         </ng-container>
+        <div class="standing-detailed-trend standing-detailed-places" *ngIf="playoffTeamOdds(row) as odds">
+          <div class="standing-detailed-trend-heading">
+            <strong>Final Place Chances</strong>
+            <span>If every remaining game were a coin flip</span>
+          </div>
+          <app-playoff-place-bars
+            *ngIf="odds.places.length > 0"
+            [places]="odds.places"
+            [playoffTeams]="playoffOdds?.playoffTeams ?? null"
+            [teamName]="row.team.Team || row.team.Owner"
+          ></app-playoff-place-bars>
+        </div>
         <ng-container *ngIf="placementTrend(row, rows.length) as trend; else placementTrendUnavailable">
           <div class="standing-detailed-trend">
             <div class="standing-detailed-trend-heading">

@@ -489,3 +489,14 @@
 .standing-detailed-luck--neg {
   color: #b91c1c !important;
 }
+
+.standing-detailed-playoffs { margin-left: auto; flex: none; }
+.standing-detailed-places { display: block; }
+
+/* #1588: on phones the playoff pill sits on the team name line so record, form and owner keep their space. */
+@media (max-width: 599px) {
+  .standing-detailed-team--odds .standing-detailed-identity { padding-right: 46px; box-sizing: border-box; }
+  .standing-detailed-team--decided .standing-detailed-identity { padding-right: 58px; }
+  .standing-detailed-form-line--odds { overflow: visible; }
+  .standing-detailed-form-line--odds .standing-detailed-playoffs { position: absolute; top: -19px; right: 0; margin-left: 0; }
+}
