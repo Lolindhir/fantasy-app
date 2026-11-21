@@ -17,7 +17,7 @@ Wir spielen die **restliche Hauptrunde** gedanklich komplett durch und nehmen da
 
 Diese beiden Hinweise sind **sicher**, nicht geschätzt:
 
-- **Clinched (x):** Das Team ist in jedem möglichen Ausgang dabei, selbst wenn es jeden Tiebreak verliert.
+- **Clinched (x):** Das Team ist in jedem möglichen Ausgang dabei, selbst wenn es jeden Tiebreak verliert. Steht außerdem schon der genaue Endplatz fest, steht dort z. B. **Clinched 1st**.
 - **Eliminated (e):** Das Team verpasst die Playoffs in jedem möglichen Ausgang, selbst wenn es jeden Tiebreak gewinnt.
 
 Auf der Übersichtsseite zeigen wir bewusst nur diese Kürzel hinter dem Teamnamen, keine Prozentwerte. Mit dem Ende der Hauptrunde verschwinden die Chancen; es zählt die offizielle Tabelle.

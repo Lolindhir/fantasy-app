@@ -87,8 +87,23 @@ export function formatPlayoffCell(probability: number): string {
   return probability <= 0 ? '' : formatPlayoffPercent(probability).replace('%', '');
 }
 
+function ordinal(place: number): string {
+  const rest = place % 100;
+  if (rest >= 11 && rest <= 13) return `${place}th`;
+  return `${place}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[place % 10] ?? 'th'}`;
+}
+
+/** Place the team has certain (published share exactly 1), e.g. 1 for "Clinched 1st"; null otherwise. */
+function certainPlace(team: PlayoffOddsTeamView): number | null {
+  const index = team.places.findIndex(share => share >= 1);
+  return index >= 0 ? index + 1 : null;
+}
+
 export function playoffPillText(team: PlayoffOddsTeamView): string | null {
-  if (team.status === 'clinched') return 'Clinched';
+  if (team.status === 'clinched') {
+    const place = certainPlace(team);
+    return place === null ? 'Clinched' : `Clinched ${ordinal(place)}`;
+  }
   if (team.status === 'eliminated') return 'Eliminated';
   return team.probability === null ? null : formatPlayoffPercent(team.probability);
 }
