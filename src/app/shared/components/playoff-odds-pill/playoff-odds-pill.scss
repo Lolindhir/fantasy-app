@@ -1,0 +1,18 @@
+:host { display: inline-flex; min-width: 0; }
+.pill {
+  display: inline-flex; align-items: baseline; gap: 4px; max-width: 100%;
+  padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+  font-size: 0.68rem; line-height: 1.35; font-variant-numeric: tabular-nums;
+  background: #f1f5f9; color: #475569; border: 1px solid rgba(148, 163, 184, 0.34);
+}
+.pill strong { font-weight: 800; }
+.pill-label { font-size: 0.62rem; font-weight: 650; color: #64748b; }
+.pill--clinched {
+  background: var(--lifecycle-final-bg); color: var(--lifecycle-final-fg); border-color: var(--lifecycle-final-border);
+}
+/* Eliminated is neutral information, not a problem: dimmed gray, never red (FDS-005). */
+.pill--eliminated { background: transparent; color: #94a3b8; border-color: rgba(148, 163, 184, 0.28); font-weight: 650; }
+@media (max-width: 599px) {
+  .pill-label { display: none; }
+  .pill--clinched, .pill--eliminated { padding: 1px 5px; font-size: 0.58rem; }
+}

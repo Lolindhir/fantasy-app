@@ -20,6 +20,7 @@ const HANDBOOK_PAGES: readonly HandbookPage[] = [
   { id: 'Offseason_Flow', label: 'Offseason Infografik' },
   { id: 'Offseason_Schedule', label: 'Offseason Regeln' },
   { id: 'Draft_Waiver_Order', label: 'Draft & Waiver Regeln' },
+  { id: 'Playoff_Odds_Schedule', label: 'Playoff-Chancen & Gegnerstärke' },
   { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' }
 ];
 

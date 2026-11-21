@@ -52,6 +52,8 @@ import {
   type OverviewTopContext,
   type OverviewWeeklyPhase
 } from '../../utils/overview-weekly-dashboard.util';
+import { playoffMarker, resolvePlayoffOdds, type PlayoffOddsView } from '../../utils/schedule-outlook-view.util';
+import type { ScheduleOutlookReadModel } from '../../../core/models/schedule-outlook.models';
 import { formatProjectionPoints } from '../../utils/projection-range.util';
 import { WinChanceBarComponent } from '../win-chance-bar/win-chance-bar';
 import {
@@ -145,6 +147,11 @@ export class LeagueMatchupsComponent {
   );
   private readonly weeklyRecapsSignal = toSignal<WeeklyRecapsReadModel | null>(this.weeklyRecaps$, { initialValue: null });
 
+  private readonly scheduleOutlookSignal = toSignal<ScheduleOutlookReadModel | null>(
+    (this.dataService.getScheduleOutlook?.() ?? of(null)).pipe(catchError(() => of(null))),
+    { initialValue: null }
+  );
+
   private readonly nflTeams$ = this.dataService.getNflTeams().pipe(
     catchError(() => of([] as NFLTeam[])),
     shareReplay({ bufferSize: 1, refCount: true })
@@ -207,6 +214,31 @@ export class LeagueMatchupsComponent {
       && playoffTeams < teamCount
       ? playoffTeams + 1
       : null;
+  }
+
+  /** Generated playoff status (Issue #1588); null unless the current season's regular season is running. */
+  get playoffOdds(): PlayoffOddsView | null {
+    const outlook = this.scheduleOutlookSignal();
+    const season = this.league?.Season;
+    if (!this.playoffOddsMemo || this.playoffOddsMemo.outlook !== outlook || this.playoffOddsMemo.season !== season) {
+      this.playoffOddsMemo = { outlook, season, value: resolvePlayoffOdds(outlook, season) };
+    }
+    return this.playoffOddsMemo!.value;
+  }
+  private playoffOddsMemo: { outlook: ScheduleOutlookReadModel | null; season: string | undefined; value: PlayoffOddsView | null } | null = null;
+
+  get playoffLegend(): { clinched: boolean; eliminated: boolean } {
+    const teams = [...(this.playoffOdds?.teams.values() ?? [])];
+    return { clinched: teams.some(team => team.status === 'clinched'), eliminated: teams.some(team => team.status === 'eliminated') };
+  }
+
+  playoffFlag(row: OverviewStandingRow): 'x' | 'e' | null {
+    return playoffMarker(this.playoffOdds, row.team.TeamID);
+  }
+
+  playoffFlagLabel(row: OverviewStandingRow): string | null {
+    const flag = this.playoffFlag(row);
+    return flag === 'x' ? 'Clinched a playoff place' : flag === 'e' ? 'Eliminated from playoff contention' : null;
   }
 
   get hasOverviewContextData(): boolean {

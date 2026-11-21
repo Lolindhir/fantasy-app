@@ -18,6 +18,7 @@ import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
 import type { PlayerInjuryHistoryReadModel } from '../models/player-injury-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
+import type { ScheduleOutlookReadModel } from '../models/schedule-outlook.models';
 
 export interface LeagueDataLoadResult {
   leagueRaw: RawLeague;
@@ -133,6 +134,10 @@ export class DataApiService {
 
   getSeasonStatisticsRaw(): Observable<SeasonStatisticsReadModel> {
     return this.http.get<SeasonStatisticsReadModel>('data/SeasonStatistics.json');
+  }
+
+  getScheduleOutlookRaw(): Observable<ScheduleOutlookReadModel> {
+    return this.http.get<ScheduleOutlookReadModel>('data/ScheduleOutlook.json');
   }
 
   getPastSeasonStatisticsRaw(path: string): Observable<SeasonStatisticsReadModel> {

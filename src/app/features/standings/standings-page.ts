@@ -8,6 +8,8 @@ import { DataService } from '../../core/services/data.service';
 import { AllTimeOverviewComponent } from '../../shared/components/all-time-overview/all-time-overview';
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { LeagueLegacySummaryComponent } from '../../shared/components/league-legacy-summary/league-legacy-summary';
+import { PlayoffPictureComponent } from '../../shared/components/playoff-picture/playoff-picture';
+import { resolvePlayoffOdds } from '../../shared/utils/schedule-outlook-view.util';
 import { SeasonArchiveComponent } from '../../shared/components/season-archive/season-archive';
 import { buildPlayerAwardHighlights } from '../../shared/utils/player-award-view.util';
 import { buildBiggestUpsetHighlight, statisticsByTeam } from '../../shared/utils/season-statistics-view.util';
@@ -26,6 +28,7 @@ import {
     LeagueLegacySummaryComponent,
     AllTimeOverviewComponent,
     CurrentStandingsComponent,
+    PlayoffPictureComponent,
     SeasonArchiveComponent
   ],
   templateUrl: './standings-page.html',
@@ -56,8 +59,8 @@ export class StandingsPageComponent {
     })
   );
 
-  vm$ = forkJoin({ data: this.dataService.getLeagueWithPlayers(), stats: this.statistics$, awards: this.dataService.getPlayerAwardHistory() }).pipe(
-    map(({ data: { league, teams }, stats, awards }) => {
+  vm$ = forkJoin({ data: this.dataService.getLeagueWithPlayers(), stats: this.statistics$, awards: this.dataService.getPlayerAwardHistory(), outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null))) }).pipe(
+    map(({ data: { league, teams }, stats, awards, outlook }) => {
       const legacy = buildLeagueLegacy(league, teams);
       const configuredPlayoffTeams = league.Settings?.['playoff_teams'];
       const playoffTeams = typeof configuredPlayoffTeams === 'number'
@@ -80,6 +83,7 @@ export class StandingsPageComponent {
         teams,
         currentStandings: buildCurrentStandings(league, teams),
         playoffTeams,
+        playoffOdds: resolvePlayoffOdds(outlook, league.Season),
         seasonHistory: filterArchivedSeasons(buildSeasonHistory(league), String(league.Season))
       };
     })

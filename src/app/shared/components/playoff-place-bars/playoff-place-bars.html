@@ -1,0 +1,12 @@
+<div class="place-bars" role="img" [attr.aria-label]="description">
+  @for (bar of bars; track bar.place) {
+    <div class="place-col" [class.place-col--playoff]="bar.inPlayoffs" [class.place-col--line]="playoffTeams !== null && bar.place === playoffTeams + 1">
+      <span class="place-value" aria-hidden="true">{{ bar.label }}</span>
+      <span class="place-track" aria-hidden="true"><span class="place-fill" [style.height.%]="bar.heightPercent"></span></span>
+      <span class="place-number" aria-hidden="true">{{ bar.place }}</span>
+    </div>
+  }
+</div>
+@if (playoffTeams !== null) {
+  <div class="place-legend" aria-hidden="true"><span class="place-legend-key"></span>Playoff places</div>
+}
