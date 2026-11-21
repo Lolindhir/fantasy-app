@@ -1,0 +1,6678 @@
+{
+  "schema": "cp6l-v0",
+  "as_of": "CP6k synthetic 2027-2031, initial archive 2026-10-05",
+  "status": "debt service financing feasibility ONLY; not an All-in/Rebuild sports simulation",
+  "sourceBlobs": [
+    {
+      "seed": 11,
+      "simulator": "8156fa0fdc7f8786ec78b27bc666e5ed94f72b8c",
+      "archive": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
+    },
+    {
+      "seed": 29,
+      "simulator": "8156fa0fdc7f8786ec78b27bc666e5ed94f72b8c",
+      "archive": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
+    },
+    {
+      "seed": 47,
+      "simulator": "8156fa0fdc7f8786ec78b27bc666e5ed94f72b8c",
+      "archive": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
+    }
+  ],
+  "code_blob_sha": "9278e3a5950a55130deef97272364678b3a07a62",
+  "configuration": {
+    "team": "CP6k Team 0 only; other five teams in unchanged CP6k paths",
+    "newBorrowingYear": 2027,
+    "interest": 0,
+    "limits": [
+      {
+        "name": "5%-draw/10%-limit",
+        "drawFraction": 0.05,
+        "creditLimit": 0.1
+      },
+      {
+        "name": "10%-draw/10%-limit",
+        "drawFraction": 0.1,
+        "creditLimit": 0.1
+      },
+      {
+        "name": "15%-draw/25%-limit",
+        "drawFraction": 0.15,
+        "creditLimit": 0.25
+      }
+    ],
+    "H2": "first mandatory due 2028; final 2029",
+    "H3": "first mandatory due 2028; final 2030",
+    "formula": "mandatory = ceil(remaining debt / remaining follow-up checks)",
+    "noRefinance": "installments must be paid from annual salary-cap headroom without another draw",
+    "repaymentChoices": [
+      "minimum-only",
+      "early-max (all unused headroom)"
+    ],
+    "oneYearInvestment": "extra one-year payroll equals full original unspent cap plus new borrowing; not an executable asset purchase",
+    "rebuild": "5/10/15% unused 2027 cap TARGET; additional salary relief computed, NO automatic cap rollover",
+    "missing": "new actual player salaries beyond 2027, player availability, buyer-side cap and slots, pick-asset transfer, C-add retained cut charges, debt ledger for other 5 teams, enforcement hard-failure"
+  },
+  "totals": {
+    "basePaths": 18,
+    "debtPaths": 216,
+    "rebuildTargets": 54
+  },
+  "financing": [
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 9583348,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 5484222,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21880729,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 8047294,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 212980,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 13682475,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 16245547,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 8411233,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 34178109,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 20344674,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 12510360,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 24223383,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 10389948,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 2555634,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21880729,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 32642054,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 24807740,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 167.145,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 10754676,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 10389948,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 2555634,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2030,
+          "dueShortfall": 1664364,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 11949943,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 11949943,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2030,
+          "dueShortfall": 9862617,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 172.515,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 9592880,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 5493754,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21890261,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 6642416,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 4189340,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 13692007,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 14840669,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 12387593,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 34187641,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 18939796,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 16486720,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 23986967,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 8739122,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 6286046,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21890261,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 31237176,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 28784100,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 10641234,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 8739122,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 6286046,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 24594761,
+          "incrementalOneYearSalaryEnvelope": 75017836,
+          "hypotheticalTotalSalary": 516489976,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24594761
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 12297381,
+          "paid": 12297381,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 12297380,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 12297380,
+          "paid": 12297380,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 24594761,
+          "incrementalOneYearSalaryEnvelope": 75017836,
+          "hypotheticalTotalSalary": 516489976,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24594761
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 12297381,
+          "paid": 24594761,
+          "earlyPaid": 12297380,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 24594761,
+          "incrementalOneYearSalaryEnvelope": 75017836,
+          "hypotheticalTotalSalary": 516489976,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24594761
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 8198254,
+          "paid": 8198254,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 16396507,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 8198254,
+          "paid": 8198254,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 8198253,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 8198253,
+          "paid": 8198253,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 24594761,
+          "incrementalOneYearSalaryEnvelope": 75017836,
+          "hypotheticalTotalSalary": 516489976,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24594761
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 8198254,
+          "paid": 24594761,
+          "earlyPaid": 16396507,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 49189522,
+          "incrementalOneYearSalaryEnvelope": 99612597,
+          "hypotheticalTotalSalary": 541084737,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49189522
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 24594761,
+          "paid": 24594761,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 24594761,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 24594761,
+          "paid": 24594761,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 49189522,
+          "incrementalOneYearSalaryEnvelope": 99612597,
+          "hypotheticalTotalSalary": 541084737,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49189522
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 24594761,
+          "paid": 24942198,
+          "earlyPaid": 347437,
+          "dueShortfall": 0,
+          "unpaid": 24247324,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 24247324,
+          "paid": 24247324,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 49189522,
+          "incrementalOneYearSalaryEnvelope": 99612597,
+          "hypotheticalTotalSalary": 541084737,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49189522
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 16396508,
+          "paid": 16396508,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 32793014,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 16396507,
+          "paid": 16396507,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 16396507,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 16396507,
+          "paid": 16396507,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 49189522,
+          "incrementalOneYearSalaryEnvelope": 99612597,
+          "hypotheticalTotalSalary": 541084737,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49189522
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 16396508,
+          "paid": 24942198,
+          "earlyPaid": 8545690,
+          "dueShortfall": 0,
+          "unpaid": 24247324,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 12123662,
+          "paid": 24247324,
+          "earlyPaid": 12123662,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 11949943,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 73784282,
+          "incrementalOneYearSalaryEnvelope": 124207357,
+          "hypotheticalTotalSalary": 565679497,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73784282
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 36892141,
+          "paid": 24942198,
+          "earlyPaid": 0,
+          "dueShortfall": 11949943,
+          "unpaid": 48842084,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 48842084,
+          "paid": 48842084,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 11949943,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 73784282,
+          "incrementalOneYearSalaryEnvelope": 124207357,
+          "hypotheticalTotalSalary": 565679497,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73784282
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 36892141,
+          "paid": 24942198,
+          "earlyPaid": 0,
+          "dueShortfall": 11949943,
+          "unpaid": 48842084,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 48842084,
+          "paid": 48842084,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 73784282,
+          "incrementalOneYearSalaryEnvelope": 124207357,
+          "hypotheticalTotalSalary": 565679497,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73784282
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 24594761,
+          "paid": 24594761,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 49189521,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 24594761,
+          "paid": 24594761,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 24594760,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 24594760,
+          "paid": 24594760,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 175.498,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491895215,
+          "baseSalary": 441472140,
+          "freeCap": 50423075,
+          "newBorrowing": 73784282,
+          "incrementalOneYearSalaryEnvelope": 124207357,
+          "hypotheticalTotalSalary": 565679497,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73784282
+        },
+        {
+          "year": 2028,
+          "cap": 489075985,
+          "baseSalary": 464133787,
+          "freeCap": 24942198,
+          "mandatoryDue": 24594761,
+          "paid": 24942198,
+          "earlyPaid": 347437,
+          "dueShortfall": 0,
+          "unpaid": 48842084,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 488156834,
+          "baseSalary": 417572994,
+          "freeCap": 70583840,
+          "mandatoryDue": 24421042,
+          "paid": 48842084,
+          "earlyPaid": 24421042,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 490334671,
+          "baseSalary": 439114713,
+          "freeCap": 51219958,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 490864560,
+          "baseSalary": 431088160,
+          "freeCap": 59776400,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 9592880,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 5493754,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 57111577,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21890261,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 6642416,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 4189340,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 13692007,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 14840669,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 12387593,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 81706338,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 34187641,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 18939796,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 16486720,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 23986967,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 8739122,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 6286046,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21890261,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 31237176,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 28784100,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 167.513,
+      "firstYearExtraPayrollEnvelope": 106301098,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 10641234,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 8739122,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 6286046,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24594761,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24594761,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 75017836,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49189522,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49189522,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 99612597,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 11949943,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 11949943,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73784282,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73784282,
+      "originalH5": 177.382,
+      "firstYearExtraPayrollEnvelope": 124207357,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 4666283,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 567859,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 16961555,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 7186179,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8764707,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 2519897,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2029,
+          "dueShortfall": 31776725,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 2519897,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2029,
+          "dueShortfall": 31776725,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 16961556,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 1911772,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 12073868,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8463863,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 267015,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 2534652,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 20759136,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 6633076,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8463864,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2030,
+          "dueShortfall": 18928349,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2031,
+          "dueShortfall": 2385661,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 175.309,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 4171618,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 73194,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 16466890,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 6691514,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8270042,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 2519897,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2029,
+          "dueShortfall": 31282060,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 2519897,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2029,
+          "dueShortfall": 31282060,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 16466891,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 11579203,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 24590546,
+          "incrementalOneYearSalaryEnvelope": 77671255,
+          "hypotheticalTotalSalary": 516401457,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24590546
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 12295273,
+          "paid": 12295273,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 12295273,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 12295273,
+          "paid": 12295273,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 24590546,
+          "incrementalOneYearSalaryEnvelope": 77671255,
+          "hypotheticalTotalSalary": 516401457,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24590546
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 12295273,
+          "paid": 24590546,
+          "earlyPaid": 12295273,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 24590546,
+          "incrementalOneYearSalaryEnvelope": 77671255,
+          "hypotheticalTotalSalary": 516401457,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24590546
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 8196849,
+          "paid": 8196849,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 16393697,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 8196849,
+          "paid": 8196849,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 8196848,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 8196848,
+          "paid": 8196848,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 24590546,
+          "incrementalOneYearSalaryEnvelope": 77671255,
+          "hypotheticalTotalSalary": 516401457,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24590546
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 8196849,
+          "paid": 24590546,
+          "earlyPaid": 16393697,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 49181091,
+          "incrementalOneYearSalaryEnvelope": 102261800,
+          "hypotheticalTotalSalary": 540992002,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49181091
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 24590546,
+          "paid": 24590546,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 24590545,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 24590545,
+          "paid": 24590545,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 49181091,
+          "incrementalOneYearSalaryEnvelope": 102261800,
+          "hypotheticalTotalSalary": 540992002,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49181091
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 24590546,
+          "paid": 49181091,
+          "earlyPaid": 24590545,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 49181091,
+          "incrementalOneYearSalaryEnvelope": 102261800,
+          "hypotheticalTotalSalary": 540992002,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49181091
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 16393697,
+          "paid": 16393697,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 32787394,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 16393697,
+          "paid": 16393697,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 16393697,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 16393697,
+          "paid": 16393697,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 49181091,
+          "incrementalOneYearSalaryEnvelope": 102261800,
+          "hypotheticalTotalSalary": 540992002,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49181091
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 16393697,
+          "paid": 49181091,
+          "earlyPaid": 32787394,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 10265219,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 73771637,
+          "incrementalOneYearSalaryEnvelope": 126852346,
+          "hypotheticalTotalSalary": 565582548,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73771637
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 36885819,
+          "paid": 36885819,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 36885818,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 36885818,
+          "paid": 26620599,
+          "earlyPaid": 0,
+          "dueShortfall": 10265219,
+          "unpaid": 10265219,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 10265219,
+          "paid": 10265219,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 73771637,
+          "incrementalOneYearSalaryEnvelope": 126852346,
+          "hypotheticalTotalSalary": 565582548,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73771637
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 36885819,
+          "paid": 64947466,
+          "earlyPaid": 28061647,
+          "dueShortfall": 0,
+          "unpaid": 8824171,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 8824171,
+          "paid": 8824171,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 73771637,
+          "incrementalOneYearSalaryEnvelope": 126852346,
+          "hypotheticalTotalSalary": 565582548,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73771637
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 24590546,
+          "paid": 24590546,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 49181091,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 24590546,
+          "paid": 24590546,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 24590545,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 24590545,
+          "paid": 24590545,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 178.15,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491810911,
+          "baseSalary": 438730202,
+          "freeCap": 53080709,
+          "newBorrowing": 73771637,
+          "incrementalOneYearSalaryEnvelope": 126852346,
+          "hypotheticalTotalSalary": 565582548,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73771637
+        },
+        {
+          "year": 2028,
+          "cap": 494665269,
+          "baseSalary": 429717803,
+          "freeCap": 64947466,
+          "mandatoryDue": 24590546,
+          "paid": 64947466,
+          "earlyPaid": 40356920,
+          "dueShortfall": 0,
+          "unpaid": 8824171,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 493852931,
+          "baseSalary": 467232332,
+          "freeCap": 26620599,
+          "mandatoryDue": 4412086,
+          "paid": 8824171,
+          "earlyPaid": 4412085,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 483417169,
+          "baseSalary": 456331549,
+          "freeCap": 27085620,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 487663027,
+          "baseSalary": 471863107,
+          "freeCap": 15799920,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 4171618,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 73194,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 62487226,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 16466890,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 6691514,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8270042,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 87077771,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 2519897,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2029,
+          "dueShortfall": 31282060,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 2519897,
+          "creditLimitOverhang": 0
+        },
+        {
+          "year": 2029,
+          "dueShortfall": 31282060,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 16466891,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 166.393,
+      "firstYearExtraPayrollEnvelope": 111668317,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 11579203,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24590546,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24590546,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 77671255,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49181091,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49181091,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 102261800,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8302178,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73771637,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73771637,
+      "originalH5": 179.932,
+      "firstYearExtraPayrollEnvelope": 126852346,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 3489466,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 24019,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2030,
+          "dueShortfall": 1534858,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2030,
+          "dueShortfall": 9733260,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 1952463,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2028,
+          "dueShortfall": 1952463,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2030,
+          "dueShortfall": 17931663,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 168.944,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 3489466,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 24019,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 24595207,
+          "incrementalOneYearSalaryEnvelope": 87045020,
+          "hypotheticalTotalSalary": 516499346,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24595207
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 12297604,
+          "paid": 12297604,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 12297603,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 12297603,
+          "paid": 12297603,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 24595207,
+          "incrementalOneYearSalaryEnvelope": 87045020,
+          "hypotheticalTotalSalary": 516499346,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24595207
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 12297604,
+          "paid": 24595207,
+          "earlyPaid": 12297603,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 24595207,
+          "incrementalOneYearSalaryEnvelope": 87045020,
+          "hypotheticalTotalSalary": 516499346,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24595207
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 8198403,
+          "paid": 8198403,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 16396804,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 8198402,
+          "paid": 8198402,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 8198402,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 8198402,
+          "paid": 8198402,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 24595207,
+          "incrementalOneYearSalaryEnvelope": 87045020,
+          "hypotheticalTotalSalary": 516499346,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 24595207
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 8198403,
+          "paid": 24595207,
+          "earlyPaid": 16396804,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8901710,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 49190414,
+          "incrementalOneYearSalaryEnvelope": 111640227,
+          "hypotheticalTotalSalary": 541094553,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49190414
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 24595207,
+          "paid": 24595207,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 24595207,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 24595207,
+          "paid": 15693497,
+          "earlyPaid": 0,
+          "dueShortfall": 8901710,
+          "unpaid": 8901710,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 8901710,
+          "paid": 8901710,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 49190414,
+          "incrementalOneYearSalaryEnvelope": 111640227,
+          "hypotheticalTotalSalary": 541094553,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49190414
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 24595207,
+          "paid": 37921944,
+          "earlyPaid": 13326737,
+          "dueShortfall": 0,
+          "unpaid": 11268470,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 11268470,
+          "paid": 11268470,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 703308,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 49190414,
+          "incrementalOneYearSalaryEnvelope": 111640227,
+          "hypotheticalTotalSalary": 541094553,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49190414
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 16396805,
+          "paid": 16396805,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 32793609,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 16396805,
+          "paid": 15693497,
+          "earlyPaid": 0,
+          "dueShortfall": 703308,
+          "unpaid": 17100112,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 17100112,
+          "paid": 17100112,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": [],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 49190414,
+          "incrementalOneYearSalaryEnvelope": 111640227,
+          "hypotheticalTotalSalary": 541094553,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 49190414
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 16396805,
+          "paid": 37921944,
+          "earlyPaid": 21525139,
+          "dueShortfall": 0,
+          "unpaid": 11268470,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 5634235,
+          "paid": 11268470,
+          "earlyPaid": 5634235,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21199313,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 73785621,
+          "incrementalOneYearSalaryEnvelope": 136235434,
+          "hypotheticalTotalSalary": 565689760,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73785621
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 36892811,
+          "paid": 36892811,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 36892810,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 36892810,
+          "paid": 15693497,
+          "earlyPaid": 0,
+          "dueShortfall": 21199313,
+          "unpaid": 21199313,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 21199313,
+          "paid": 21199313,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 20170180,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 73785621,
+          "incrementalOneYearSalaryEnvelope": 136235434,
+          "hypotheticalTotalSalary": 565689760,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73785621
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 36892811,
+          "paid": 37921944,
+          "earlyPaid": 1029133,
+          "dueShortfall": 0,
+          "unpaid": 35863677,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 35863677,
+          "paid": 15693497,
+          "earlyPaid": 0,
+          "dueShortfall": 20170180,
+          "unpaid": 20170180,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 20170180,
+          "paid": 20170180,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8901710,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 73785621,
+          "incrementalOneYearSalaryEnvelope": 136235434,
+          "hypotheticalTotalSalary": 565689760,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73785621
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 24595207,
+          "paid": 24595207,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 49190414,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 24595207,
+          "paid": 15693497,
+          "earlyPaid": 0,
+          "dueShortfall": 8901710,
+          "unpaid": 33496917,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 33496917,
+          "paid": 33496917,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 182.119,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 2238342,
+          "creditLimitOverhang": 0
+        }
+      ],
+      "detail": [
+        {
+          "year": 2027,
+          "cap": 491904139,
+          "baseSalary": 429454326,
+          "freeCap": 62449813,
+          "newBorrowing": 73785621,
+          "incrementalOneYearSalaryEnvelope": 136235434,
+          "hypotheticalTotalSalary": 565689760,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "unpaid": 73785621
+        },
+        {
+          "year": 2028,
+          "cap": 494669775,
+          "baseSalary": 456747831,
+          "freeCap": 37921944,
+          "mandatoryDue": 24595207,
+          "paid": 37921944,
+          "earlyPaid": 13326737,
+          "dueShortfall": 0,
+          "unpaid": 35863677,
+          "overLimit": 0
+        },
+        {
+          "year": 2029,
+          "cap": 492106470,
+          "baseSalary": 476412973,
+          "freeCap": 15693497,
+          "mandatoryDue": 17931839,
+          "paid": 15693497,
+          "earlyPaid": 0,
+          "dueShortfall": 2238342,
+          "unpaid": 20170180,
+          "overLimit": 0
+        },
+        {
+          "year": 2030,
+          "cap": 487980659,
+          "baseSalary": 444086249,
+          "freeCap": 43894410,
+          "mandatoryDue": 20170180,
+          "paid": 20170180,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        },
+        {
+          "year": 2031,
+          "cap": 499782343,
+          "baseSalary": 472440268,
+          "freeCap": 27342075,
+          "mandatoryDue": 0,
+          "paid": 0,
+          "earlyPaid": 0,
+          "dueShortfall": 0,
+          "unpaid": 0,
+          "overLimit": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 73521952,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 98117159,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 3489466,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 24019,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 174.393,
+      "firstYearExtraPayrollEnvelope": 122712366,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 24595207,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "5%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 24595207,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 87045020,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8974326,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 49190414,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 775924,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "10%-draw/10%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 49190414,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 111640227,
+      "compliantWithoutExtraRosterAction": true,
+      "failures": []
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 21271929,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H2",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 20242796,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "minimum-only",
+      "borrow": 73785621,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 8974326,
+          "creditLimitOverhang": 0
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "option": "15%-draw/25%-limit",
+      "term": "H3",
+      "repayment": "early-max",
+      "borrow": 73785621,
+      "originalH5": 180.738,
+      "firstYearExtraPayrollEnvelope": 136235434,
+      "compliantWithoutExtraRosterAction": false,
+      "failures": [
+        {
+          "year": 2029,
+          "dueShortfall": 2310958,
+          "creditLimitOverhang": 0
+        }
+      ]
+    }
+  ],
+  "rebuild": [
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 24594761,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 49189522,
+      "additionalSalaryReliefNeeded": 16672706,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 73784282,
+      "additionalSalaryReliefNeeded": 41267466,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 24594761,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 49189522,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 73784282,
+      "additionalSalaryReliefNeeded": 23361207,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 24594761,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 49189522,
+      "additionalSalaryReliefNeeded": 16672706,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 73784282,
+      "additionalSalaryReliefNeeded": 41267466,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 24594761,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 49189522,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 73784282,
+      "additionalSalaryReliefNeeded": 23361207,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 24594761,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 49189522,
+      "additionalSalaryReliefNeeded": 16672706,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491895215,
+      "baselineFullSalary": 459378399,
+      "currentFreeCap": 32516816,
+      "targetFreeCap": 73784282,
+      "additionalSalaryReliefNeeded": 41267466,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 24594761,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 49189522,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 11,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491895215,
+      "baselineFullSalary": 441472140,
+      "currentFreeCap": 50423075,
+      "targetFreeCap": 73784282,
+      "additionalSalaryReliefNeeded": 23361207,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 24590546,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 49181091,
+      "additionalSalaryReliefNeeded": 11284411,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 73771637,
+      "additionalSalaryReliefNeeded": 35874957,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 24590546,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 49181091,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 73771637,
+      "additionalSalaryReliefNeeded": 20690928,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 24590546,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 49181091,
+      "additionalSalaryReliefNeeded": 11284411,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 73771637,
+      "additionalSalaryReliefNeeded": 35874957,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 24590546,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 49181091,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 73771637,
+      "additionalSalaryReliefNeeded": 20690928,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 24590546,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 49181091,
+      "additionalSalaryReliefNeeded": 11284411,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491810911,
+      "baselineFullSalary": 453914231,
+      "currentFreeCap": 37896680,
+      "targetFreeCap": 73771637,
+      "additionalSalaryReliefNeeded": 35874957,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 24590546,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 49181091,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491810911,
+      "baselineFullSalary": 438730202,
+      "currentFreeCap": 53080709,
+      "targetFreeCap": 73771637,
+      "additionalSalaryReliefNeeded": 20690928,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 24595207,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 49190414,
+      "additionalSalaryReliefNeeded": 263669,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 73785621,
+      "additionalSalaryReliefNeeded": 24858876,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 24595207,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 49190414,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 0,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 73785621,
+      "additionalSalaryReliefNeeded": 11335808,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 24595207,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 49190414,
+      "additionalSalaryReliefNeeded": 263669,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 73785621,
+      "additionalSalaryReliefNeeded": 24858876,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 24595207,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 49190414,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 30,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 73785621,
+      "additionalSalaryReliefNeeded": 11335808,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 24595207,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 49190414,
+      "additionalSalaryReliefNeeded": 263669,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "passive",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491904139,
+      "baselineFullSalary": 442977394,
+      "currentFreeCap": 48926745,
+      "targetFreeCap": 73785621,
+      "additionalSalaryReliefNeeded": 24858876,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.05,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 24595207,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.1,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 49190414,
+      "additionalSalaryReliefNeeded": 0,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    },
+    {
+      "seed": 47,
+      "supply": 50,
+      "regime": "active",
+      "year": 2027,
+      "targetUnusedCapFraction": 0.15,
+      "cap": 491904139,
+      "baselineFullSalary": 429454326,
+      "currentFreeCap": 62449813,
+      "targetFreeCap": 73785621,
+      "additionalSalaryReliefNeeded": 11335808,
+      "futureCapBalance": 0,
+      "futurePicksEarned": 0,
+      "note": "Only salary headroom. No automatic carryover, trade, buyer, pick transfer or roster move."
+    }
+  ]
+}
