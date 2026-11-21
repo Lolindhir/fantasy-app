@@ -1,5 +1,6 @@
 import type { PlayoffOddsStatus, ScheduleOutlookReadModel } from '../../core/models/schedule-outlook.models';
 import {
+  formatPlayoffCell,
   formatPlayoffPercent,
   playoffMarker,
   playoffPillText,
@@ -41,6 +42,12 @@ describe('schedule outlook view', () => {
     expect(formatPlayoffPercent(0.004)).toBe('<1%');
     expect(formatPlayoffPercent(0.4632)).toBe('46%');
     expect(formatPlayoffPercent(0.996)).toBe('>99%');
+    expect(formatPlayoffPercent(0.9999)).toBe('>99%');
+    expect(formatPlayoffPercent(1)).toBe('100%');
+    expect(formatPlayoffPercent(0)).toBe('0%');
+    expect(formatPlayoffCell(0.9972)).toBe('>99');
+    expect(formatPlayoffCell(1)).toBe('100');
+    expect(formatPlayoffCell(0)).toBe('');
   });
 
   it('maps status to pill text and Overview markers', () => {
