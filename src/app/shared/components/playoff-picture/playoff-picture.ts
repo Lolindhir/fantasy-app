@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 import {
+  formatPlayoffCell,
   formatPlayoffPercent,
   type PlayoffOddsView
 } from '../../utils/schedule-outlook-view.util';
@@ -50,10 +51,10 @@ export class PlayoffPictureComponent {
       if (!team) return [];
       const cells = team.places.map((probability, index): PicturePlaceCell => ({
         place: index + 1,
-        text: probability <= 0 ? '' : probability < 0.01 ? '<1' : String(Math.round(probability * 100)),
+        text: formatPlayoffCell(probability),
         intensity: probability,
         inPlayoffs: this.odds.playoffTeams !== null && index < this.odds.playoffTeams,
-        label: `Place ${index + 1}: ${probability <= 0 ? '0%' : formatPlayoffPercent(probability)}`
+        label: `Place ${index + 1}: ${formatPlayoffPercent(probability)}`
       }));
       return [{ row, cells, hasPlaces: cells.length > 0 }];
     });

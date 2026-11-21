@@ -73,11 +73,18 @@ function toTeamView(team: PlayoffOddsTeam, teamCount: number): PlayoffOddsTeamVi
   };
 }
 
-/** Whole percent; a team that is still alive never shows 0% or 100% ("<1%" and ">99%"). */
+/** Whole percent; only an exact 0 or 1 shows 0% / 100%, everything in between shows "<1%" or ">99%". */
 export function formatPlayoffPercent(probability: number): string {
+  if (probability <= 0) return '0%';
+  if (probability >= 1) return '100%';
   if (probability < 0.01) return '<1%';
   if (probability > 0.99) return '>99%';
   return `${Math.round(probability * 100)}%`;
+}
+
+/** Matrix cell text without the percent sign; empty for an exact 0. */
+export function formatPlayoffCell(probability: number): string {
+  return probability <= 0 ? '' : formatPlayoffPercent(probability).replace('%', '');
 }
 
 export function playoffPillText(team: PlayoffOddsTeamView): string | null {
