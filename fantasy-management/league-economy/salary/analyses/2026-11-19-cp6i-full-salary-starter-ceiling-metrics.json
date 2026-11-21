@@ -1,0 +1,355 @@
+{
+  "research_id": "CP6i",
+  "date": "2026-11-19",
+  "status": "exploratory feasible lower bounds; no league rule",
+  "issue": "https://github.com/Lolindhir/fantasy-app/issues/1344",
+  "paths": {
+    "league": "public/data/League.json",
+    "players": "public/data/Players.json",
+    "historical_price": "fantasy-management/league-economy/salary/analyses/2026-10-05-salary-simulation-players.csv",
+    "calculator": "fantasy-management/league-economy/salary/simulation/cp6i_starter_ceiling.mjs"
+  },
+  "blob_shas": {
+    "league": "923e42dd8551d1bc3f4b812758dd856a34c82394",
+    "players": "113ffa77ce0f607ac73a80204b363bd7af54aab9",
+    "historical_price": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
+  },
+  "source_state": {
+    "season": 2026,
+    "current_week": 11,
+    "final_scored_week": 10,
+    "score": "2026 current+prior-season smoothed CP6h index, not a weekly projection",
+    "initial_eligible": 613,
+    "paired_eligible": 611,
+    "paired_positive_index": 560,
+    "unmatched": [
+      "George Holani",
+      "Tyler Conklin"
+    ]
+  },
+  "method": {
+    "starter_slots": {
+      "QB": 2,
+      "RB": 2,
+      "WR": 2,
+      "TE": 2,
+      "FLEX": 4,
+      "K": 1
+    },
+    "bench_trial_requirements": {
+      "QB": 1,
+      "RB": 2,
+      "WR": 2,
+      "TE": 1,
+      "K": 1
+    },
+    "cost": "full sum of starter and bench salaries",
+    "market_cap": "market-wide Top120 salary sum / 6",
+    "search": "Lagrangian starter concentration + single-player replacement; cheapest eligible backup allocation; no MILP/global certificate",
+    "bench_floor_values": [
+      0,
+      5,
+      8
+    ],
+    "solver_status": "feasible lower bounds; 13-starter Lagrangian upper bound only",
+    "zero_salary_caveat": "live production salary permits 0-dollar bench; not transferable to concept floors"
+  },
+  "worlds": {
+    "live_2026": {
+      "top120_sum": 2851024206,
+      "cap_per_team": 475170701,
+      "allstar_index": 275.504,
+      "allstar_starter_salary": 481858004,
+      "starter_13_relax_upper": 275.257,
+      "valid_candidate_lineups": 18923,
+      "rows": [
+        {
+          "roster_occupied": 13,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": null
+        },
+        {
+          "roster_occupied": 20,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": 1.77
+        },
+        {
+          "roster_occupied": 20,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": 6.55
+        },
+        {
+          "roster_occupied": 20,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 273.533,
+          "starter_salary_million": 462.741,
+          "bench_salary_million": 9.808,
+          "headroom_million": 2.621,
+          "bench_avg_index": 8.95
+        },
+        {
+          "roster_occupied": 30,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": 1.77
+        },
+        {
+          "roster_occupied": 30,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": 7.91
+        },
+        {
+          "roster_occupied": 30,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 272.714,
+          "starter_salary_million": 458.007,
+          "bench_salary_million": 16.917,
+          "headroom_million": 0.247,
+          "bench_avg_index": 9.84
+        },
+        {
+          "roster_occupied": 35,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": 1.95
+        },
+        {
+          "roster_occupied": 35,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": 7.62
+        },
+        {
+          "roster_occupied": 35,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 272.034,
+          "starter_salary_million": 445.242,
+          "bench_salary_million": 27.924,
+          "headroom_million": 2.005,
+          "bench_avg_index": 9.63
+        },
+        {
+          "roster_occupied": 40,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0,
+          "headroom_million": 1,
+          "bench_avg_index": 2.17
+        },
+        {
+          "roster_occupied": 40,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 274.67,
+          "starter_salary_million": 474.17,
+          "bench_salary_million": 0.318,
+          "headroom_million": 0.683,
+          "bench_avg_index": 7.29
+        },
+        {
+          "roster_occupied": 40,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 269.517,
+          "starter_salary_million": 429.203,
+          "bench_salary_million": 43.042,
+          "headroom_million": 2.926,
+          "bench_avg_index": 9.8
+        }
+      ],
+      "example_13": [
+        "Joe Burrow",
+        "Josh Allen",
+        "Will Reichard",
+        "Jahmyr Gibbs",
+        "Christian McCaffrey",
+        "Jaxon Smith-Njigba",
+        "Puka Nacua",
+        "Brock Bowers",
+        "Trey McBride",
+        "Kenneth Walker III",
+        "CeeDee Lamb",
+        "Amon-Ra St. Brown",
+        "Bijan Robinson"
+      ]
+    },
+    "criticality_oct_proxy": {
+      "top120_sum": 2939173253,
+      "cap_per_team": 489862208.8333333,
+      "prior_cap_for_minimum": 428784607,
+      "contract_basis": "CSV salary_I_ohne_base_minimum, rookie unchanged, veterans max(P, M + 0.5*P)",
+      "allstar_index": 275.504,
+      "allstar_starter_salary": 594229350,
+      "starter_13_relax_upper": 269.135,
+      "valid_candidate_lineups": 18016,
+      "rows": [
+        {
+          "roster_occupied": 13,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 268.199,
+          "starter_salary_million": 478.81,
+          "bench_salary_million": 0,
+          "headroom_million": 11.053,
+          "bench_avg_index": null
+        },
+        {
+          "roster_occupied": 20,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 268.199,
+          "starter_salary_million": 478.81,
+          "bench_salary_million": 7.795,
+          "headroom_million": 3.258,
+          "bench_avg_index": 2.39
+        },
+        {
+          "roster_occupied": 20,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 268.199,
+          "starter_salary_million": 478.81,
+          "bench_salary_million": 9.306,
+          "headroom_million": 1.747,
+          "bench_avg_index": 7.41
+        },
+        {
+          "roster_occupied": 20,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 266.941,
+          "starter_salary_million": 472.896,
+          "bench_salary_million": 16.222,
+          "headroom_million": 0.744,
+          "bench_avg_index": 9.85
+        },
+        {
+          "roster_occupied": 30,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 266.7,
+          "starter_salary_million": 456.451,
+          "bench_salary_million": 18.971,
+          "headroom_million": 14.44,
+          "bench_avg_index": 2.88
+        },
+        {
+          "roster_occupied": 30,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 266.7,
+          "starter_salary_million": 456.451,
+          "bench_salary_million": 23.442,
+          "headroom_million": 9.97,
+          "bench_avg_index": 7.26
+        },
+        {
+          "roster_occupied": 30,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 265.457,
+          "starter_salary_million": 452.108,
+          "bench_salary_million": 36.372,
+          "headroom_million": 1.382,
+          "bench_avg_index": 9.98
+        },
+        {
+          "roster_occupied": 35,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 266.7,
+          "starter_salary_million": 456.451,
+          "bench_salary_million": 24.937,
+          "headroom_million": 8.474,
+          "bench_avg_index": 2.73
+        },
+        {
+          "roster_occupied": 35,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 266.7,
+          "starter_salary_million": 456.451,
+          "bench_salary_million": 31.943,
+          "headroom_million": 1.469,
+          "bench_avg_index": 7.76
+        },
+        {
+          "roster_occupied": 35,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 265.216,
+          "starter_salary_million": 435.662,
+          "bench_salary_million": 52.481,
+          "headroom_million": 1.719,
+          "bench_avg_index": 9.79
+        },
+        {
+          "roster_occupied": 40,
+          "bench_score_floor": 0,
+          "achieved_starter_index": 266.7,
+          "starter_salary_million": 456.451,
+          "bench_salary_million": 31.182,
+          "headroom_million": 2.23,
+          "bench_avg_index": 2.64
+        },
+        {
+          "roster_occupied": 40,
+          "bench_score_floor": 5,
+          "achieved_starter_index": 265.216,
+          "starter_salary_million": 435.662,
+          "bench_salary_million": 41.571,
+          "headroom_million": 12.629,
+          "bench_avg_index": 7.51
+        },
+        {
+          "roster_occupied": 40,
+          "bench_score_floor": 8,
+          "achieved_starter_index": 260.739,
+          "starter_salary_million": 384.58,
+          "bench_salary_million": 74.284,
+          "headroom_million": 30.998,
+          "bench_avg_index": 9.9
+        }
+      ],
+      "example_13": [
+        "Joe Burrow",
+        "Drake Maye",
+        "Will Reichard",
+        "Jahmyr Gibbs",
+        "Kenneth Walker III",
+        "Jaxon Smith-Njigba",
+        "Puka Nacua",
+        "Brock Bowers",
+        "Trey McBride",
+        "Christian McCaffrey",
+        "CeeDee Lamb",
+        "Bijan Robinson",
+        "James Cook III"
+      ]
+    }
+  },
+  "audit": {
+    "seller_relief": "N/A: no cuts or trade events simulated",
+    "buyer_burden": "N/A: isolated no-buyer roster construction",
+    "roster": "13/20/30/35/40 regular occupied slots; IR/Taxi excluded, hypothetical bench coverage, no actual Sleeper transaction",
+    "league_debt": "N/A: no debt or retained salary modeled",
+    "repayment": "N/A: no borrowing or installment modeled",
+    "five_year_H5": "not yet modeled",
+    "second_best_team_gap": "not yet modeled",
+    "injury_availability": "not modeled"
+  }
+}
