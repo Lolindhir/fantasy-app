@@ -6,6 +6,12 @@
           <span class="schedule-summary-label">Regular season</span>
           <strong>{{ seasonRecordLabel() }}</strong>
         </span>
+        @if (remainingLabel(); as remaining) {
+          <span class="schedule-summary-item">
+            <span class="schedule-summary-label">Remaining schedule</span>
+            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}</strong>
+          </span>
+        }
         @if (playoffRecordLabel(); as playoffs) {
           <span class="schedule-summary-item">
             <span class="schedule-summary-label">Playoffs</span>
@@ -64,7 +70,7 @@
       <p class="schedule-note">No games available for this season.</p>
     }
     <p class="schedule-note">
-      Upcoming games start with the nearest week, played games with the latest. Opponent records are final regular-season results of the selected season.
+      Upcoming games start with the nearest week, played games with the latest. Opponent records are final regular-season results of the selected season.@if (outlook()) { Opponent strength compares the points a team has scored with the league average, early in the season mixed with last season. }
     </p>
   }
 </div>
@@ -109,6 +115,12 @@
         <strong>{{ points(row.ownPoints) }}</strong><span aria-hidden="true">–</span><span>{{ points(row.opponentPoints) }}</span>
       </span>
     } @else if (row.opponentID !== null) {
+      @if (opponentChip(row); as chip) {
+        <span class="schedule-chip" [ngClass]="'schedule-chip--' + chip.cls" [attr.title]="chip.title"
+          [attr.aria-label]="'Opponent strength: ' + chip.label">
+          <span aria-hidden="true">{{ chip.symbol }}</span> {{ chip.label }}
+        </span>
+      }
       <span class="schedule-record" aria-label="Opponent record">{{ recordLabel(row.opponentRecord) }}</span>
     }
   </span>

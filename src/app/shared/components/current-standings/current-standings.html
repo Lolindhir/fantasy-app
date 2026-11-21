@@ -89,6 +89,7 @@
                 ></span>
               </span>
             </ng-container>
+            <app-playoff-odds-pill *ngIf="playoffTeamOdds(row) as odds" class="standing-detailed-playoffs" [team]="odds"></app-playoff-odds-pill>
           </div>
         </div>
 
@@ -156,6 +157,18 @@
             <strong>{{ formatAllPlay(stats) }}</strong>
           </div>
         </ng-container>
+        <div class="standing-detailed-trend standing-detailed-places" *ngIf="playoffTeamOdds(row) as odds">
+          <div class="standing-detailed-trend-heading">
+            <strong>Final Place Chances</strong>
+            <span>If every remaining game were a coin flip</span>
+          </div>
+          <app-playoff-place-bars
+            *ngIf="odds.places.length > 0"
+            [places]="odds.places"
+            [playoffTeams]="playoffOdds?.playoffTeams ?? null"
+            [teamName]="row.team.Team || row.team.Owner"
+          ></app-playoff-place-bars>
+        </div>
         <ng-container *ngIf="placementTrend(row, rows.length) as trend; else placementTrendUnavailable">
           <div class="standing-detailed-trend">
             <div class="standing-detailed-trend-heading">

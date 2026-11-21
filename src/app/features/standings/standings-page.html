@@ -13,7 +13,14 @@
     [playoffTeams]="vm.playoffTeams"
     [statistics]="vm.currentStatistics"
     [standings]="vm.currentStandings"
+    [playoffOdds]="vm.playoffOdds"
   ></app-current-standings>
+
+  <app-playoff-picture
+    *ngIf="vm.playoffOdds as odds"
+    [odds]="odds"
+    [standings]="vm.currentStandings"
+  ></app-playoff-picture>
 
   <app-season-archive
     [history]="vm.seasonHistory"

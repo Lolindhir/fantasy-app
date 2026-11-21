@@ -20,6 +20,7 @@
         <div
           *ngFor="let row of context.standings"
           class="weekly-context-row weekly-standing-row"
+          [class.weekly-standing-row--eliminated]="playoffFlag(row) === 'e'"
           [class.weekly-standing-row--playoff-cutline]="row.displayPlace === playoffCutlineStartPlace"
         >
           <strong class="weekly-standing-rank">{{ row.displayPlace }}</strong>
@@ -30,8 +31,8 @@
             </span>
             <app-champion-badge *ngIf="row.team.IsDefendingChampion" class="weekly-team-champion" title="Defending Champion"></app-champion-badge>
           </span>
-          <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}</span>
-          <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}</span>
+          <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}<sup *ngIf="playoffFlag(row) as flag" class="weekly-standing-flag" [attr.aria-label]="playoffFlagLabel(row)" [title]="playoffFlagLabel(row)">{{ flag }}</sup></span>
+          <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}<sup *ngIf="playoffFlag(row) as flag" class="weekly-standing-flag" [attr.aria-label]="playoffFlagLabel(row)" [title]="playoffFlagLabel(row)">{{ flag }}</sup></span>
           <strong class="weekly-standing-record">{{ row.record }}</strong>
           <strong
             class="weekly-standing-movement"
@@ -42,6 +43,7 @@
             [title]="standingMovementLabel(row.placeDelta)"
           ><span aria-hidden="true">{{ standingMovementText(row.placeDelta) }}</span></strong>
         </div>
+        <p *ngIf="playoffOdds?.hasDecidedTeam" class="weekly-standing-legend"><span *ngIf="playoffLegend.clinched"><b>x</b> clinched</span><span *ngIf="playoffLegend.eliminated"><b>e</b> eliminated</span></p>
       </div>
     </a>
 

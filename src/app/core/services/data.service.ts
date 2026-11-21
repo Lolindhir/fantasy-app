@@ -31,6 +31,7 @@ import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
 import type { PlayerInjuryHistoryReadModel } from '../models/player-injury-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
+import type { ScheduleOutlookReadModel } from '../models/schedule-outlook.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
 import { buildPlayerWeekProjections, type PlayerWeekProjectionView } from '../../shared/utils/player-week-projection.util';
 import { sortPlayers } from '../../shared/utils/player-sort.util';
@@ -348,6 +349,10 @@ export class DataService {
 
   getSeasonStatistics(): Observable<SeasonStatisticsReadModel> {
     return this.dataApiService.getSeasonStatisticsRaw();
+  }
+
+  getScheduleOutlook(): Observable<ScheduleOutlookReadModel> {
+    return this.dataApiService.getScheduleOutlookRaw();
   }
 
   getPastSeasonStatisticsRaw(path: string): Observable<SeasonStatisticsReadModel> {

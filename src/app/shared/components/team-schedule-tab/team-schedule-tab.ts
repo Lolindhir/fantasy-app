@@ -15,6 +15,12 @@ import {
   type ScheduleRecord,
   type TeamScheduleRow
 } from '../../utils/team-schedule.util';
+import {
+  OPPONENT_CLASS_VIEW,
+  REMAINING_CLASS_LABEL,
+  resolveTeamScheduleOutlook
+} from '../../utils/schedule-outlook-view.util';
+import type { ScheduleOutlookReadModel } from '../../../core/models/schedule-outlook.models';
 import { buildWeeksSeasonOptions, resolveWeeksSeason } from '../../utils/weeks-view.util';
 import {
   type FantasyGameContextDialogData
@@ -46,7 +52,8 @@ export class TeamScheduleTabComponent {
   private readonly base = toSignal(
     combineLatest({
       index: this.dataService.getPastSeasonsIndex().pipe(catchError(() => of(null))),
-      nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[])))
+      nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[]))),
+      outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null as ScheduleOutlookReadModel | null)))
     }),
     { initialValue: undefined }
   );
@@ -117,6 +124,26 @@ export class TeamScheduleTabComponent {
     const ties = count('tie');
     return ties ? `${count('win')}-${count('loss')}-${ties}` : `${count('win')}-${count('loss')}`;
   });
+
+  /** Generated opponent strength classes (Issue #1589); only for the running season and only while games remain. */
+  readonly outlook = computed(() => {
+    const team = this.teamSignal();
+    const league = this.leagueSignal();
+    if (!team || !league || !this.activeSeason()?.isCurrent) return null;
+    const view = resolveTeamScheduleOutlook(this.base()?.outlook, league.Season, team.TeamID);
+    return view && view.remainingGames > 0 ? view : null;
+  });
+
+  readonly remainingLabel = computed(() => {
+    const remaining = this.outlook()?.remaining;
+    return remaining ? REMAINING_CLASS_LABEL[remaining] : '';
+  });
+
+  opponentChip(row: TeamScheduleRow) {
+    if (row.outcome || row.isPlayoff) return null;
+    const cls = this.outlook()?.opponentByWeek.get(row.week);
+    return cls ? { cls, ...OPPONENT_CLASS_VIEW[cls] } : null;
+  }
 
   selectSeason(season: string): void {
     this.pickedSeason.set(season);
