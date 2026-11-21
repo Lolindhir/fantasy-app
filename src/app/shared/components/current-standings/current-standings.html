@@ -67,7 +67,7 @@
             [elements]="detailedTeamIdentityElements"
             size="small"
           ></app-team-identity>
-          <div class="standing-detailed-form-line">
+          <div class="standing-detailed-form-line" [class.standing-detailed-form-line--odds]="!!playoffTeamOdds(row)">
             <span class="standing-detailed-owner" [title]="row.team.Owner">{{ row.team.Owner }}</span>
             <span class="standing-detailed-record">{{ formatRecord(row) }}</span>
             <span class="standing-detailed-streak" *ngIf="row.team.Streak">{{ row.team.Streak }}</span>

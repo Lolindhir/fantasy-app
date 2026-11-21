@@ -493,6 +493,8 @@
 .standing-detailed-playoffs { margin-left: auto; flex: none; }
 .standing-detailed-places { display: block; }
 
-@media (max-width: 340px) {
-  .standing-detailed-streak { display: none; }
+/* #1588: on phones the playoff pill takes the place of the form dots so the owner name stays readable. */
+@media (max-width: 599px) {
+  .standing-detailed-form-line--odds .standing-detailed-form,
+  .standing-detailed-form-line--odds .standing-detailed-streak { display: none; }
 }
