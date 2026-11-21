@@ -2,6 +2,7 @@ import type { PlayoffOddsStatus, ScheduleOutlookReadModel } from '../../core/mod
 import {
   formatPlayoffCell,
   formatPlayoffPercent,
+  playoffLockedPlace,
   playoffMarker,
   playoffPillText,
   resolvePlayoffOdds,
@@ -52,9 +53,14 @@ describe('schedule outlook view', () => {
 
   it('maps status to pill text and Overview markers', () => {
     const odds = resolvePlayoffOdds(outlook(), 2026)!;
-    expect(playoffPillText(odds.teams.get(1)!)).toBe('Clinched');
+    expect(playoffPillText(odds.teams.get(1)!)).toBe('Clinched 1st');
     expect(playoffPillText(odds.teams.get(2)!)).toBe('<1%');
     expect(playoffPillText(odds.teams.get(3)!)).toBe('Eliminated');
+    expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [1, 0, 0, 0] })).toBe('Clinched 1st');
+    expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [0, 0, 1, 0] })).toBe('Clinched 3rd');
+    expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [0, 0.5, 0.5, 0] })).toBe('Clinched');
+    expect(playoffLockedPlace(odds, 1)).toBe(1);
+    expect(playoffLockedPlace(odds, 2)).toBeNull();
     expect(playoffMarker(odds, 1)).toBe('x');
     expect(playoffMarker(odds, '3')).toBe('e');
     expect(playoffMarker(odds, 2)).toBeNull();
