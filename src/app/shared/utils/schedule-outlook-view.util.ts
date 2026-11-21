@@ -122,6 +122,12 @@ export function playoffMarker(odds: PlayoffOddsView | null, teamId: number | str
   return status === 'clinched' ? 'x' : status === 'eliminated' ? 'e' : null;
 }
 
+/** Final place that is already certain for a decided team (clinched or eliminated); null otherwise. */
+export function playoffLockedPlace(odds: PlayoffOddsView | null, teamId: number | string): number | null {
+  const team = odds?.teams.get(Number(teamId));
+  return team && team.status !== 'alive' ? certainPlace(team) : null;
+}
+
 export interface TeamScheduleOutlookView {
   remaining: RemainingScheduleClass | null;
   remainingGames: number;

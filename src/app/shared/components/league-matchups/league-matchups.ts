@@ -52,7 +52,7 @@ import {
   type OverviewTopContext,
   type OverviewWeeklyPhase
 } from '../../utils/overview-weekly-dashboard.util';
-import { playoffMarker, resolvePlayoffOdds, type PlayoffOddsView } from '../../utils/schedule-outlook-view.util';
+import { playoffLockedPlace, playoffMarker, resolvePlayoffOdds, type PlayoffOddsView } from '../../utils/schedule-outlook-view.util';
 import type { ScheduleOutlookReadModel } from '../../../core/models/schedule-outlook.models';
 import { formatProjectionPoints } from '../../utils/projection-range.util';
 import { WinChanceBarComponent } from '../win-chance-bar/win-chance-bar';
@@ -236,9 +236,20 @@ export class LeagueMatchupsComponent {
     return playoffMarker(this.playoffOdds, row.team.TeamID);
   }
 
+  playoffFlagPlace(row: OverviewStandingRow): number | null {
+    return playoffLockedPlace(this.playoffOdds, row.team.TeamID);
+  }
+
+  get playoffLegendPlace(): boolean {
+    const teams = [...(this.playoffOdds?.teams.keys() ?? [])];
+    return teams.some(id => playoffLockedPlace(this.playoffOdds, id) !== null);
+  }
+
   playoffFlagLabel(row: OverviewStandingRow): string | null {
     const flag = this.playoffFlag(row);
-    return flag === 'x' ? 'Clinched a playoff place' : flag === 'e' ? 'Eliminated from playoff contention' : null;
+    const place = this.playoffFlagPlace(row);
+    const base = flag === 'x' ? 'Clinched a playoff place' : flag === 'e' ? 'Eliminated from playoff contention' : null;
+    return base === null ? null : place === null ? base : `${base}; final place ${place} is locked`;
   }
 
   get hasOverviewContextData(): boolean {
