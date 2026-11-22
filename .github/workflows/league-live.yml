@@ -209,6 +209,8 @@ jobs:
       # matchup-context (Issue #1571, ADR-089, approved by Robert 2026-11-19): the running season's Matchups, FantasyGameContext history and the
       # current game context with MatchupProjections (WinProbability, HybridExpected) are materialized into data-derived/matchup-context first;
       # the App publisher only renders them (products before consumers). A failure of the running season's materialization fails the run as before.
+      # team-injury-impact (Issue #1584 CP5, ADR-096, approved by Robert 2026-11-22): running season, fail-soft (a failure keeps the last product
+      # and App file and warns); reads the fresh PlayerWeekFantasy partition and the persisted nfl-player-availability product.
       # league-rivalry (Issue #1455): one product over all seasons, fail-soft (no --fail-on-error), after the matchup context of the same run.
       - name: Rebuild and publish League, PlayerWeekFantasy, MatchupProjections and current-season Derived
         run: >-
@@ -225,6 +227,7 @@ jobs:
           --path data-derived/matchup-context
           --path data-derived/weekly-recaps
           --path data-derived/team-cap-outlook
+          --path data-derived/team-injury-impact
           --
           bash -euo pipefail -c
           'python3 tools/league_live_derived_refresh.py &&
@@ -242,6 +245,9 @@ jobs:
           { python3 tools/derived_data.py materialize --product league-rivalry > /dev/null ||
             echo "::warning title=league-rivalry not materialized::kept the last product"; } &&
           python3 tools/rivalry_app_publish.py write &&
+          { python3 tools/team_injury_impact_materialize.py --scope current ||
+            echo "::warning title=team-injury-impact not materialized::kept the last product"; } &&
+          python3 tools/injury_impact_app_publish.py write &&
           pwsh ./public/requests/RequestLeaguePublication.ps1 &&
           python3 tools/team_cap_outlook_materialize.py &&
           python3 tools/team_cap_outlook_app_publish.py write'

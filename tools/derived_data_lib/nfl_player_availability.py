@@ -106,7 +106,7 @@ def _report_entries(player_week: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def _available(roster_status: str | None, report: list[dict[str, Any]] | None) -> str:
-    """Available yes | no | unknown from roster status and the observed game status; never inferred from a missing row."""
+    """Available yes | no | unknown (bye is set by the caller for bye weeks) from roster status and the observed game status; never inferred from a missing row."""
     if roster_status in RESERVE_STATUSES:
         return "no"
     if any(entry["Game"] in UNAVAILABLE_REPORT_STATUSES for entry in report or ()):
@@ -310,7 +310,7 @@ def derive_nfl_player_availability(
             "GameType": game_type,
             "GameID": game_id,
             "State": state,
-            "Available": _available(roster_status, report_entries),
+            "Available": "bye" if state == "bye" else _available(roster_status, report_entries),
             "Played": True if part == "played" else False if part == "not-played" else None,
             "Participation": {"State": part, "Evidence": evidence},
             "Report": report_entries,

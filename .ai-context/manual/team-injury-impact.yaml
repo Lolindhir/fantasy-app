@@ -1,0 +1,52 @@
+schemaVersion: 1
+status: active
+purpose: >-
+  Contract of the Shared Derived product team-injury-impact (Issue #1584 CP5, ADR-096): the historical Fantasy Injury Impact per team and
+  league-scored week, computed by the central model injury-impact-v1.
+
+product:
+  path: data-derived/team-injury-impact/<CanonicalLeagueID>/<Season>.json
+  identity: CanonicalLeagueID + Season + Models.InjuryImpact (data-meta) + ScoringSettingsHash + LineupDefinitionHash
+  implementation:
+    function: tools/derived_data_lib/team_injury_impact.py (resolve)
+    model: tools/derived_data_lib/models/injury_impact/v1.py
+    materializer: tools/team_injury_impact_materialize.py (--scope current|history|all)
+    appRenderer: tools/injury_impact_app_publish.py (public/data/InjuryImpact.json, Timestamps key InjuryImpact)
+  writers: [league-live.yml (current season, fail-soft), update-transactions.yml (history)]
+  noClock: the document holds no timestamp; unchanged inputs write nothing (byte comparison)
+
+inputs:
+  - data-derived/nfl-player-availability/<season>.json (State, Available, Played, Report per player and week)
+  - data-derived/player-week-fantasy partition of the week (participation-conditional projection, SettingsHash)
+  - canonical league source (rosters of the week, lineup slots) through the TeamWeekPerformance verified inputs
+  - week finality (LeagueScoredWeek); only league-scored weeks are computed
+  - data-meta Models.InjuryImpact
+
+rules:
+  impact: best lineup of the full roster (A) minus best lineup of the usable roster (B); slots and eligibility from the league
+  rosterScope: starters, bench, IR and Taxi all count (IR and Taxi are activatable at any time)
+  classification:
+    usable: [played, healthy-scratch]
+    injured: [not-played-reported, not-played-reserve]
+    unknownEvidence: [unknown, not-played-unexplained]
+    outsideBothPools: [bye, not-on-active-roster, no record]
+    other: fail closed (ValueError)
+  missingProjection:
+    injured: week is a lower bound (IsLowerBound, Undeterminable counted); never filled with zero
+    usable: neutral, counted as NoProjection
+  singleReturn: per injured player best(B plus that player) minus best(B); values are not additive
+  seasonTotals: sum of the rounded weekly impacts, so totals equal the weekly values
+
+availability:
+  unavailableWeeks: a week without a verified PlayerWeekFantasy partition or built under other scoring settings is listed in UnavailableWeeks with a reason, never zero
+
+invalidation:
+  - availability or PlayerWeekFantasy partition changes (input digests per week)
+  - scoring settings or lineup definition changes
+  - model version or data-meta model choice changes
+
+restoreProbe: outside (depends on the current PlayerWeekFantasy partition); own tests tools/tests/test_injury_impact_v1.py and test_team_injury_impact_materialize.py
+
+consumers:
+  - App file public/data/InjuryImpact.json (display later in Stats > Season, Issue #1621; no UI yet)
+  - Fantasy Management and chat analyses read the product

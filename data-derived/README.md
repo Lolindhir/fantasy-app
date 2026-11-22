@@ -34,6 +34,7 @@ the read-only restore probe `tools/derived_clean_root_audit.py`.
 | `matchup-context` | `.ai-context/manual/matchup-context.yaml` | `tools/matchup_context_materialize.py` | `league-live.yml`, `update-transactions.yml` |
 | `weekly-recaps` | `.ai-context/manual/weekly-recaps.yaml` | `tools/weekly_recaps_materialize.py` | `league-live.yml`, `update-transactions.yml` |
 | `team-cap-outlook` | `.ai-context/manual/derived-models.yaml` | `tools/team_cap_outlook_materialize.py` | `league-live.yml` |
+| `team-injury-impact` | `.ai-context/manual/team-injury-impact.yaml` | `tools/team_injury_impact_materialize.py` | `league-live.yml`, `update-transactions.yml` |
 <!-- derived-products:end -->
 
 ## NFL Injury report trajectories
