@@ -145,6 +145,9 @@ def plan(
             revisions.append({"Season": year, "Reason": "official-provider-size-changed"})
         elif record.get("SourceAssetID") not in (None, asset["id"]):
             revisions.append({"Season": year, "Reason": "official-provider-asset-replaced"})
+        elif (record.get("SourceAssetUpdatedAtUtc") is not None
+              and asset.get("updated_at") != record["SourceAssetUpdatedAtUtc"]):
+            revisions.append({"Season": year, "Reason": "official-provider-asset-metadata-revised"})
     if selected is None:
         chosen = missing[:limit]
     else:
