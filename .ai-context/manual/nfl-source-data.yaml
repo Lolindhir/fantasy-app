@@ -553,6 +553,61 @@ fullPlayByPlayTarget:
       prior Source snapshots or accepted per-season manifest. Restore the
       latest accepted Source manifest revision if a regression is observed;
       Derived v2 is regenerated through the same existing writer.
+  historicalOriginalPbpReconciliation:
+    issue: 1077
+    status: dynamic-history-intake-and-reconciliation-in-implementation
+    producer: tools/nfl_pbp_source_history.py
+    sourceOwnership: existing-sync-nfl-source-data-full-raw-publisher
+    discovery: >-
+      Dynamically intersect canonical data-source/nfl/schedules/<season>.json
+      history with the exact nflverse pbp release CSV.GZ inventory. Never
+      enumerate a hard-coded year list or derive seasons from Derived/Consumers.
+      Existing accepted metadata are verified against immutable Release assets.
+    initialBackfill: >-
+      At most three missing closed seasons per unfiltered scheduled or
+      manually dispatched full Source sync. Prioritize newest missing years
+      to minimize the impact of isolated legacy anomalies; pin the selected
+      year batch in runner-temp across Source Raw publication retries.
+      Source code pushes, filtered calls and scope-specific invocations do
+      not activate historic intake. Every year undergoes complete Source-only
+      GZIP/CSV, SHA256, canonical-game and play-identity preflight before
+      uploading any new batch assets. Only fully verified immutable releases
+      and their small manifests join the existing Source Raw write set.
+    digestlessHistoricalAsset: >-
+      A provider release asset lacking a published digest (observed 1999)
+      requires exact official release identity, asset ID, URL, uploaded state,
+      byte size, original-byte self-SHA256 and whole-stream Source audit.
+      Store UpstreamSHA256=null, OriginalSHA256=verified self-hash and
+      SourceDigestAuthority=self-sha256-official-asset-no-digest; never
+      attribute the self-hash to the provider. The accepted Release asset
+      itself records GitHub's verified digest. Other years require and check
+      the official provider SHA256.
+    recurringHistory: >-
+      Every full scheduled Monday Source run verifies the upstream inventory
+      and retained accepted manifests/releases. During initial catch-up the
+      same bounded producer runs daily; once all years are accepted, it is
+      a provenance/revision no-op. Source revision or asset replacement in
+      a frozen year is reported for review; it never overwrites the accepted
+      bytes or updates their accepted SHA automatically.
+    originalStorage: >-
+      Preserve unmodified gzip outside Git in content-addressed GitHub
+      Release assets, with only per-year manifests under
+      data-source/providers/nflverse/play-by-play-original. Existing
+      2025/2026 archives, writers and schema remain compatible.
+    affectedDerived: >-
+      A newly admitted historical manifest is discovered by the existing
+      nfl-games-derived GameDetail writer, which can perform an immediate
+      history replay outside Monday. The Monday pass still fully rederives
+      all accepted historical seasons from accepted inputs even when
+      no original asset changed.
+    riskAndRollback: >-
+      Elevated additive persistent Source evidence (approximately 454 MB
+      for 1999-2024), but no additional branch writer, output scope, token
+      or schedule. Revert the bounded historical invocation to stop
+      admissions, preserve already accepted immutable releases/manifests,
+      retain the current-season Source intake and existing Derived product.
+      Never automatically repair/replace/delete frozen Source evidence.
+
   original2025Pilot:
     issue: 1077
     authorizationDate: 2026-11-16
