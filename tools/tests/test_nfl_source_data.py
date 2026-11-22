@@ -809,6 +809,49 @@ class NflPbpHistoricalReconciliationTests(unittest.TestCase):
                 self.assertEqual(meta["SourceDigestAuthority"],
                                  "self-sha256-official-asset-no-digest")
 
+    def test_frozen_2025_upstream_revision_is_review_not_overwrite(self):
+        year = 2025
+        old = hashlib.sha256(b"accepted").hexdigest()
+        official = {year: self._asset(year, b"provider-revision")}
+        archived = {
+            "id": 42, "name": "play_by_play_2025.csv.gz",
+            "size": len(b"accepted"), "digest": f"sha256:{old}",
+            "state": "uploaded",
+            "browser_download_url": pbp_auto._archive_url(year, old),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._root(root, [year])
+            path = (root /
+                "data-source/providers/nflverse/play-by-play-original/metadata-2025.json"
+            )
+            path.parent.mkdir(parents=True)
+            data = {
+                "SchemaVersion": 1, "Status": "accepted-original-byte-identity",
+                "Season": year, "UpstreamSHA256": old,
+                "SourceAssetID": year, "CompressedBytes": len(b"accepted"),
+                "ReleaseTag": pbp_auto._archive_tag(year, old),
+                "ArchiveURL": pbp_auto._archive_url(year, old),
+            }
+            path.write_text(json.dumps(data))
+            saved = path.read_bytes()
+            with patch.object(pbp_history, "current_source_season", return_value=2026), \
+                 patch.object(pbp_history, "official_inventory", return_value=official), \
+                 patch.object(pbp_history, "_get_release", return_value={
+                     "assets": [archived],
+                 }), \
+                 patch.object(pbp_history, "download") as download, \
+                 patch.object(pbp_history, "_upload") as upload:
+                report = pbp_history.run(root, "Lolindhir/fantasy-app", "token",
+                                         write=True)
+                self.assertEqual(report["NewlyAccepted"], [])
+                self.assertEqual(report["FrozenRevisionReview"], [{
+                    "Season": 2025, "Reason": "official-provider-digest-changed",
+                }])
+                self.assertEqual(saved, path.read_bytes())
+                download.assert_not_called()
+                upload.assert_not_called()
+
     def test_history_and_weekly_derived_use_existing_workflow_only(self):
         workflow = (TOOLS.parent / ".github/workflows/sync-nfl-source-data.yml").read_text()
         self.assertIn("tools/nfl_pbp_source_history.py", workflow)
