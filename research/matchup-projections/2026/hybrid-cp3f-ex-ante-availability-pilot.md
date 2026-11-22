@@ -77,3 +77,42 @@ Die 90,9 % sind **kein nachgewiesener Forecast-Qualitätsgewinn für Expected Te
 4. **Keine** Produktionsänderung an PWF, CP2-HybridExpected, WinProbability, Source/Derived, Injury, Availability, UI oder Workflows. Rücknahme nur der beiden Research-Dateien.
 
 **Validierung:** Die sechs historischen ESPN-Git-Dateien und die retrospektiven v2-Labels wurden über den GitHub-Connector im JS-Harness gegeneinander gerechnet. Ein vollständiger direkter Node-CLI-Lauf der ausgecheckten Repository-Geschichte ist nicht behauptet. Review/CI sind zusätzliche PR-Gates, nicht durch einen erfolgreichen JS-Harness-Lauf ersetzt.
+
+## C — Gepaarter As-of-Roster-/PWF-Check (22.11.2026)
+
+**Resultat:** Für alle sechs 2026er Wochen 5–10 liegen vor deren erstem NFL-Kickoff jeweils gemeinsam ein damals veröffentlichter PlayerWeekFantasy-Stand, DecisionWindows mit 13 Starting-Slots und ein kanonischer Sleeper-Wochenkader im Git-Stand vor. Week 5 liegt noch unter source-data/leagues, Weeks 6–10 unter data-source/leagues. Die späteren tatsächlichen Team-Scores werden getrennt aus Commit 5f9c6feb89441088d3aeb19765420f7563d71780 als **Outcome**, nicht als Prognoseeingabe, geladen. Die historischen public/data-Dateien sind hier *Belege für damals veröffentlichte Daten*, niemals eine neue produktive Consumer-Quelle.
+
+**As-of-Checks:** PWF.Week = DecisionWindows.LineupWeek = Matchup.Week; jeweils sechs Teams und 13 Starting-Slots (2 QB, 2 RB, 2 WR, 2 TE, 4 FLEX, 1 K). Der Join der kanonischen Wochenkader und der damals veröffentlichten Decision-Windows-Spielerlisten ist für 1.229 Spielerwochen exakt (0 Mitgliedschaftsdifferenzen). Alle as-of verfügbaren ESPN-Statusbeobachtungen lagen vor dem Wochen-Checkpoint. Die damaligen PWF-Actual-Felder waren sämtlich null, ebenso die damaligen Sleeper-Team-Punkte.
+
+| Week | Historische Kader-Spielerwochen | damals mit ESPN-Status | OUT/DOUBTFUL/IR | vollständige Paare |
+| ---: | ---: | ---: | ---: | ---: |
+| 5 | 204 | 78 | 0 | 6 |
+| 6 | 205 | 78 | 0 | 6 |
+| 7 | 204 | 77 | 0 | 5 |
+| 8 | 206 | 77 | 0 | 5 |
+| 9 | 205 | 77 | 1 | 5 |
+| 10 | 205 | 78 | 2 | 6 |
+| **Summe** | **1.229** | **465** | **3** | **33/36** |
+
+Die drei unvollständigen Team-Wochen hatten keinen projizierbaren Kicker (W7 Team 4, W8 und W9 Team 1). Der ein Spielerwochen-Eintrag größere retrospektive Fantasy-Pool aus Abschnitt B und das später vervollständigte ESPN-Mapping dürfen **nicht** als in diesem As-of-Zeitpunkt verfügbar ausgegeben werden.
+
+### Diagnostischer, paariger Punktetest
+
+Auf denselben aktiv rosterbaren Starter-/Bankspielern mit damaligen verfügbaren, noch **teilnahmebedingten** PWF-Projektionen wird ein regelkonformer globaler 13-Slot-Best-Ball berechnet. IR, Taxi, Bye und unbekanntes NFL-Spiel beziehungsweise fehlende PWF-Projektion werden nie als sichere Null kaschiert. Statusarm B entfernt ausschließlich Kandidaten mit damals tatsächlich publiziertem OUT, DOUBTFUL oder INJURY_RESERVE; QUESTIONABLE und fehlender Status bleiben im Pool. Beide Arme haben sonst denselben Pool, dieselben Projektionen und dieselben Slots.
+
+| Metrik, identische 33 vollständige Team-Wochen | Ohne Statusfilter | Mit Statusfilter |
+| --- | ---: | ---: |
+| MAE gegen spätere tatsächliche Sleeper-Team-Punkte | **28,0707** | **28,5358** |
+| RMSE | **35,6283** | **35,8245** |
+
+In **31/33** vollständigen Paaren änderte sich keine einzige Team-Prognose. Nur in W10 bei Team 1 und Team 4 entfernte der Filter einen relevanten Kandidaten. Beide Spieler starteten später tatsächlich nicht und erzielten null Punkte; trotzdem vergrößerte der Filter bei beiden Teams den Punktfehler gegenüber dem späteren **tatsächlichen Manager-Ergebnis**. Die Teilnahmeprognose-Güte (Abschnitt B, retrospektive 90,9 %) ist eben nicht automatisch Team-Score-Güte. Dieser Test misst **nicht** das vollständig geplante Monte-Carlo-Best-Ball-, Coach-Effizienz- oder Siegchancen-Modell und ist keine unabhängige Holdout-Kalibrierung. Die Stichprobe ist klein und wochenweise korreliert.
+
+### Reproduktion und offene Schranke
+
+Neuer Modus des bestehenden [Forschungsskripts](audit_ex_ante_espn_status.cjs):
+
+    node research/matchup-projections/2026/audit_ex_ante_espn_status.cjs --roster-pwf
+
+Mit vollständiger lokaler Git-Historie liest der Modus nur festgehaltene Commits via git show, prüft die temporale und semantische Konsistenz, optimiert beide Kandidatenpools und misst die Fehler gegen spätere Sleeper-Team-Punkte. Der bestehende --self-test enthält nun auch einen synthetischen Fall für vollständige Slots, OUT-Filter und fehlenden Kicker. Die Zahlen wurden mittels GitHub-Connector mit einem unabhängigen JS-Harness nachgerechnet. **Direkter Full-History-CLI-Durchlauf und CI-Erfolg sind noch nicht belegt**, da der lokale Git-Checkout in dieser Umgebung nicht heruntergeladen werden kann.
+
+**Folgerung:** Die alte PWF- und Kaderbasis ist rekonstruierbar, aber die damals publizierte Statuszuordnung umfasst nur 465 der 1.229 Kader-Spielerwochen und gerade drei hochriskante Statussignale. Vor dem wesentlich komplexeren Walk-forward-Test müssen wir die **damals** verfügbare ESPN-Identitätstabelle gegen die im jeweiligen Commit gespeicherte ESPN-Quelldatei prüfen. Einen **heutigen** erweiterten Identity-Graph rückwirkend als damalige operative Zuordnung zu verwenden wäre Look-ahead-Leakage. Vor einer produktiven Chance- oder Punktmodell-Änderung wären größere Stichprobe, echte Expected-Points-/Siegchancenmetriken und ein zeitlich separater Holdout nötig. Produktive Pipelines bleiben unverändert.
