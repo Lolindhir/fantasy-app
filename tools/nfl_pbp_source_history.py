@@ -205,13 +205,15 @@ def run(
         }, sort_keys=True) + "\n", encoding="utf-8")
     if not write or not state["Seasons"]:
         return {**state, "Status": "historical-pbp-preview" if not write else "historical-pbp-noop",
-                "Changed": False, "NewlyAccepted": []}
+                "Changed": False, "NewlyAccepted": [], "BlockedSeasons": []}
 
     staged: list[tuple[int, dict[str, Any], Path]] = []
+    blocked: list[dict[str, Any]] = []
     with tempfile.TemporaryDirectory(prefix="nfl-pbp-history-") as temporary:
         root_temp = Path(temporary)
-        # Validate the ENTIRE batch before any permanent release/upload or
-        # Source manifest change. Never accept an unverified partial batch.
+        # Each candidate is independently fail-closed. A malformed source year
+        # must never authorize that year, but also must not indefinitely prevent
+        # the other two proven-good years in the bounded intake from progressing.
         for year in state["Seasons"]:
             manifest = load_json(root / _SOURCE_MANIFEST_DIR / f"metadata-{year}.json")
             if manifest is not None:
@@ -219,14 +221,19 @@ def run(
                 continue
             asset = official[year]
             path = root_temp / _archive_name(year)
-            download(asset["browser_download_url"], path)
-            digest = asset.get("digest")
-            actual = _sha(path)
-            if path.stat().st_size != asset["size"]:
-                raise ValueError(f"Original PBP official asset size changed: {year}")
-            if digest is not None and digest != f"sha256:{actual}":
-                raise ValueError(f"Original PBP official asset digest changed: {year}")
-            evidence = _audit(root, year, path, actual)
+            try:
+                download(asset["browser_download_url"], path)
+                digest = asset.get("digest")
+                actual = _sha(path)
+                if path.stat().st_size != asset["size"]:
+                    raise ValueError(f"Original PBP official asset size changed: {year}")
+                if digest is not None and digest != f"sha256:{actual}":
+                    raise ValueError(f"Original PBP official asset digest changed: {year}")
+                evidence = _audit(root, year, path, actual)
+            except (OSError, ValueError, TypeError, KeyError,
+                    urllib.error.URLError, EOFError, json.JSONDecodeError) as error:
+                blocked.append({"Season": year, "Reason": str(error)[:300]})
+                continue
             staged.append((year, {
                 "SchemaVersion": 1,
                 "Status": "accepted-original-byte-identity",
@@ -274,8 +281,15 @@ def run(
             if not write_json_if_changed(path, metadata):
                 raise ValueError(f"Historical PBP metadata unexpectedly unchanged: {year}")
         return {
-            **state, "Status": "historical-pbp-accepted",
-            "Changed": bool(staged), "NewlyAccepted": [year for year, _, _ in staged],
+            **state,
+            "Status": (
+                "historical-pbp-partial" if blocked and staged else
+                "historical-pbp-blocked" if blocked else
+                "historical-pbp-accepted"
+            ),
+            "Changed": bool(staged),
+            "NewlyAccepted": [year for year, _, _ in staged],
+            "BlockedSeasons": blocked,
         }
 
 
