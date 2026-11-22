@@ -121,6 +121,28 @@ remains available to check unchanged v1 groups. After the first production
 write, actual output/No-op verification is still required; tests do not
 replace published readback.
 
+## Historical original PBP delivery and weekly replay
+
+Original nflverse PBP bytes are retained as immutable, SHA-addressed GitHub
+Release assets, never as generated App data or compact Derived play lists.
+The existing daily NFL Source Sync discovers missing historical years dynamically
+from official release assets and canonical Source schedules and admits up to
+three verified missing seasons per scheduled/manual full run. Current-season
+acquisition remains independent and automatic; frozen original revisions are
+reported for review, not silently overwritten.
+
+The existing NFL Games Derived publisher performs an immediate GameDetail-v2
+history replay when newly accepted historical PBP appears and a complete
+recomputation every Monday from the accepted Source originals. GameDetail
+algorithms/model versions can therefore change without re-downloading
+unmodified originals from the provider. A verified local Actions archive cache
+reduces repeated Release fetches and bounds decompressed memory to one season;
+a cache restore still transfers its compressed contents. No other product may
+read GameDetail as its Source. Additional shared Derived products require a
+versioned contract, dependency declaration and an authorized existing writer
+before becoming eligible for historical replay. Source acceptance and Derived
+publication use distinct classified writers and preserve exact no-op semantics.
+
 ## PlayerWeekFantasy
 
 The first product is:
