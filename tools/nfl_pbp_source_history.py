@@ -120,6 +120,10 @@ def plan(
             if match is None:
                 continue
             year = int(match.group(1))
+            # The live season is owned by nfl_pbp_source_auto, not by this
+            # frozen-history importer. Its manifest is always present on main.
+            if year == current:
+                continue
             if year not in canonical:
                 raise ValueError(f"PBP Source manifest without canonical Source season: {year}")
             record = load_json(path)
