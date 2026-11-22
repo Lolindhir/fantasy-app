@@ -69,8 +69,154 @@ function selfTest(){
   assert(SAMPLES.every(s=>Date.parse(s[2])<Date.parse(s[1]+'T00:00:00Z')));
   console.log('CP3f self-test OK');
 }
+
+// Secondary CP3f read-only pilot: contemporaneous league roster, PWF and
+// published DecisionWindows join. Do not replace source products with app files
+// in production: these app artifacts are historical publication evidence only.
+const REQUIRED_SLOTS=[['QB',2],['RB',2],['WR',2],['TE',2],['K',1]];
+function sleeperID(record,field){
+  const matches=(record.ProviderMappings||[]).filter(p=>p.Provider==='Sleeper' && p[field]!==null && p[field]!==undefined);
+  assert.equal(matches.length,1,'Missing/ambiguous Sleeper '+field);
+  return String(matches[0][field]);
+}
+function bestBall(pool,blocked){
+  const grouped={QB:[],RB:[],WR:[],TE:[],K:[]};
+  for(const p of pool){
+    if(blocked && BLOCKED.has(p.status))continue;
+    assert(Object.hasOwn(grouped,p.position),'Unexpected fantasy position '+p.position);
+    assert(Number.isFinite(p.points),'Nonfinite candidate projection');
+    grouped[p.position].push(p.points);
+  }
+  for(const g of Object.values(grouped))g.sort((a,b)=>b-a);
+  let points=0;
+  for(const [position,count] of REQUIRED_SLOTS){
+    const items=grouped[position];
+    if(items.length<count)return {complete:false,missing:position};
+    points+=items.splice(0,count).reduce((a,b)=>a+b,0);
+  }
+  const flex=[...grouped.RB,...grouped.WR,...grouped.TE].sort((a,b)=>b-a);
+  if(flex.length<4)return {complete:false,missing:'FLEX'};
+  points+=flex.slice(0,4).reduce((a,b)=>a+b,0);
+  return {complete:true,points:+points.toFixed(4)};
+}
+function auditRosterPwf(){
+  const outcomeRoot='data-source/leagues/nfl-reise/seasons/2026/matchups/week-';
+  const result={researchOnly:true,baseline:'unadjusted as-of 13-slot best ball',
+    alternative:'exclude as-of published OUT/DOUBTFUL/INJURY_RESERVE',
+    target:'retrospective final Sleeper team score, not realized full-roster best ball',
+    samples:[],summary:null};
+  let allPlayers=0,asofStatuses=0,asofBlocked=0,paired=0,changed=0,
+    baselineAbsError=0,adjustedAbsError=0,baselineSqError=0,adjustedSqError=0;
+  for(const [week,day,observed,sha] of SAMPLES){
+    const cut=Date.parse(observed);
+    const dw=load(sha,'public/data/DecisionWindows.json');
+    const pwf=load(sha,'public/data/PlayerWeekFantasy.json');
+    const sourcePrefix=week===5?'source-data':'data-source';
+    const sourcePath=sourcePrefix+'/leagues/nfl-reise/seasons/2026/matchups/week-'+week+'.json';
+    const source=load(sha,sourcePath);
+    const final=load(BASE,outcomeRoot+week+'.json');
+    assert.equal(pwf.Week,week);assert.equal(pwf.Season,2026);
+    assert.equal(dw.LineupWeek,week);assert.equal(String(dw.Season),'2026');
+    assert(Array.isArray(source)&&source.length===6);
+    assert(Array.isArray(final)&&final.length===6);
+    const start=Math.min(...dw.DecisionWindows.map(d=>Date.parse(d.StartsAtUtc)));
+    assert(Number.isFinite(start) && cut<start,'Snapshot must precede first kickoff');
+    assert.equal(dw.FantasyRelevance.SlotDefinitions.length,13);
+    const slotCounts={};
+    for(const s of dw.FantasyRelevance.SlotDefinitions)
+      slotCounts[s.SlotType]=(slotCounts[s.SlotType]||0)+1;
+    assert.deepEqual(slotCounts,{QB:2,RB:2,WR:2,TE:2,FLEX:4,K:1});
+    const projections=new Map();
+    for(const record of pwf.Records){
+      if(record.PlayerID===null||record.PlayerID===undefined)continue;
+      const id=String(record.PlayerID);
+      assert(!projections.has(id),'Duplicate PlayerID in PWF '+id);
+      assert(record.Actual?.Points===null,'Pregame PWF includes actual points '+id);
+      projections.set(id,record.Projection);
+    }
+    const asofByTeam=new Map(),finalByRoster=new Map();
+    for(const team of source){
+      const tid=sleeperID(team,'ProviderRosterID');
+      assert(!asofByTeam.has(tid),'Duplicate as-of team '+tid);
+      assert.equal(team.Week,week);assert.equal(team.Points,0,'Nonzero as-of score');
+      asofByTeam.set(tid,team);
+    }
+    for(const team of final){
+      assert(!finalByRoster.has(team.CanonicalLeagueRosterID),'Duplicate final roster ID');
+      finalByRoster.set(team.CanonicalLeagueRosterID,team);
+    }
+    const perWeek={week,commit:sha,cutoff:observed,rosterPlayers:0,
+      knownStatuses:0,blockedStatuses:0,completePairs:0,changedPairs:0,
+      incomplete:[],teams:[]};
+    assert.equal(dw.FantasyRelevance.Teams.length,6);
+    for(const dwTeam of dw.FantasyRelevance.Teams){
+      const teamID=String(dwTeam.FantasyTeamID),asof=asofByTeam.get(teamID);
+      assert(asof,'No as-of matchup for team '+teamID);
+      const finalTeam=finalByRoster.get(asof.CanonicalLeagueRosterID);
+      assert(finalTeam && Number.isFinite(finalTeam.Points),'Missing final team score');
+      const sourceIds=new Set(asof.Players.map(p=>sleeperID(p,'ProviderPlayerID')));
+      const decisionIds=new Set(dwTeam.Players.map(p=>String(p.PlayerID)));
+      assert.equal(sourceIds.size,asof.Players.length,'Duplicate source player');
+      assert.equal(decisionIds.size,dwTeam.Players.length,'Duplicate decision player');
+      assert.equal(sourceIds.size,decisionIds.size,'As-of roster size mismatch');
+      for(const id of sourceIds)assert(decisionIds.has(id),'As-of roster member mismatch '+id);
+      const pool=[];
+      for(const p of dwTeam.Players){
+        allPlayers++;perWeek.rosterPlayers++;
+        const a=p.ScoringAvailability||{};
+        if(a.ProviderStatus){
+          asofStatuses++;perWeek.knownStatuses++;
+          assert(a.ObservedAtUtc,'Missing observation date for status '+p.PlayerID);
+          assert(Date.parse(a.ObservedAtUtc)<=cut,'Status observed after checkpoint');
+        }
+        if(BLOCKED.has(a.ProviderStatus)){
+          asofBlocked++;perWeek.blockedStatuses++;
+        }
+        if(p.Placement!=='starter'&&p.Placement!=='bench')continue;
+        if(p.GameState!=='unlocked'||!p.GameID)continue;
+        const projection=projections.get(String(p.PlayerID));
+        if(projection?.Status!=='available'||!Number.isFinite(projection.Points))continue;
+        pool.push({position:p.Position,points:projection.Points,status:a.ProviderStatus});
+      }
+      const base=bestBall(pool,false),gate=bestBall(pool,true);
+      const entry={teamID,projectableCandidates:pool.length,baseline:base,
+        gated:gate,finalSleeperPoints:finalTeam.Points};
+      if(base.complete && gate.complete){
+        paired++;perWeek.completePairs++;
+        const be=base.points-finalTeam.Points,ge=gate.points-finalTeam.Points;
+        baselineAbsError+=Math.abs(be);adjustedAbsError+=Math.abs(ge);
+        baselineSqError+=be*be;adjustedSqError+=ge*ge;
+        if(Math.abs(base.points-gate.points)>0.00001){
+          changed++;perWeek.changedPairs++;
+          entry.errorChange=Math.abs(ge)-Math.abs(be);
+        }
+      }else{
+        perWeek.incomplete.push({teamID,baseline:base.missing??null,gated:gate.missing??null});
+      }
+      perWeek.teams.push(entry);
+    }
+    result.samples.push(perWeek);
+  }
+  result.summary={totalTeamWeeks:result.samples.length*6,
+    asofRosterPlayerWeeks:allPlayers,knownAsOfStatuses:asofStatuses,
+    blockedAsOfStatuses:asofBlocked,completePairedTeamWeeks:paired,
+    changedPairedTeamWeeks:changed,
+    baselineMAE:+(baselineAbsError/paired).toFixed(4),
+    gatedMAE:+(adjustedAbsError/paired).toFixed(4),
+    baselineRMSE:+Math.sqrt(baselineSqError/paired).toFixed(4),
+    gatedRMSE:+Math.sqrt(adjustedSqError/paired).toFixed(4)};
+  assert.equal(allPlayers,1229,'Fixed historical population changed');
+  assert.equal(asofStatuses,465,'Historical status coverage changed');
+  assert.equal(paired,33,'Historical paired sample changed');
+  console.log(JSON.stringify(result,null,2));
+}
+
 function main(){
   if(process.argv.includes('--self-test'))return selfTest();
+  if(process.argv.includes('--roster-pwf')){
+    assert.equal(process.argv.length,3,'--roster-pwf is the only argument');
+    return auditRosterPwf();
+  }
   if(process.argv.length!==2)throw Error('Only --self-test is an option; input revisions are pinned');
   const ident=ids(load(BASE,'data-source/nfl/identities/players.json').Players);
   const avail=load(BASE,'data-derived/nfl-player-availability/2026.json');
