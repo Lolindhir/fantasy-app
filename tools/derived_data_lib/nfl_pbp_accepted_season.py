@@ -44,6 +44,13 @@ def _manifest(root: Path, season: int) -> dict[str, Any] | None:
     if not isinstance(manifest, dict):
         raise ValueError(f"Invalid PBP original Source manifest {season}")
     sha = manifest.get("OriginalSHA256") or manifest.get("UpstreamSHA256")
+    provider_sha = manifest.get("UpstreamSHA256")
+    if provider_sha is not None and (
+        not isinstance(provider_sha, str)
+        or (manifest.get("OriginalSHA256") is not None
+            and manifest["OriginalSHA256"] != provider_sha)
+    ):
+        raise ValueError(f"Contradictory original PBP digest provenance: {season}")
     if (manifest.get("SchemaVersion") != 1
             or manifest.get("Status") != "accepted-original-byte-identity"
             or manifest.get("Provider") != "nflverse"
