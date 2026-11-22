@@ -114,8 +114,10 @@ function run(options={}) {
       candidatePlayers:0,knownStatus:0,unknownStatus:0,byStatus:{},complete:0,incomplete:0,
       missingSnapEvidence:0};
     const seenTeams=new Set(),seenPlayers=new Set();
+    let teamOrdinal=0;
     for(const team of dw.FantasyRelevance.Teams) {
       const teamID=String(team.FantasyTeamID);
+      teamOrdinal++;
       assert(!seenTeams.has(teamID),'Duplicate team');seenTeams.add(teamID);
       const pool=[];
       for(const p of team.Players) {
@@ -149,14 +151,13 @@ function run(options={}) {
         stats.candidatePlayers++;
       }
       const maxMean=optimize(slots,pool,'mean'),maxActual=optimize(slots,pool,'actual');
-      const row={week,teamID,complete:maxMean.unfilled===0&&maxActual.unfilled===0,
+      const row={week,teamID,complete:maxMean.unfilled===0,
         target:maxActual.points,projected:maxMean.points,projectedP10:null,projectedP90:null,
         poolSize:pool.length,unfilledBefore:maxMean.unfilled};
       if(row.complete) {
         stats.complete++;
-        const norm=randomNormal((seed+week*4099+Number(teamID)*13)>>>0);
-        // Team IDs can be nonnumeric: deterministic ordinal fallback.
-        const u=uniform((seed+week*8191+stats.complete*37+1)>>>0);
+        const norm=randomNormal((seed+week*4099+teamOrdinal*13)>>>0);
+        const u=uniform((seed+week*8191+teamOrdinal*37+1)>>>0);
         const raw=[],part=[],oracle=[],out=[];
         for(let i=0;i<draws;i++) {
           const active=[],knownPlayed=[];
