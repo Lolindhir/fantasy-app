@@ -18,7 +18,7 @@
         <span class="stats-cell stats-desktop" role="columnheader" title="Expected wins from all-play">Exp. W</span>
         <button type="button" class="stats-sort stats-cell stats-desktop" role="columnheader" [attr.aria-sort]="ariaSort('luck')" (click)="sortBy('luck')" title="Wins above expectation">Luck</button>
         <span class="stats-cell stats-desktop" role="columnheader">All-Play</span>
-        <button *ngIf="vm.hasInjuryImpact" type="button" class="stats-sort stats-cell stats-impact" role="columnheader" [attr.aria-sort]="ariaSort('impact')" (click)="sortBy('impact')" title="Projected points lost to injured players">Injury Impact</button>
+        <button *ngIf="vm.hasInjuryImpact" type="button" class="stats-sort stats-cell stats-impact" role="columnheader" [attr.aria-sort]="ariaSort('impact')" (click)="sortBy('impact')" title="Average players per week whose absence cost points">Hurt</button>
         <span class="stats-chevron-col" aria-hidden="true"></span>
       </div>
 
@@ -32,8 +32,8 @@
           <span class="stats-cell stats-desktop" role="cell">{{ expectedWins(row.stats) }}</span>
           <span class="stats-cell stats-desktop stats-luck" role="cell" [ngClass]="'stats-luck--' + signClass(row.stats?.Luck)">{{ formatSigned(row.stats?.Luck) }}</span>
           <span class="stats-cell stats-desktop" role="cell">{{ row.stats ? formatAllPlay(row.stats) : '–' }}</span>
-          <span *ngIf="vm.hasInjuryImpact" class="stats-cell stats-impact" role="cell" [attr.title]="row.injury?.isLowerBound ? 'Lower bound: some injured players have no projection' : null">
-            {{ row.injury ? row.injury.totalDisplay : '–' }}
+          <span *ngIf="vm.hasInjuryImpact" class="stats-cell stats-impact" role="cell" [attr.title]="row.injury?.isLowerBound ? 'Some injured players have no projection' : null">
+            {{ row.injury ? row.injury.hurtDisplay : '–' }}
           </span>
           <button
             type="button"
@@ -45,71 +45,47 @@
         </div>
 
         <div class="stats-details" *ngIf="isExpanded(row)">
-          <dl class="stats-mobile-facts" *ngIf="row.stats as s">
-            <div><dt>Expected Wins</dt><dd>{{ expectedWins(s) }}</dd></div>
-            <div><dt>Luck</dt><dd [ngClass]="'stats-luck--' + signClass(s.Luck)">{{ formatSigned(s.Luck) }}</dd></div>
-            <div><dt>All-Play</dt><dd>{{ formatAllPlay(s) }}</dd></div>
+          <dl class="stats-facts">
+            <ng-container *ngIf="row.stats as s">
+              <div class="stats-fact--table"><dt>Expected Wins</dt><dd>{{ expectedWins(s) }}</dd></div>
+              <div class="stats-fact--table"><dt>Luck</dt><dd [ngClass]="'stats-luck--' + signClass(s.Luck)">{{ formatSigned(s.Luck) }}</dd></div>
+              <div class="stats-fact--table"><dt>All-Play</dt><dd>{{ formatAllPlay(s) }}</dd></div>
+            </ng-container>
+            <ng-container *ngIf="vm.hasInjuryImpact && row.injury as injury">
+              <div><dt>Hurt / Week</dt><dd>{{ injury.hurtDisplay }}</dd></div>
+              <div><dt>Points Lost</dt><dd>{{ injury.totalDisplay }}</dd></div>
+              <div><dt>Weeks Hit</dt><dd>{{ injury.weeksWithImpact }} of {{ injury.weeksComputed }}</dd></div>
+            </ng-container>
           </dl>
 
-          <ng-container *ngIf="vm.hasInjuryImpact">
-            <ng-container *ngIf="row.injury as injury; else noInjury">
-              <h3 class="injury-heading">Injury Impact</h3>
-              <p class="injury-summary">
-                <strong>{{ injury.totalDisplay }} pts</strong> in total
-                <span class="injury-dot" aria-hidden="true">·</span>
-                {{ injury.perWeekDisplay }} per week
-                <span class="injury-dot" aria-hidden="true">·</span>
-                {{ injury.weeksWithImpact }} of {{ injury.weeksComputed }} weeks affected
-                <ng-container *ngIf="injury.peakDisplay"><span class="injury-dot" aria-hidden="true">·</span>Peak {{ injury.peakDisplay }}</ng-container>
-              </p>
-
-              <div class="injury-bars" role="group" aria-label="Injury Impact per week">
-                <button
-                  type="button"
-                  *ngFor="let bar of injury.bars"
-                  class="injury-bar"
-                  [class.injury-bar--lower]="bar.lowerBound"
-                  [class.injury-bar--unknown]="bar.unknownEvidence"
-                  [class.injury-bar--na]="bar.unavailable"
-                  [class.injury-bar--active]="activeBar?.week === bar.week"
-                  [attr.aria-label]="bar.label"
-                  (click)="pickBar(bar)"
-                  (mouseenter)="pickBar(bar)"
-                >
-                  <span class="injury-bar__track"><span class="injury-bar__fill" [style.height.%]="bar.heightPercent"></span></span>
-                  <span class="injury-bar__week">{{ bar.week }}</span>
-                </button>
-              </div>
-              <p class="injury-caption" aria-live="polite">{{ activeBar ? activeBar.label : 'Select a week for its value.' }}</p>
-              <ul class="injury-legend">
-                <li><span class="injury-key injury-key--lower"></span>Lower bound (≥)</li>
-                <li><span class="injury-key injury-key--unknown"></span>Some availability unknown</li>
-                <li><span class="injury-key injury-key--na"></span>Not available</li>
-              </ul>
-
-              <ng-container *ngIf="injury.topPlayers.length > 0">
-                <h4 class="injury-subheading">Players who cost the most</h4>
-                <ul class="injury-players">
-                  <li *ngFor="let player of injury.topPlayers" class="injury-player">
+          <ng-container *ngIf="vm.hasInjuryImpact && row.injury as injury">
+            <ng-container *ngIf="injury.topPlayers.length > 0">
+              <h4 class="injury-subheading">Most hurt players</h4>
+              <ul class="injury-players">
+                <li *ngFor="let player of injury.topPlayers" class="injury-player">
+                  <span class="injury-player__photo-wrap">
                     <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
                     <span *ngIf="!player.picture" class="injury-player__photo injury-player__photo--empty" aria-hidden="true"></span>
+                    <img *ngIf="nflLogo(vm, player.team) as logo" class="injury-player__nfl-logo" [src]="logo" [alt]="player.team" />
+                  </span>
+                  <span class="injury-player__body">
                     <span class="injury-player__name">{{ player.name }}</span>
-                    <span *ngIf="player.position" class="position-chip" [ngStyle]="player.position | positionStyle">{{ player.position }}</span>
-                    <span class="injury-player__value">{{ player.impactDisplay }} pts<small> · {{ player.weeks }} {{ player.weeks === 1 ? 'week' : 'weeks' }}</small></span>
-                  </li>
-                </ul>
-                <p class="injury-note">Each value is what the lineup would have gained with that player healthy. Values do not add up.</p>
-              </ng-container>
+                    <span class="injury-player__meta">
+                      <span *ngIf="player.position" class="position-chip" [ngStyle]="player.position | positionStyle">{{ player.position }}</span>
+                      <span class="injury-player__value">{{ player.impactDisplay }}<small> pts · {{ player.weeks }}w</small></span>
+                    </span>
+                  </span>
+                </li>
+              </ul>
             </ng-container>
-            <ng-template #noInjury><p class="injury-note">No Injury Impact for this team in this season.</p></ng-template>
           </ng-container>
+          <p class="injury-note" *ngIf="vm.hasInjuryImpact && !row.injury">No injury data for this team in this season.</p>
         </div>
       </ng-container>
     </div>
 
     <p class="season-stats__note" *ngIf="vm.hasInjuryImpact">
-      <strong>Injury Impact</strong> is the projected points a team lost because of injured players in league-scored weeks.
-      <strong>≥</strong> marks a lower bound.
+      <strong>Hurt</strong> is the average number of injured players per week whose absence cost the team points.
       <a routerLink="/handbook" [queryParams]="{ section: 'Injury_Impact' }">How is this calculated?</a>
     </p>
   </section>
