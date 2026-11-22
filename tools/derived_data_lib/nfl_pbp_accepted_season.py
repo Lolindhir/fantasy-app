@@ -11,8 +11,9 @@ import csv
 import gzip
 import hashlib
 import json
+import os
 import tempfile
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -42,7 +43,7 @@ def _manifest(root: Path, season: int) -> dict[str, Any] | None:
     manifest = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(manifest, dict):
         raise ValueError(f"Invalid PBP original Source manifest {season}")
-    sha = manifest.get("UpstreamSHA256")
+    sha = manifest.get("OriginalSHA256") or manifest.get("UpstreamSHA256")
     if (manifest.get("SchemaVersion") != 1
             or manifest.get("Status") != "accepted-original-byte-identity"
             or manifest.get("Provider") != "nflverse"
@@ -59,6 +60,12 @@ def _manifest(root: Path, season: int) -> dict[str, Any] | None:
     )
     if manifest.get("ArchiveURL") != expected_url:
         raise ValueError(f"Unsafe/mismatched accepted PBP archive URL {season}")
+    if manifest.get("UpstreamSHA256") is None and (
+        manifest.get("OriginalSHA256") != sha
+        or manifest.get("SourceDigestAuthority") != "self-sha256-official-asset-no-digest"
+        or type(manifest.get("SourceAssetID")) is not int
+    ):
+        raise ValueError(f"Unverified historical self-hash PBP archive {season}")
     return manifest
 
 
@@ -69,7 +76,7 @@ def _verified_rows(
     with original.open("rb") as handle:
         actual_sha = hashlib.file_digest(handle, "sha256").hexdigest()
     if (original.stat().st_size != manifest["CompressedBytes"]
-            or actual_sha != manifest["UpstreamSHA256"]):
+            or actual_sha != (manifest.get("OriginalSHA256") or manifest.get("UpstreamSHA256"))):
         raise ValueError(f"Original PBP archive does not match accepted Source bytes: {manifest['Season']}")
     by_game: dict[str, list[dict[str, str]]] = defaultdict(list)
     seen_ids: set[str] = set()
@@ -113,27 +120,49 @@ class AcceptedPBPSeasons:
     ) -> None:
         self.root = root
         self.local_assets = dict(local_assets or {})
-        self._cache: dict[int, tuple[dict[str, list[dict[str, str]]], str] | None] = {}
+        # Bound live unpacked PBP season dictionaries to one year.
+        self._cache: OrderedDict[int, tuple[dict[str, list[dict[str, str]]], str] | None] = OrderedDict()
 
     def get(
         self, season: int, games: Mapping[str, Mapping[str, Any]],
     ) -> tuple[dict[str, list[dict[str, str]]], str] | None:
         if season in self._cache:
+            self._cache.move_to_end(season)
             return self._cache[season]
         manifest = _manifest(self.root, season)
         if manifest is None:
             if season in self.local_assets:
                 raise ValueError(f"Local PBP asset without accepted manifest: {season}")
             self._cache[season] = None
+            if len(self._cache) > 1:
+                self._cache.popitem(last=False)
             return None
+        sha = manifest.get("OriginalSHA256") or manifest.get("UpstreamSHA256")
         original = self.local_assets.get(season)
         if original is not None:
             payload = _verified_rows(original, manifest, games)
         else:
-            with tempfile.TemporaryDirectory(prefix=f"nfl-pbp-derived-{season}-") as tmp:
-                original = Path(tmp) / f"play_by_play_{season}.csv.gz"
-                download(manifest["ArchiveURL"], original)
-                payload = _verified_rows(original, manifest, games)
-        evidence = (payload, manifest["UpstreamSHA256"])
+            cache_root = os.environ.get("NFL_PBP_ARCHIVE_CACHE_DIR")
+            if cache_root:
+                cached = Path(cache_root) / str(season) / f"{sha}.csv.gz"
+                if cached.is_file():
+                    payload = _verified_rows(cached, manifest, games)
+                else:
+                    cached.parent.mkdir(parents=True, exist_ok=True)
+                    # A failed download/validation never poisons the durable cache.
+                    with tempfile.TemporaryDirectory(prefix="pbp-", dir=cached.parent) as tmp:
+                        temporary = Path(tmp) / "original.csv.gz"
+                        download(manifest["ArchiveURL"], temporary)
+                        payload = _verified_rows(temporary, manifest, games)
+                        os.replace(temporary, cached)
+            else:
+                with tempfile.TemporaryDirectory(prefix=f"nfl-pbp-derived-{season}-") as tmp:
+                    original = Path(tmp) / f"play_by_play_{season}.csv.gz"
+                    download(manifest["ArchiveURL"], original)
+                    payload = _verified_rows(original, manifest, games)
+        evidence = (payload, sha)
         self._cache[season] = evidence
+        self._cache.move_to_end(season)
+        if len(self._cache) > 1:
+            self._cache.popitem(last=False)
         return evidence
