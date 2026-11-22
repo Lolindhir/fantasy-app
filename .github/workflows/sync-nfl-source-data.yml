@@ -9,6 +9,7 @@ on:
       - "tools/nfl_source_data.py"
       - "tools/nfl_source_data_lib/**"
       - "tools/nfl_pbp_source_auto.py"
+      - "tools/nfl_participation_source.py"
       - "tools/nfl_pbp_source_history.py"
       - "tools/derived_data_lib/nfl_pbp_accepted_season.py"
       - "tools/nfl_game_details_materialize.py"
@@ -1016,6 +1017,25 @@ jobs:
             # scoped diagnostics remain execution output and never overwrite it.
             if [[ "$materialization_scope" == "full" ]]; then
               python tools/nfl_source_data.py audit | tee -a "$materialize_log"
+            fi
+
+            # Issue #1612 (CP4): compact nflverse pbp_participation Source projection
+            # (positive on-field evidence only, no raw retention). Runs only on the
+            # unfiltered full Source sync, fail-soft: a blocked season never blocks
+            # the independent canonical NFL Source publication. Accepted seasons
+            # are frozen; an upstream revision is only reported.
+            if [[ "$materialization_scope" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" ]]; then
+              participation_log="$(mktemp)"
+              set +e
+              python3 tools/nfl_participation_source.py --repo-root . 2>&1 | tee "$participation_log"
+              participation_status=${PIPESTATUS[0]}
+              set -e
+              if (( participation_status != 0 )); then
+                echo "::warning::NFL participation projection blocked (exit $participation_status); no new participation season accepted."
+                echo "- NFL participation projection: BLOCKED (exit $participation_status)" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "- NFL participation projection: $(tail -n 1 "$participation_log")" >> "$GITHUB_STEP_SUMMARY"
+              fi
             fi
             rm -f "$failure_diagnostic_file"
             assert_source_data_only

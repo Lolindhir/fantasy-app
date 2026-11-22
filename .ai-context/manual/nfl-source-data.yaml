@@ -1001,6 +1001,32 @@ combine:
       Upstream-Draftfelder bleiben Provenienz. Die normalisierte Draft-
       Verknuepfung stammt aus dem kanonischen Draft-Dataset.
 
+
+participationContract:
+  issue: 1612
+  status: active-after-merge-of-cp4
+  dataset: nflverse.participation
+  output: data-source/nfl/participation/<season>.json
+  implementation: tools/nfl_participation_source.py
+  upstream: nflverse-data release pbp_participation, files pbp_participation_<season>.csv (2016 onward; the current season is absent until FTN publishes after the postseason)
+  rule: >
+    Compact positive-only on-field evidence per season, GameID and CanonicalPlayerID. A player is observed in a play
+    when its GSIS id is in offense_players or defense_players (real GSIS in all seasons; players_on_play is numeric
+    before 2023 and is not used). Plays counts distinct plays. Absence is never evidence of not playing. The upstream
+    file has no play type, so no_play handling belongs to the consumer (threshold decision in the availability product).
+  retention: >
+    No raw CSV and no Release asset (CC BY-SA 4.0 ShareAlike risk, 20-50 MB per season). Provenance (asset id, SHA-256,
+    size, digest source, license, attribution) lives inside the season file. Attribution: FTN Data via nflverse (2023+),
+    NFL NextGenStats via nflverse (up to 2022). Nothing is published to public/data.
+  identity: GSIS to CanonicalPlayerID through data-source/nfl/identities/players.json (IDs plus aliases); ambiguous or unresolved ids are excluded and counted in Audit.
+  failClosed:
+    - missing columns, empty file, games not in the canonical schedule, size/SHA mismatch against the official asset
+  frozen: Accepted seasons are never overwritten; a differing upstream digest or size is reported as a review notice.
+  operation: >
+    Runs in the canonical phase of the existing unfiltered full NFL Source sync (fail-soft, at most three new seasons per run,
+    dynamic season discovery up to the current Source season). No new workflow, writer, permission or schedule; the output
+    prefix is inside the existing data-source write set. Rollback: remove the step and the module; delete the directory.
+
 publication:
   rawFirst: true
   failClosed: true

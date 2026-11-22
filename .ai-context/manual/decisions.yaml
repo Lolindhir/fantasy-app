@@ -3316,3 +3316,24 @@ decisions:
       negative:
         - On two completed seasons the backtest is marginally worse than k=3; a later data point may justify another version.
         - Documents of all seasons are rewritten once by the next full run (model switch).
+
+  - id: ADR-095
+    title: nflverse participation is a compact positive-only Source projection, retained without raw bytes
+    status: accepted
+    amends: [ADR-092]
+    context: >-
+      Issue #1612: PFR snap counts miss identity-gapped players; nflverse pbp_participation (GSIS, 2016 onward) independently shows on-field
+      presence (42 of 64 unknown player-games in 2016 to 2025 confirmed, research/nfl-player-availability/2026). The file is CC BY-SA 4.0 and
+      20-50 MB per season, and its absence says nothing about not playing.
+    decision: >-
+      Robert approved on 2026-11-22 (Issue #1612, variant A). The existing full NFL Source sync projects each released season into
+      data-source/nfl/participation/<season>.json (GameID to CanonicalPlayerID to distinct play count, provenance and attribution inside), keeps no raw
+      CSV or Release asset, publishes nothing to public/data and freezes accepted seasons. Absence is never evidence. Changing the availability
+      product to use it is a separate gated step (state diff first). Contract: nfl-source-data.yaml participationContract.
+    consequences:
+      positive:
+        - Independent positive evidence for the availability product at roughly 1 MB per season.
+      negative:
+        - Source plays include no_play entries (no play type), so the consumer needs a documented threshold.
+        - The ShareAlike question for derived facts stays open (documented, not decided).
+
