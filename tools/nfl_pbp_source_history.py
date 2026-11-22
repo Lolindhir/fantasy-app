@@ -86,6 +86,13 @@ def source_seasons(root: Path) -> list[int]:
 def _accepted_sha(manifest: Mapping[str, Any], year: int) -> str:
     """Legacy manifests have provider SHA; a digestless asset has self-hash."""
     value = manifest.get("OriginalSHA256") or manifest.get("UpstreamSHA256")
+    provider_sha = manifest.get("UpstreamSHA256")
+    if provider_sha is not None and (
+        not isinstance(provider_sha, str)
+        or (manifest.get("OriginalSHA256") is not None
+            and manifest["OriginalSHA256"] != provider_sha)
+    ):
+        raise ValueError(f"Contradictory historical PBP digest provenance: {year}")
     if (manifest.get("SchemaVersion") != 1
             or manifest.get("Status") != "accepted-original-byte-identity"
             or manifest.get("Season") != year or not isinstance(value, str)
