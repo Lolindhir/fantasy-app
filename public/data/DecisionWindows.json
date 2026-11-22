@@ -719,7 +719,7 @@
         {
           "FantasyTeamID": 6,
           "AffectedRosteredPlayerCount": 14,
-          "AffectedStarterCount": 8,
+          "AffectedStarterCount": 9,
           "Players": [
             {
               "PlayerID": "10859",
@@ -767,7 +767,7 @@
               "PlayerID": "3257",
               "NFLTeamID": "BAL",
               "GameID": "20261122_BAL@CAR",
-              "IsStarter": false
+              "IsStarter": true
             },
             {
               "PlayerID": "6786",
@@ -3370,7 +3370,7 @@
       "GameID": "20261122_BAL@CAR",
       "DecisionWindowID": "2026-11-22T18:00:00Z",
       "StartsAtUtc": "2026-11-22T18:00:00Z",
-      "IsStarter": false
+      "IsStarter": true
     },
     {
       "FantasyTeamID": 6,
@@ -3586,18 +3586,11 @@
     },
     {
       "FantasyTeamID": 6,
-      "State": "action-required",
+      "State": "ready",
       "ExpectedStarterCount": 13,
-      "StarterCount": 12,
-      "OpenStarterSlots": 1,
-      "Issues": [
-        {
-          "Code": "OPEN_STARTER_SLOT",
-          "State": "action-required",
-          "PlayerID": null,
-          "Count": 1
-        }
-      ]
+      "StarterCount": 13,
+      "OpenStarterSlots": 0,
+      "Issues": []
     }
   ],
   "FantasyRelevance": {
@@ -9123,14 +9116,14 @@
       {
         "FantasyTeamID": "6",
         "ActiveRosterPlayerCount": 30,
-        "StarterCount": 12,
-        "BenchCount": 18,
+        "StarterCount": 13,
+        "BenchCount": 17,
         "IRCount": 5,
         "TaxiCount": 0,
-        "UnlockedStarterCount": 10,
+        "UnlockedStarterCount": 11,
         "LockedActiveStarterCount": 0,
         "CompletedStarterCount": 2,
-        "EligibleBenchCandidateCount": 7,
+        "EligibleBenchCandidateCount": 6,
         "HasRemainingScoringPath": true,
         "Slots": [
           {
@@ -9157,20 +9150,19 @@
             "SlotType": "QB",
             "SlotOrdinal": 2,
             "SlotIndex": 1,
-            "CurrentStarterID": null,
+            "CurrentStarterID": "3257",
             "State": "unlocked",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
-            "ScoringAvailability": null,
-            "Repairability": {
-              "ProblemCode": "OPEN_STARTER_SLOT",
-              "State": "repairable",
-              "Path": "internal-roster",
-              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 17,
-              "ExternalCandidateCount": 0
-            }
+            "GameID": "20261122_BAL@CAR",
+            "DecisionWindowID": "2026-11-22T18:00:00Z",
+            "StartsAtUtc": "2026-11-22T18:00:00Z",
+            "ScoringAvailability": {
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-11-04T20:13:00Z",
+              "ObservedAtUtc": "2026-11-04T20:13:00Z"
+            },
+            "Repairability": null
           },
           {
             "SlotID": "RB-1",
@@ -9597,31 +9589,6 @@
             }
           },
           {
-            "PlayerID": "3257",
-            "Placement": "bench",
-            "Position": "QB",
-            "GameState": "unlocked",
-            "GameID": "20261122_BAL@CAR",
-            "DecisionWindowID": "2026-11-22T18:00:00Z",
-            "StartsAtUtc": "2026-11-22T18:00:00Z",
-            "LineupSlotID": null,
-            "LineupSlotType": null,
-            "EligibleUnlockedSlotIDs": [
-              "QB-1",
-              "QB-2"
-            ],
-            "IsBenchCandidate": true,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": true,
-            "ScoringAvailability": {
-              "State": "unknown",
-              "ProviderStatus": null,
-              "Source": "ESPN",
-              "FirstObservedAtUtc": null,
-              "ObservedAtUtc": null
-            }
-          },
-          {
             "PlayerID": "421",
             "Placement": "bench",
             "Position": "QB",
@@ -10033,6 +10000,28 @@
             }
           },
           {
+            "PlayerID": "3257",
+            "Placement": "starter",
+            "Position": "QB",
+            "GameState": "unlocked",
+            "GameID": "20261122_BAL@CAR",
+            "DecisionWindowID": "2026-11-22T18:00:00Z",
+            "StartsAtUtc": "2026-11-22T18:00:00Z",
+            "LineupSlotID": "QB-2",
+            "LineupSlotType": "QB",
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": true,
+            "HasAlternativePath": false,
+            "ScoringAvailability": {
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-11-04T20:13:00Z",
+              "ObservedAtUtc": "2026-11-04T20:13:00Z"
+            }
+          },
+          {
             "PlayerID": "5892",
             "Placement": "starter",
             "Position": "RB",
@@ -10218,6 +10207,15 @@
       "Source": "ESPN",
       "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
       "ObservedAtUtc": "2026-10-06T21:33:37Z"
+    },
+    {
+      "PlayerID": "3257",
+      "ESPNPlayerID": "2578570",
+      "State": "available",
+      "ProviderStatus": "ACTIVE",
+      "Source": "ESPN",
+      "FirstObservedAtUtc": "2026-11-04T20:13:00Z",
+      "ObservedAtUtc": "2026-11-04T20:13:00Z"
     },
     {
       "PlayerID": "3451",
