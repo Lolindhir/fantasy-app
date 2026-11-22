@@ -96,10 +96,10 @@ state:
       final game, not played, no report row, roster status ACT or INA (available, not dressed or not used). Replaces not-played-unexplained for
       these statuses; not-played-unexplained remains only for other roster statuses without a report or reserve signal and is practically unreachable.
     Available: >
-      Separate field per record, yes | no | unknown. no: roster status RES or PUP, or an observed game status Out or Doubtful. yes: roster status ACT or INA
+      Separate field per record, yes | no | unknown | bye. bye: every record with State bye (Issue #1616 follow-up, Robert 2026-11-22; explicit not-applicable value instead of null or unknown). no: roster status RES or PUP, or an observed game status Out or Doubtful. yes: roster status ACT or INA
       without such a status. unknown: any other roster status or no roster row (pre-2016 report weeks, for example). A Questionable or blank game status
       does not make a player unavailable. Available is evidence of availability, independent of Played: Out and played stays Available no, Played true.
-      A bye or cancelled week carries the same evidence rules; consumers exclude those weeks through Participation (no-game, unknown).
+      A cancelled week carries the same evidence rules and is excluded through Participation (unknown); a bye week is always Available bye.
     Played: >
       true | false | null, from Participation: played is true, not-played is false, unknown and no-game are null. Missing evidence is null, never false.
   v2AdditionsIssue1616:
@@ -114,8 +114,8 @@ state:
       status in BYE_CARRY_STATUSES (ACT, INA, RES, PUP, DEV, SUS, EXE; confidence: attached-to-team statuses) and a position in the cut (RES and PUP
       of every position, as in the population), and who has no roster row in the bye week. The team is the one of that preceding roster week, so a
       team change around the bye keeps the pre-bye team. CUT, RET, TRD and similar statuses end the attachment and never produce a bye record.
-    values: State bye, Available unknown (no roster row, never inferred), Played null, Participation {no-game, bye}, Roster null, GameID null.
-    noteOnIssueText: Issue #1616 names Available null for these records; the existing three-valued field is kept (unknown) so that a consumer handles missing roster rows in one way.
+    values: State bye, Available bye, Played null, Participation {no-game, bye}, Roster null, GameID null.
+    noteOnIssueText: Issue #1616 named Available null; Robert chose the explicit value bye on 2026-11-22 so that a bye is never mistaken for missing evidence (null, unknown). It also applies to a bye week that has a roster row.
     postseason: A postseason week without a game of the team never produces a record.
     cancelled: The hand-maintained cancelled game (2022 week 17 BUF and CIN) keeps Participation unknown with evidence cancelled-game.
   note: State is a derivation for display and for downstream consumers; the evidence fields are the facts.

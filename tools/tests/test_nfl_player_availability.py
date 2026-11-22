@@ -282,7 +282,7 @@ class HealthyWeekTests(unittest.TestCase):
         p = player(1)
         doc = build([report(p, 2, "Questionable")], {2: [roster(p, "AAA", position="QB")]})
         rec = one(doc, 2, p)
-        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("bye", "yes", None))
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("bye", "bye", None))
 
     def test_reserve_without_report_is_unavailable(self):
         p = player(1)
@@ -352,7 +352,7 @@ class HealthyWeekTests(unittest.TestCase):
         expected.add((2, ids[0]))
         self.assertEqual(set(keys), expected)
         for rec in doc["Records"]:
-            self.assertIn(rec["Available"], ("yes", "no", "unknown"))
+            self.assertIn(rec["Available"], ("yes", "no", "unknown", "bye"))
             self.assertIn("Played", rec)
 
     def test_population_is_documented_in_quality(self):
@@ -406,7 +406,7 @@ class NonActiveAndByeTests(unittest.TestCase):
         doc = build([], {1: [roster(p, "AAA", position="WR")], 3: [roster(p, "AAA", position="WR")]},
                     {1: snaps(self._g(1), played=[p]), 3: snaps(self._g(3), played=[p])})
         rec = one(doc, 2, p)
-        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("bye", "unknown", None))
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("bye", "bye", None))
         self.assertEqual(rec["Participation"], {"State": "no-game", "Evidence": "bye"})
         self.assertIsNone(rec["GameID"])
         self.assertIsNone(rec["Roster"])
@@ -478,7 +478,7 @@ class PersistedStateGuard(unittest.TestCase):
             recorded = {(r["Week"], r["CanonicalPlayerID"]) for r in document["Records"]}
             self.assertEqual(len(recorded), len(document["Records"]), f"{season}: duplicate player-week")
             for record in document["Records"]:
-                self.assertIn(record["Available"], ("yes", "no", "unknown"))
+                self.assertIn(record["Available"], ("yes", "no", "unknown", "bye"))
                 self.assertIn(record["Played"], (True, False, None))
             if not population["RosterWeeksIncluded"]:
                 continue
