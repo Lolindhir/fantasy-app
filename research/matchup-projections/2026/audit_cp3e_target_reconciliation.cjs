@@ -78,7 +78,8 @@ function reconcileWeek(season, week, formation) {
     const adjusted = optimize(formation, candidates.filter(p => p.revised), 'actual');
     const raw = optimize(formation, candidates, 'actual');
     const target = official.PotentialPoints;
-    const aligned = x => x.unfilled === 0 && Math.abs(x.points - target) <= TARGET_TOLERANCE;
+    const aligned = x => (official.UnfilledSlotIDs?.length ?? 0) === 0 &&
+      x.unfilled === 0 && Math.abs(x.points - target) <= TARGET_TOLERANCE;
     if (adjusted.points > raw.points + 1e-8 || original.points > adjusted.points + 1e-8) {
       throw Error('Subset monotonicity violated ' + rosterID);
     }
