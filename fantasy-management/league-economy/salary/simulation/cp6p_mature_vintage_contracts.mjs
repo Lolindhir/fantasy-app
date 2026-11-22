@@ -785,7 +785,7 @@ function simulateMature(csv,{seeds=[11,29,47],slopes=[.1,.25],rookieGuarantees=[
    veteranSalary:'100/110/120 vs 100/125/150, not compound',
    veteranGuarantees:'100/50/25 in both groups',
    vintages:'active 2027 old rookies follow NFL experience 1–3; veterans assigned deterministic staggered 2025–27 vintages',
-   2027Anchor:'annual 2027 player cost exactly matches CP6k post-draft ownership, historic signing prices synthesized by inverting contract factor',
+   anchor2027:'annual 2027 player cost exactly matches CP6k post-draft ownership, historic signing prices synthesized by inverting contract factor',
    marketCap:'CP6k top120/6, rookie salary contaminates pure market value; market shocks 0,-10,-20% annually from 2028',
    marketCapFeedback:'prior season shocked realized cap drives next year minimum and rookie initial contract salary',
    initialPriorDead:'none — no invented pre-2027 cut events; 2027 roster not built using contract expiry signals',
