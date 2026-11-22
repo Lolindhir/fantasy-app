@@ -1,4 +1,4 @@
-"""NFL Player Availability (nfl-player-availability-v1): per player-week evidence, never a medical claim.
+"""NFL Player Availability (nfl-player-availability-v2): per player-week evidence, never a medical claim.
 
 Pure, deterministic derivation. Inputs are only already-persisted facts of one season:
 
@@ -19,14 +19,15 @@ from typing import Any, Iterable, Mapping
 from derived_data_lib.nfl_franchise_aliases import franchise_equal
 
 PRODUCT = "nfl-player-availability"
-PRODUCT_VERSION = "nfl-player-availability-v1"
-SCHEMA_VERSION = 1
+PRODUCT_VERSION = "nfl-player-availability-v2"
+SCHEMA_VERSION = 2
 
 STATES = (
     "played",
     "not-played-reported",
     "not-played-reserve",
     "not-played-unexplained",
+    "healthy-scratch",
     "bye",
     "unknown",
 )
@@ -35,6 +36,15 @@ STATES = (
 # meaning is documented with confidence (RES = reserve list incl. injured reserve, PUP = physically unable to
 # perform). INA (game-day inactive) alone is intentionally not a signal: it is dominated by healthy scratches.
 RESERVE_STATUSES = frozenset({"RES", "PUP"})
+
+# v2 population: every roster week of a player on the game-day roster (ACT active, INA game-day inactive) in a season whose
+# roster status column exists (data-driven, from 2016), restricted to these positions (Robert, Issue #1610). Report weeks and
+# RES/PUP weeks of every position stay in the population in every season. ``None`` for ``healthy_positions`` means all positions.
+ROSTER_WEEK_STATUSES = frozenset({"ACT", "INA"})
+FANTASY_POSITIONS = frozenset({"QB", "RB", "WR", "TE", "K"})
+
+# Report game statuses that make a player unavailable for the game.
+UNAVAILABLE_REPORT_STATUSES = frozenset({"Out", "Doubtful"})
 
 # Cancelled games that are absent from the canonical schedule (hand-maintained NFL fact, see nfl-injuries.yaml).
 CANCELLED_TEAM_WEEKS: dict[int, frozenset[tuple[int, str]]] = {
@@ -87,6 +97,17 @@ def _report_entries(player_week: Mapping[str, Any]) -> list[dict[str, Any]]:
     return entries
 
 
+def _available(roster_status: str | None, report: list[dict[str, Any]] | None) -> str:
+    """Available yes | no | unknown from roster status and the observed game status; never inferred from a missing row."""
+    if roster_status in RESERVE_STATUSES:
+        return "no"
+    if any(entry["Game"] in UNAVAILABLE_REPORT_STATUSES for entry in report or ()):
+        return "no"
+    if roster_status in ROSTER_WEEK_STATUSES:
+        return "yes"
+    return "unknown"
+
+
 def _partitions(documents: Iterable[Mapping[str, Any]] | Mapping[int, Mapping[str, Any]]) -> dict[int, Mapping[str, Any]]:
     if isinstance(documents, Mapping):
         return dict(documents)
@@ -103,6 +124,7 @@ def derive_nfl_player_availability(
     schedule: Mapping[str, Any],
     finality: Mapping[str, Any],
     player_pfr_tokens: Mapping[str, Iterable[str]] | None = None,
+    healthy_positions: frozenset[str] | None = FANTASY_POSITIONS,
 ) -> dict[str, Any]:
     """Return the season document. ``injuries`` may be None when no report product exists for the season.
 
@@ -195,9 +217,13 @@ def derive_nfl_player_availability(
             roster_status_available = roster_status_available or row.get("Status") is not None
 
     keys = set(reports)
+    healthy_weeks = 0
     for (week, player), row in roster_by_key.items():
         if row.get("Status") in RESERVE_STATUSES:
             keys.add((week, player))
+        elif row.get("Status") in ROSTER_WEEK_STATUSES and (healthy_positions is None or row.get("Position") in healthy_positions):
+            keys.add((week, player))
+            healthy_weeks += 1
 
     cancelled = CANCELLED_TEAM_WEEKS.get(season, frozenset())
     records: list[dict[str, Any]] = []
@@ -228,7 +254,10 @@ def derive_nfl_player_availability(
                 if part == "played":
                     state = "played"
                 elif part == "not-played":
-                    state = "not-played-reported" if report else "not-played-reserve" if reserve else "not-played-unexplained"
+                    state = (
+                        "not-played-reported" if report else "not-played-reserve" if reserve
+                        else "healthy-scratch" if roster_status in ROSTER_WEEK_STATUSES else "not-played-unexplained"
+                    )
                 elif reserve and evidence == "snap-counts-identity-gap":
                     # A player on the NFL reserve list cannot have played; the snap rows of his team only miss an identity.
                     state = "not-played-reported" if report else "not-played-reserve"
@@ -244,6 +273,7 @@ def derive_nfl_player_availability(
                 part, evidence, state = "no-game", "bye", "bye"
             else:
                 continue
+        report_entries = _report_entries(report) if report else None
         records.append({
             "Week": week,
             "CanonicalPlayerID": player,
@@ -251,8 +281,10 @@ def derive_nfl_player_availability(
             "GameType": game_type,
             "GameID": game_id,
             "State": state,
+            "Available": _available(roster_status, report_entries),
+            "Played": True if part == "played" else False if part == "not-played" else None,
             "Participation": {"State": part, "Evidence": evidence},
-            "Report": _report_entries(report) if report else None,
+            "Report": report_entries,
             "Roster": None if roster is None else {"Status": roster_status, "Code": roster.get("StatusDescription")},
         })
 
@@ -288,6 +320,13 @@ def derive_nfl_player_availability(
             "StateCounts": {state: state_counts.get(state, 0) for state in STATES},
             "ReportObservationsWithoutIdentity": without_identity,
             "WeekCoverage": coverage,
+            "Population": {
+                "RosterWeeksIncluded": roster_status_available,
+                "RosterWeekStatuses": sorted(ROSTER_WEEK_STATUSES) if roster_status_available else [],
+                "Positions": None if healthy_positions is None else sorted(healthy_positions),
+                "Rule": "report-or-reserve-weeks-of-all-positions-plus-roster-weeks-when-roster-status-exists" if roster_status_available
+                else "report-weeks-only-no-roster-status",
+            },
             "MissingEvidenceMeaning": "unknown-not-healthy-or-available",
         },
         "Records": records,

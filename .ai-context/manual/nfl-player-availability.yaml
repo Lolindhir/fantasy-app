@@ -1,9 +1,10 @@
 schemaVersion: 1
-status: active-product-v1
+status: active-product-v2
 trackingIssue: 1590
+v2TrackingIssue: 1610
 architectureDecision: ADR-092
 purpose: >
-  Global, league-independent Shared Derived product NFL Player Availability (nfl-player-availability-v1): per player and week the
+  Global, league-independent Shared Derived product NFL Player Availability (nfl-player-availability-v2, v1 until the first regeneration): per player and week the
   separate evidence for an observed injury report, the NFL roster status, participation and the game/bye situation, plus a documented
   derived State. It is the availability layer for the player-detail injury history and for Fantasy Injury Impact (Issue #1584).
   It makes no medical, onset, return-date, games-missed, probability or pre-kickoff claim.
@@ -27,7 +28,7 @@ identity:
 
 inputs:
   - data-derived/nfl-injuries/<season>.json (nfl-injuries-v1, never re-derived from Canonical)
-  - data-source/nfl/weekly-rosters/<season>/<week>.json (Status, StatusDescription, Team, GameType)
+  - data-source/nfl/weekly-rosters/<season>/<week>.json (Status, StatusDescription, Team, GameType, Position)
   - data-source/nfl/snap-counts/<season>/<week>.json (from 2013)
   - data-source/nfl/player-stats/<season>/<week>.json (from 1999, used as participation fallback)
   - data-source/nfl/schedules/<season>.json and game-finality/<season>.json
@@ -37,10 +38,19 @@ inputRules:
 
 population:
   rule: >
-    A player-week is recorded when the player has an observed report row (any status) OR the NFL roster status is RES or PUP.
-    INA (game-day inactive) alone is deliberately not a signal: it is dominated by healthy scratches and would multiply the size.
-    A postseason week in which the team has no game produces no record (it is not a bye).
-  sizeMeasured: about 3 to 4 MB per season from 2016 (roster status exists), about 1.5 MB before; about 44 MB for 2009 to 2026.
+    v2 (Issue #1610, Robert 2026-11-22): a player-week is recorded when (a) the player has an observed report row (any status), OR
+    (b) the NFL roster status is RES or PUP, OR (c) in a season whose roster status column exists (data-driven, from 2016) the roster status is
+    ACT or INA and the roster position is in the position cut. Report and reserve weeks of every position stay in every season. The position cut
+    is QB, RB, WR, TE, K (FANTASY_POSITIONS, a documented product policy; the function parameter healthy_positions=None means all positions).
+    Other roster statuses (DEV, CUT, RET and so on) bring a healthy week into the population only through a report or reserve signal.
+    Seasons without roster status (before 2016) keep the v1 population (report weeks only); the coverage is stated in Quality.Population
+    (RosterWeeksIncluded false). A postseason week in which the team has no game produces no record (it is not a bye).
+    The denominator is therefore explicit: a consumer never derives healthy or available from a missing record within the cut; a missing record
+    means the player was not on the game-day roster of that week, or is outside the position cut, or the season has no roster status.
+  sizeMeasured: >
+    v1: about 3 to 4 MB per season from 2016, about 44 MB for 2009 to 2026. v2 with the fantasy-position cut: about 5.5 to 6 MB per season, about 71 MB in total
+    (about 1.6 times v1). All positions would have measured about 10 to 11 MB per season and about 121 MB (2.7 times) and was not chosen.
+    Healthy scratches measured per season from 2016: about 1,100 to 1,600 (fantasy positions) against about 2,600 to 3,800 (all positions).
 
 evidenceFields:
   Report: >
@@ -74,6 +84,17 @@ state:
     not-played-unexplained: final game, not played, no report row, no reserve status. Reachable only through a future wider population; v1 population cannot produce it.
     bye: a regular-season week without a game of the team (a report or reserve row exists for that week).
     unknown: missing evidence (see participation unknown). Never healthy, never available.
+  v2Additions:
+    healthy-scratch: >
+      final game, not played, no report row, roster status ACT or INA (available, not dressed or not used). Replaces not-played-unexplained for
+      these statuses; not-played-unexplained remains only for other roster statuses without a report or reserve signal and is practically unreachable.
+    Available: >
+      Separate field per record, yes | no | unknown. no: roster status RES or PUP, or an observed game status Out or Doubtful. yes: roster status ACT or INA
+      without such a status. unknown: any other roster status or no roster row (pre-2016 report weeks, for example). A Questionable or blank game status
+      does not make a player unavailable. Available is evidence of availability, independent of Played: Out and played stays Available no, Played true.
+      A bye or cancelled week carries the same evidence rules; consumers exclude those weeks through Participation (no-game, unknown).
+    Played: >
+      true | false | null, from Participation: played is true, not-played is false, unknown and no-game are null. Missing evidence is null, never false.
   note: State is a derivation for display and for downstream consumers; the evidence fields are the facts.
 
 rosterStatusCodes:
@@ -117,7 +138,7 @@ quality:
 dependencyInvalidation:
   dependsOn: nfl-injuries-v1 product, weekly rosters, snap counts, player stats, schedule, game finality, the product version.
   recompute: every run rebuilds all seasons from persisted inputs and writes a season file only on a byte difference (semantic no-op, no timestamps).
-  versioning: ProductVersion nfl-player-availability-v1. A rule change is a new ProductVersion and a regenerated product.
+  versioning: ProductVersion nfl-player-availability-v2 (SchemaVersion 2; v1 files stay readable until the writer regenerates them, Monday full run or the next injury run). A rule change is a new ProductVersion and a regenerated product.
 
 publication:
   writer: >
@@ -134,10 +155,11 @@ publication:
 appDelivery:
   file: public/data/PlayerInjuryHistory.json
   shape: >
-    {ContractVersion 1, Product, Coverage[{Season, ReportsAvailable, RosterStatusAvailable, SnapCountsAvailable}],
+    {ContractVersion 1, Product (follows the product version, the only change v1 to v2), Coverage[{Season, ReportsAvailable, RosterStatusAvailable, SnapCountsAvailable}],
     Players[{ID (Sleeper), Seasons[{Season, Weeks[{Week, GameType, Team, State, Participation, Report, Roster}]}]}]}
   rules:
     - Pure reshaping of the product; no derivation in the generator.
+    - v2: the generator keeps publishing only signal weeks (report row or RES/PUP status) so the file stays equal to its v1 content; healthy roster weeks, Available and Played are not copied (Issue #1610 step 4).
     - Only players listed in Players.json are published; Sleeper ID to CanonicalPlayerID through data-source/nfl/identities/players.json (the canonical identity owner).
     - The file is loaded lazily by the player-detail Injury tab (History).
 
@@ -148,4 +170,5 @@ notInScope:
 
 validation:
   tests: tools/tests/test_nfl_player_availability.py, tools/tests/test_player_injury_history_app_publish.py
-  cases: Out played/not played, Questionable played, reserve without report, inactive without report, bye, missing roster row, cancelled 2022 game, player without identity, game not final, no snap coverage, stats fallback, snap identity gap, postseason week without game, determinism and semantic no-op.
+  persistedStateGuard: tools/tests/test_nfl_player_availability.py PersistedStateGuard (every roster week of the cut has exactly one record, Available and Played valid; v1 season files are skipped until regenerated).
+  cases: healthy played, healthy scratch, bye, reserve without report, Out and played, Questionable and played, Doubtful, unknown (game not final, snap identity gap), cancelled game, other roster status, configurable position cut, no gaps, population documented; Out played/not played, Questionable played, reserve without report, inactive without report, bye, missing roster row, cancelled 2022 game, player without identity, game not final, no snap coverage, stats fallback, snap identity gap, postseason week without game, determinism and semantic no-op.
