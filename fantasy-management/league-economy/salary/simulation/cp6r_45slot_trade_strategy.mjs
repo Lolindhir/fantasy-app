@@ -789,7 +789,7 @@ function simulateCP6r(csv,{seeds=[11,29,47],slopes=[.1,.25],rookieGuarantees=['t
     const contracts=new Map([...ledger0.ledger].map(([id,c])=>[id,{...c}]));
     const dead=[],cutPool=new Set(),vetGuarantee=[1,.5,.25];
     let prevCap=cap2027,failed=false,lastScores=teams.map(t=>lineIndex(t.players,world));
-    const counts={cuts:0,expirationDeclines:0,expiryRenewals:0,replacements:0,draftSignings:0,forcedDraftRosterCuts:0,trades:0,rejectedTradeOffers:0};
+    const counts={cuts:0,expirationDeclines:0,expiryRenewals:0,replacements:0,draftSignings:0,forcedDraftRosterCuts:0,trades:0,candidatePairsScreened:0};
     const years=[{year:2027,cap:cap2027,legal:true,capBeforeCut:cap2027,preOver:0,postOver:0,
       salaryDue:teams.reduce((a,t)=>a+dueFor(t,2027,slope,contracts,dead).total,0),
       roster:teams.map(t=>({team:t.id,roster:t.players.length,capUsed:dueFor(t,2027,slope,contracts,dead).total,starterIndex:lineIndex(t.players,world)})),
@@ -866,7 +866,7 @@ function simulateCP6r(csv,{seeds=[11,29,47],slopes=[.1,.25],rookieGuarantees=['t
      counts.expiryRenewals+=renewals;
      const tradeResult=allLegal&&tradeRegime==='bilateral'?attemptTrades(teams,world,cap,year,slope,contracts,dead):{events:[],offersChecked:0};
      counts.trades+=tradeResult.events.length;
-     counts.rejectedTradeOffers+=tradeResult.offersChecked-tradeResult.events.length;
+     counts.candidatePairsScreened+=tradeResult.offersChecked;
      const ownerMap=allOwned(teams);
      assert2(ownerMap.size===teams.reduce((s,t)=>s+t.players.length,0),'postsettlement unique player owners');
       const unownedActive=[...world.values()].filter(p=>p.active&&!ownerMap.has(p.id));
@@ -884,11 +884,14 @@ function simulateCP6r(csv,{seeds=[11,29,47],slopes=[.1,.25],rookieGuarantees=['t
        expiredForRenewal:candidates.length,renewals,expirationDeclines:operator.expirationDeclines+forcedDraft.filter(x=>x.releaseKind==='expiration-declined').length,
        cutsThisYear:operator.cuts+forcedDraft.filter(x=>x.releaseKind==='forced-draft-capacity-cut').length,
        FA:thisYearFA(operator),forcedDraft,trades:tradeResult.events,tradeOffersChecked:tradeResult.offersChecked,
-       roster:settled.sort((a,b)=>a.team-b.team).map(t=>({
-        team:t.team,capUsed:t.afterUsed,deadUsed:t.deadUsed,legal:t.legal,roster:t.rosterSize,
-        starterBefore:t.startIndex,starterAfter:t.endIndex,
-        guaranteedCutEvents:t.events.filter(x=>x.releaseKind==='guaranteed-cut').length,
-        expiredDeclines:t.events.filter(x=>x.releaseKind==='expiration-declined').length})),
+       roster:teams.map(t=>{
+        const prior=settled.find(x=>x.team===t.id),fin=totals[t.id];
+        return {team:t.id,capUsed:fin.total,deadUsed:fin.dead,
+         legal:fin.total<=cap+1&&coverage(t.players,world),roster:t.players.length,
+         starterBefore:prior.startIndex,starterAfter:lineIndex(t.players,world),
+         guaranteedCutEvents:prior.events.filter(x=>x.releaseKind==='guaranteed-cut').length,
+         expiredDeclines:prior.events.filter(x=>x.releaseKind==='expiration-declined').length};
+       }),
        events:settled.flatMap(t=>t.events.map(x=>({team:t.team,...x}))),
        futureBook:books,
        draftRookies:30,rookiesHeld,freeAgents:unownedActive.length,freeAgentsQuality3:unownedActive.filter(p=>p.known>=3).length,
@@ -913,14 +916,14 @@ function simulateCP6r(csv,{seeds=[11,29,47],slopes=[.1,.25],rookieGuarantees=['t
    nonRenewals:a.reduce((v,x)=>v+x.counters.expirationDeclines,0),signedFA:a.reduce((v,x)=>v+x.counters.replacements,0)};
  })));
  const result={schema:'cp6r-trade-strategy-45-v0',date:'2026-11-22',asOf:'2026-10-05',
-  status:'synthetic research only; no true historic 2025/26 signings, player trades or NFL futures',
+  status:'synthetic research; hypothetical mutually accepted trades, no real buyer consent, historic 2025/26 signings or future NFL results',
   assumptions:{seeds,rosterCaps,rookieGuarantees,slopes,shocks,tradeRegimes,managerStrategies:MANAGER_STYLES,supply,taxi:0,reserve:0,fullSalary:true,rounds:5,
    initialContracts:'synthetic CP6p staggered vintages; unknown historical Fantasy rookie draft round defaults to 100/50/25',
    rookiePrices:'at actual exercised pick compute 65% fantasy draft rank +35% NFL draft rank, year1 from prior market cap',
    salaryEscalation:'rookie fixed 100/125/150, veterans 100/110/120 or 100/125/150',
    rookieGuarantees:'partial=100/50/25, tiered=R1-2 100/100/100 R3-4 100/100/50 R5 100/50/25; full=100/100/100; undrafted always 100/50/25',
    cap:'Top120/6 yearly after actual rookie picks, 0/-10/-20% annual shocks from 2028; no artificial cap floor',
-   roster:'20 minimum / optional up to 40/45/50 full-salary regular players, 13 starters, no taxi, no IR',
+   roster:'45 optional maximum, 20 research minimum; 13 starters, fully paid, no taxi or IR',
    market:'paired no-trade control vs synthetic mutually beneficial 1-for-1 roster-player trades; full remaining contract transferred, no retained salary; no draft pick transfers, real consent or claims, no weekly NFL availability'},
   starts,scenarios,summary:{totalScenarios:scenarios.length,legalScenarios:scenarios.filter(x=>x.legalAll).length,byChoice}};
  return result;
