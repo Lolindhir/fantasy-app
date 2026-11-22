@@ -11,6 +11,7 @@ from decimal import Decimal, InvalidOperation
 
 from typing import Any, Mapping
 
+from .nfl_franchise_aliases import franchise_equal
 from .nfl_pbp_team_metrics import evaluate_team_pbp_metric_candidates
 from .nfl_team_snap_usage import infer_team_snap_volumes
 
@@ -361,6 +362,26 @@ def _pbp_number(value: Any, name: str, *, integer: bool = False,
     return value
 
 
+def _canonical_original_pbp_team(
+    source_team: str, game: Mapping[str, Any], season: int,
+) -> str | None:
+    """Resolve one observed franchise token within this canonical game's teams.
+
+    Preserve the original provider spelling in SourceRow; only Derived groupings
+    use canonical schedule tokens. Unknown, ambiguous and out-of-era teams
+    fail closed rather than silently losing a team's metrics.
+    """
+    if not source_team:
+        return None
+    matches = [
+        team for team in (game["AwayTeam"], game["HomeTeam"])
+        if franchise_equal(source_team, team, season)
+    ]
+    if len(matches) != 1:
+        raise ValueError(f"Original PBP invalid possession/defense team: {source_team}")
+    return matches[0]
+
+
 def _build_original_pbp(
     game: Mapping[str, Any],
     season: int,
@@ -388,8 +409,8 @@ def _build_original_pbp(
                 or _pbp_number(row.get("season"), "season", integer=True, required=True) != season
                 or _pbp_number(row.get("week"), "week", integer=True, required=True) != game.get("Week")
                 or not _valid_type(row.get("season_type"), game.get("GameType"))
-                or row.get("home_team") != game.get("HomeTeam")
-                or row.get("away_team") != game.get("AwayTeam")):
+                or not franchise_equal(row.get("home_team"), game.get("HomeTeam"), season)
+                or not franchise_equal(row.get("away_team"), game.get("AwayTeam"), season)):
             raise ValueError(f"Original PBP game/season/week/type/team mismatch: {game.get('GameID')}")
         play_id = _pbp_number(row.get("play_id"), "play_id", integer=True, required=True)
         if play_id < 1 or play_id in seen:
@@ -411,13 +432,13 @@ def _build_original_pbp(
                 or success is not None and success not in (0, 1)
                 or game_clock is not None and game_clock < 0):
             raise ValueError(f"Original PBP impossible situation at PlayID {play_id}")
-        posteam = (row.get("posteam") or "").strip()
-        defteam = (row.get("defteam") or "").strip()
-        if posteam not in ("", game["AwayTeam"], game["HomeTeam"]) or defteam not in (
-            "", game["AwayTeam"], game["HomeTeam"]
-        ):
-            raise ValueError(f"Original PBP invalid possession/defense team: {play_id}")
-        if posteam and defteam and posteam == defteam:
+        posteam = _canonical_original_pbp_team(
+            (row.get("posteam") or "").strip(), game, season,
+        )
+        defteam = _canonical_original_pbp_team(
+            (row.get("defteam") or "").strip(), game, season,
+        )
+        if posteam is not None and posteam == defteam:
             raise ValueError(f"Original PBP same possession/defense team: {play_id}")
         plays.append({
             "PlayID": play_id,
