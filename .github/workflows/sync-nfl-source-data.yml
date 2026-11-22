@@ -776,6 +776,30 @@ jobs:
                   echo "- Original PBP archive $pbp_script: $pbp_archive_result" >> "$GITHUB_STEP_SUMMARY"
                 fi
               done
+
+              # Issue #1077: dynamic, bounded historical original-PBP intake.
+              # Only scheduled/manual full runs; code pushes and called/scoped
+              # runs never silently admit historical Original Source.
+              # A runner-temp selection pins up to three seasons over Raw retries.
+              if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+                history_log="$(mktemp)"
+                set +e
+                python3 tools/nfl_pbp_source_history.py \
+                  --repo-root . --repository "$GITHUB_REPOSITORY" --limit 3 \
+                  --pin-path "$RUNNER_TEMP/nfl-pbp-history-batch.json" --write \
+                  2>&1 | tee "$history_log"
+                history_status=${PIPESTATUS[0]}
+                set -e
+                if (( history_status != 0 )); then
+                  # A blocked PBP historical intake never blocks independent
+                  # canonical NFL Sources. Accepted frozen assets stay untouched.
+                  echo "::warning::Historical original PBP intake blocked (exit $history_status); check batch/source identity."
+                  echo "- Historical original PBP: BLOCKED (exit $history_status)" >> "$GITHUB_STEP_SUMMARY"
+                else
+                  history_result="$(tail -n 1 "$history_log")"
+                  echo "- Historical original PBP: $history_result" >> "$GITHUB_STEP_SUMMARY"
+                fi
+              fi
             fi
 
             assert_source_data_only
