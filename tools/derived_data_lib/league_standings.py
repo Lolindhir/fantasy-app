@@ -125,3 +125,21 @@ def build_season(
     all_time = standings_model.all_time_standings(chain) if chain else {"Playoffs": [], "RegularSeason": []}
     document["AllTime"] = {"ThroughSeason": through, "Playoffs": all_time["Playoffs"], "RegularSeason": all_time["RegularSeason"]}
     return document
+
+
+def draft_order_placements(documents: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Product-neutral placement view for the draft-order rules (Issue #1263 CP2, finding F3).
+
+    One entry per season (``Season`` as text) and one ``AllTime`` entry, each carrying only the playoff placement rows
+    (``TeamID``, ``Place``, ... unchanged from the product). ``AllTime`` comes first, then the seasons newest first, the order of
+    the App Standings delivery, so the draft-order rules (OrderSource PreviousPlayoffs / AllTime) see the same rows as before
+    without any dependency on an App renderer.
+    """
+    if not documents:
+        raise ValueError("No league-standings documents to derive draft-order placements from")
+    entries: list[dict[str, Any]] = [
+        {"Season": "AllTime", "Playoffs": [dict(row) for row in documents[max(documents)]["AllTime"]["Playoffs"]]}
+    ]
+    for season in sorted(documents, reverse=True):
+        entries.append({"Season": str(season), "Playoffs": [dict(row) for row in documents[season]["Playoffs"]]})
+    return entries

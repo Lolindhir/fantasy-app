@@ -42,7 +42,7 @@ from derived_data_lib.matchup_context import MatchupContextError, resolve_matchu
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest, manifest_seasons  # noqa: E402
 from matchup_projection import compute_matchup_projections  # noqa: E402
-from player_week_fantasy_app_publish import load_app_player_week_fantasy  # noqa: E402
+from derived_data_lib.player_week_fantasy_view import load_sleeper_keyed_view  # noqa: E402
 
 PRODUCT = "matchup-context"
 SCHEMA_VERSION = 1
@@ -105,7 +105,7 @@ def current_document(repo_root: Path, league_id: str, season: int, at_utc: datet
     projections = None
     if context is not None:
         try:
-            player_model = load_app_player_week_fantasy(repo_root, league_id, season, int(context["Week"]))
+            player_model = load_sleeper_keyed_view(repo_root, league_id, season, int(context["Week"]))
         except (OSError, ValueError, KeyError) as error:
             _warn("MatchupProjections not materialized", f"{type(error).__name__}: {error}")
         else:

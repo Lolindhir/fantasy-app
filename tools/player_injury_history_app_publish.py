@@ -2,8 +2,8 @@
 """Consumer generator: renders public/data/PlayerInjuryHistory.json from the persisted nfl-player-availability product (Issue #1590).
 
 Pure reshaping, no derivation: every season document of data-derived/nfl-player-availability is regrouped per player. Only players
-listed in public/data/Players.json are published; the join is Sleeper ID -> CanonicalPlayerID through the canonical identity index.
-The current injury status stays with Players.json (Sleeper) and is not part of this file.
+of the shared Fantasy population rule (the Players file population, built from canonical facts, never read from the published file) are published; the join is Sleeper ID -> CanonicalPlayerID through the canonical identity index.
+The current injury status stays with the Players file (Sleeper) and is not part of this file.
 
 Usage:
   player_injury_history_app_publish.py write [--fail-on-error]
@@ -21,7 +21,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT  # noqa: E402
 from derived_data_lib.nfl_player_availability import PRODUCT, PRODUCT_VERSION, RESERVE_STATUSES  # noqa: E402
+from league_metadata import data_meta_root, list_league_ids  # noqa: E402
+from league_standings_sources import current_season, manifest  # noqa: E402
 from matchup_context_app_publish import Writer, _load, _warn, diff_values  # noqa: E402
+from players_population import PopulationError, build_population  # noqa: E402
 
 CONTRACT_VERSION = 1
 APP_FILE = "PlayerInjuryHistory.json"
@@ -155,12 +158,30 @@ def build_document(
     }
 
 
+def population_players(repo_root: Path) -> list[dict[str, Any]]:
+    """Players of the shared Fantasy population rule (tools/players_population.py, ADR-043) for every league's current season.
+
+    This is the same rule that defines the Players file population, applied directly to canonical facts so the published
+    the published Players file is not an input of this Shared-Derived-based rendering (Issue #1263, finding F4).
+    """
+    players: dict[str, dict[str, Any]] = {}
+    for league_id in list_league_ids(data_meta_root(repo_root)):
+        season = current_season(manifest(repo_root, league_id))
+        try:
+            population = build_population(repo_root, league_id, season)
+        except PopulationError as error:
+            raise InjuryHistoryError(f"population unavailable for {league_id}/{season}: {error}") from error
+        for entry in population["Players"]:
+            players.setdefault(str(entry["SleeperID"]), {"ID": str(entry["SleeperID"])})
+    return list(players.values())
+
+
 def publish(repo_root: Path, writer: Writer) -> None:
     root = repo_root / DATA_DERIVED_ROOT / PRODUCT
     seasons = {int(p.stem): _load(p) for p in sorted(root.glob("*.json")) if p.stem.isdigit()} if root.is_dir() else {}
     if not seasons:
         raise InjuryHistoryError(f"{PRODUCT} product is not materialized")
-    players = _load(repo_root / "public" / "data" / "Players.json")
+    players = population_players(repo_root)
     bridge = sleeper_to_canonical(_load(repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"))
     writer.put(APP_FILE, build_document(seasons, players, bridge, league_week_caps(repo_root)), TIMESTAMP_KEY)
 

@@ -8,6 +8,8 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 import league_standings_app_publish as app  # noqa: E402
+from derived_data_lib.league_drafts import configured_order_roster_ids  # noqa: E402
+from derived_data_lib.league_standings import draft_order_placements  # noqa: E402
 
 
 def regular(team_id, place, moves=True):
@@ -41,6 +43,33 @@ def document(season, with_movement):
             "RegularSeason": [regular(1, 1, False), regular(2, 2, False)],
         },
     }
+
+
+class DraftOrderPlacementTests(unittest.TestCase):
+    """Issue #1263 CP2 (F3): the draft order reads a neutral placement view, never the App renderer, with identical rules."""
+
+    def setUp(self):
+        self.documents = {2024: document(2024, True), 2025: document(2025, True)}
+
+    def test_placements_match_the_app_playoff_rows_for_order_and_identity(self):
+        rendered = app.render_standings(self.documents, 2025)
+        neutral = draft_order_placements(self.documents)
+        key = lambda entries: [(e["Season"], [(r["TeamID"], r["Place"]) for r in e["Playoffs"]]) for e in entries]
+        self.assertEqual(key(rendered), key(neutral))
+        self.assertEqual(["AllTime", "2025", "2024"], [e["Season"] for e in neutral])
+
+    def test_configured_orders_are_identical_for_both_sources(self):
+        rendered = app.render_standings(self.documents, 2025)
+        neutral = draft_order_placements(self.documents)
+        for config in ({"OrderSource": "PreviousPlayoffs"}, {"OrderSource": "AllTime"}, {"OrderSource": "AllTime", "Order": "Descending"}):
+            self.assertEqual(configured_order_roster_ids(config, "2026", rendered), configured_order_roster_ids(config, "2026", neutral))
+
+    def test_placements_are_copies_and_empty_input_fails_closed(self):
+        neutral = draft_order_placements(self.documents)
+        neutral[1]["Playoffs"][0]["Place"] = 99
+        self.assertEqual(1, self.documents[2025]["Playoffs"][0]["Place"])
+        with self.assertRaises(ValueError):
+            draft_order_placements({})
 
 
 class RenderTests(unittest.TestCase):

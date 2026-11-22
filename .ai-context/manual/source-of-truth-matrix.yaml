@@ -1170,8 +1170,7 @@ consumerReadClassification:
     tools/player_injury_history_app_publish.py:
       reads:
         legacy:PlayerInjuryHistory: app-output-owner
-        legacy:Players: app-config-path-owner
-      note: 'Consumer generator of PlayerInjuryHistory.json (ADR-092, Issue #1590). Rows come only from the Shared Derived product data-derived/nfl-player-availability; Players.json is read only to limit the file to players the app lists (population filter, no value is taken from it) and the identity bridge comes from the canonical identities. The writer owns its previous file and the PlayerInjuryHistory key of Timestamps.json only to detect a change.'
+      note: 'Consumer generator of PlayerInjuryHistory.json (ADR-092, Issue #1590; Issue #1263 F4). Rows come only from the Shared Derived product data-derived/nfl-player-availability; the player filter is the shared population rule (tools/players_population.py, ADR-043) built from canonical facts, the published Players.json is no input; the identity bridge comes from the canonical identities. The writer owns its previous file and the PlayerInjuryHistory key of Timestamps.json only to detect a change.'
     tools/decision_windows.py:
       reads:
         legacy:DecisionWindows: validation-shadow
