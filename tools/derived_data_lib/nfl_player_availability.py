@@ -1,4 +1,4 @@
-"""NFL Player Availability (nfl-player-availability-v2): per player-week evidence, never a medical claim.
+"""NFL Player Availability (nfl-player-availability-v3): per player-week evidence, never a medical claim.
 
 Pure, deterministic derivation. Inputs are only already-persisted facts of one season:
 
@@ -19,8 +19,15 @@ from typing import Any, Iterable, Mapping
 from derived_data_lib.nfl_franchise_aliases import franchise_equal
 
 PRODUCT = "nfl-player-availability"
-PRODUCT_VERSION = "nfl-player-availability-v2"
-SCHEMA_VERSION = 2
+PRODUCT_VERSION = "nfl-player-availability-v3"
+SCHEMA_VERSION = 3
+
+# v3 (Issue #1612): nflverse participation (GSIS on-field plays per game) is independent positive evidence. Model parameters, versioned with
+# the product. Absence from participation is never evidence.
+# * a player without snap/stat evidence (participation unknown) with at least this many plays is played;
+# * a player whose snap rows say not played but who has at least this many plays gets unknown (conflict), never played.
+PARTICIPATION_MIN_PLAYS_UNKNOWN = 1
+PARTICIPATION_MIN_PLAYS_CONFLICT = 5
 
 STATES = (
     "played",
@@ -135,12 +142,14 @@ def derive_nfl_player_availability(
     finality: Mapping[str, Any],
     player_pfr_tokens: Mapping[str, Iterable[str]] | None = None,
     healthy_positions: frozenset[str] | None = FANTASY_POSITIONS,
+    participation_plays: Mapping[str, Mapping[str, int]] | None = None,
 ) -> dict[str, Any]:
     """Return the season document. ``injuries`` may be None when no report product exists for the season.
 
     ``player_pfr_tokens`` maps CanonicalPlayerID to the PFR tokens known for that player (IDs plus aliases). It is a declared
     input: a snap row without identity only blocks players whose own token is unknown or equal to that row's token.
     """
+    plays_by_game = participation_plays or {}
     pfr_tokens = {pid: frozenset(t for t in tokens if t) for pid, tokens in (player_pfr_tokens or {}).items()}
     if schedule.get("Season") != season or finality.get("Season") != season:
         raise AvailabilityError(f"schedule/finality season mismatch for {season}")
@@ -193,6 +202,7 @@ def derive_nfl_player_availability(
                 stats_played[game_id].add(player)
 
     def participation(game_id: str, team: str, player: str) -> tuple[str, str | None]:
+        plays = int(plays_by_game.get(game_id, {}).get(player) or 0)
         if player in snap_played.get(game_id, ()) or player in stats_played.get(game_id, ()):
             return "played", "snap-counts" if player in snap_played.get(game_id, ()) else "player-stats"
         if game_id in snap_games:
@@ -201,9 +211,17 @@ def derive_nfl_player_availability(
                 blocked = snap_unresolved_tokens.get((game_id, team), set())
                 if own and None not in blocked and not (own & blocked):
                     # The identity-less row(s) carry other people's tokens, so this player's missing row means not played.
+                    if plays >= PARTICIPATION_MIN_PLAYS_CONFLICT:
+                        return "unknown", "participation-conflict"
                     return "not-played", "snap-counts-token-excluded"
+                if plays >= PARTICIPATION_MIN_PLAYS_UNKNOWN:
+                    return "played", "participation"
                 return "unknown", "snap-counts-identity-gap"
+            if plays >= PARTICIPATION_MIN_PLAYS_CONFLICT:
+                return "unknown", "participation-conflict"
             return "not-played", "snap-counts"
+        if plays >= PARTICIPATION_MIN_PLAYS_UNKNOWN:
+            return "played", "participation"
         return "unknown", None
 
     # Signals.
@@ -312,7 +330,10 @@ def derive_nfl_player_availability(
             "State": state,
             "Available": "bye" if state == "bye" else _available(roster_status, report_entries),
             "Played": True if part == "played" else False if part == "not-played" else None,
-            "Participation": {"State": part, "Evidence": evidence},
+            "Participation": {
+                "State": part, "Evidence": evidence,
+                "Plays": int(plays_by_game[game_id][player]) if game_id and player in plays_by_game.get(game_id, {}) else None,
+            },
             "Report": report_entries,
             "Roster": None if roster is None else {"Status": roster_status, "Code": roster.get("StatusDescription")},
         })
@@ -343,6 +364,11 @@ def derive_nfl_player_availability(
             "SnapCountsAvailable": bool(snap_games),
             "PlayerStatsAvailable": bool(stats_played),
             "PfrTokenIndexAvailable": bool(pfr_tokens),
+            "ParticipationAvailable": bool(plays_by_game),
+            "ParticipationParameters": {
+                "MinPlaysUnknownToPlayed": PARTICIPATION_MIN_PLAYS_UNKNOWN,
+                "MinPlaysConflict": PARTICIPATION_MIN_PLAYS_CONFLICT,
+            },
         },
         "Quality": {
             "RecordCount": len(records),
