@@ -44,6 +44,17 @@ def serialize(document: dict) -> str:
     return body[:-2] + ",\n" + records + "\n}\n"
 
 
+def pfr_tokens(nfl: Path) -> dict[str, list[str]]:
+    """CanonicalPlayerID -> sorted PFR tokens (IDs.PFR plus IDAliases.PFR) from the canonical identities."""
+    tokens: dict[str, list[str]] = {}
+    for player in _load(nfl / "identities" / "players.json").get("Players", []):
+        own = {player.get("IDs", {}).get("PFR"), *(player.get("IDAliases", {}).get("PFR") or [])}
+        own = {t for t in own if isinstance(t, str) and t}
+        if own and player.get("CanonicalPlayerID"):
+            tokens[player["CanonicalPlayerID"]] = sorted(own)
+    return tokens
+
+
 def build(repo_root: Path, season: int, derived_root: Path | None = None) -> dict:
     nfl = repo_root / DATA_SOURCE_ROOT / "nfl"
     derived = derived_root or (repo_root / DATA_DERIVED_ROOT)
@@ -56,6 +67,7 @@ def build(repo_root: Path, season: int, derived_root: Path | None = None) -> dic
         player_stats=_weeks(nfl / "player-stats" / str(season)),
         schedule=_load(nfl / "schedules" / f"{season}.json"),
         finality=_load(nfl / "game-finality" / f"{season}.json"),
+        player_pfr_tokens=pfr_tokens(nfl),
     )
 
 

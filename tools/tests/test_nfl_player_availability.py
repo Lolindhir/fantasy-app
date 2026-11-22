@@ -37,15 +37,15 @@ def roster(pid, team, status="ACT", code="A01", gtype="REG"):
     return {"CanonicalPlayerID": pid, "Team": team, "Status": status, "StatusDescription": code, "GameType": gtype}
 
 
-def snaps(game_id, played=(), idle=(), unresolved_team=None):
+def snaps(game_id, played=(), idle=(), unresolved_team=None, token="TOKEN-X"):
     rows = [{"CanonicalPlayerID": p, "GameID": game_id, "Team": "AAA", "OffenseSnaps": 10, "DefenseSnaps": 0, "SpecialTeamsSnaps": 0} for p in played]
     rows += [{"CanonicalPlayerID": p, "GameID": game_id, "Team": "AAA", "OffenseSnaps": 0, "DefenseSnaps": 0, "SpecialTeamsSnaps": 0} for p in idle]
     if unresolved_team:
-        rows.append({"CanonicalPlayerID": None, "GameID": game_id, "Team": unresolved_team, "OffenseSnaps": 5, "DefenseSnaps": 0, "SpecialTeamsSnaps": 0})
+        rows.append({"CanonicalPlayerID": None, "SourceIDs": {"PFR": token} if token else {}, "GameID": game_id, "Team": unresolved_team, "OffenseSnaps": 5, "DefenseSnaps": 0, "SpecialTeamsSnaps": 0})
     return rows
 
 
-def build(reports=(), rosters=None, snap_rows=None, stats=None, games=None, final=True, season=SEASON):
+def build(reports=(), rosters=None, snap_rows=None, stats=None, games=None, final=True, season=SEASON, tokens=None):
     games = games if games is not None else [game(1, "AAA", "BBB"), game(2, "CCC", "BBB"), game(3, "AAA", "BBB"), game(4, "AAA", "CCC")]
     injuries = {"Season": season, "ProductVersion": "nfl-injuries-v1", "SourceAssetSha256": "x", "IdentityGraphFingerprint": "y",
                 "ObservedPlayerWeeks": list(reports)}
@@ -56,6 +56,7 @@ def build(reports=(), rosters=None, snap_rows=None, stats=None, games=None, fina
         snap_counts={w: {"Week": w, "Records": r} for w, r in (snap_rows or {}).items()},
         player_stats={w: {"Week": w, "Records": r} for w, r in (stats or {}).items()},
         schedule={"Season": season, "Games": games}, finality={"Season": season, "Games": final_games},
+        player_pfr_tokens=tokens,
     )
 
 
@@ -159,6 +160,37 @@ class StateTests(unittest.TestCase):
         doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, {1: snaps(gid, played=[player(9)], unresolved_team="BBB")})
         self.assertEqual(one(doc, 1, p)["State"], "not-played-reported")
 
+    def test_own_pfr_token_not_among_unresolved_tokens_excludes_the_gap(self):
+        p = player(1)
+        gid = game(1, "AAA", "BBB")["GameID"]
+        rows = {1: snaps(gid, played=[player(9)], unresolved_team="AAA")}
+        doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, rows, tokens={p: ["OWN-1", "OWN-ALIAS"]})
+        rec = one(doc, 1, p)
+        self.assertEqual(rec["State"], "not-played-reported")
+        self.assertEqual(rec["Participation"], {"State": "not-played", "Evidence": "snap-counts-token-excluded"})
+        doc = build([], {1: [roster(p, "AAA", "RES", "R01")]}, rows, tokens={p: ["OWN-1"]})
+        self.assertEqual(one(doc, 1, p)["State"], "not-played-reserve")
+
+    def test_unresolved_token_equal_to_players_own_token_stays_unknown(self):
+        p = player(1)
+        gid = game(1, "AAA", "BBB")["GameID"]
+        rows = {1: snaps(gid, played=[player(9)], unresolved_team="AAA", token="OWN-ALIAS")}
+        doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, rows, tokens={p: ["OWN-1", "OWN-ALIAS"]})
+        rec = one(doc, 1, p)
+        self.assertEqual(rec["State"], "unknown")
+        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": "snap-counts-identity-gap"})
+
+    def test_player_without_pfr_token_or_row_without_token_stays_unknown(self):
+        p = player(1)
+        gid = game(1, "AAA", "BBB")["GameID"]
+        rows = {1: snaps(gid, played=[player(9)], unresolved_team="AAA")}
+        for tokens in (None, {}, {player(2): ["OTHER"]}):
+            doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, rows, tokens=tokens)
+            self.assertEqual(one(doc, 1, p)["State"], "unknown")
+        tokenless = {1: snaps(gid, played=[player(9)], unresolved_team="AAA", token=None)}
+        doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, tokenless, tokens={p: ["OWN-1"]})
+        self.assertEqual(one(doc, 1, p)["State"], "unknown")
+
     def test_reserve_player_with_snap_identity_gap_is_not_played_reserve(self):
         p = player(1)
         gid = game(1, "AAA", "BBB")["GameID"]
@@ -209,6 +241,11 @@ class DeterminismTests(unittest.TestCase):
             (nfl / "game-finality" / f"{SEASON}.json").write_text(json.dumps({"Season": SEASON, "Games": [{"GameID": games[0]["GameID"], "Final": True}]}))
             (nfl / "weekly-rosters" / str(SEASON)).mkdir(parents=True)
             (nfl / "weekly-rosters" / str(SEASON) / "01.json").write_text(json.dumps({"Week": 1, "Records": [roster(player(1), "AAA", "RES", "R01")]}))
+            (nfl / "identities").mkdir(parents=True)
+            (nfl / "identities" / "players.json").write_text(json.dumps({"Players": [
+                {"CanonicalPlayerID": player(1), "IDs": {"PFR": "OWN-1"}, "IDAliases": {"PFR": ["OWN-ALIAS"]}},
+                {"CanonicalPlayerID": player(2), "IDs": {}, "IDAliases": {}}]}))
+            self.assertEqual(materializer.pfr_tokens(nfl), {player(1): ["OWN-1", "OWN-ALIAS"]})
             first = materializer.materialize(root, SEASON, write=True)
             second = materializer.materialize(root, SEASON, write=True)
             self.assertTrue(first["Written"])

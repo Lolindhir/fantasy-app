@@ -50,7 +50,7 @@ evidenceFields:
     {Status, Code} of the NFL weekly roster row (null when the week has no roster row for the player). Status is null before 2016
     (the source has no status column then); it stays null, never inferred.
   Participation: >
-    {State: played | not-played | unknown | no-game, Evidence}. Evidence is snap-counts, player-stats, snap-counts-identity-gap,
+    {State: played | not-played | unknown | no-game, Evidence}. Evidence is snap-counts, player-stats, snap-counts-token-excluded, snap-counts-identity-gap,
     game-not-final, cancelled-game, team-unresolved or bye; null when no evidence source covers the game.
   Team: roster team, else the first report source team; normalized to the schedule abbreviation of that season (franchise aliases).
   GameID: canonical schedule game of the team in that week, null for bye, cancelled or unresolved team.
@@ -58,8 +58,12 @@ evidenceFields:
 participationRules:
   played: a snap-counts row with more than zero snaps, or a player-stats row of that game (stats rows exist only for players who took part).
   not-played: the game is covered by snap counts (any row of the GameID), the player has neither snaps nor a stats row, and no snap row of the
-    same team and game lacks a CanonicalPlayerID (such a row could be this player).
-  unknown: game not final; no snap coverage and no stats row (always the case for a missing stats row before 2013); snap-counts identity gap of the team.
+    same team and game lacks a CanonicalPlayerID (such a row could be this player) - or such rows exist but the player has own PFR tokens
+    (data-source/nfl/identities/players.json IDs.PFR plus IDAliases.PFR) and none equals the SourceIDs.PFR of an identity-less row of that
+    team and game (evidence snap-counts-token-excluded). The token index is a declared input handed in by the materializer
+    (Inputs.PfrTokenIndexAvailable); a changed identity mapping changes the output on the next regeneration. An identity-less row without
+    any PFR token, or a player without own PFR token, keeps the gap.
+  unknown: game not final; no snap coverage and no stats row (always the case for a missing stats row before 2013); snap-counts identity gap of the team when the player's own PFR token cannot be excluded.
   cancelled: the 2022 week 17 BUF@CIN game is absent from the canonical schedule and never counts as played (state unknown, evidence cancelled-game).
 
 state:
