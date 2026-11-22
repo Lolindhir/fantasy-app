@@ -40,7 +40,7 @@ Die sechs Wochen wurden im **echten eingecheckten Research-Code**, mit separat �
 | Gepoolter früherer Ist-/Proj-BB-Uplift | 31,14 | +7,31 | – |
 | Unkorrigierter PI1-Monte-Carlo-BB | **33,90** | **+23,22** | 15/27 = 55,6 % |
 | **Teilnahmebewusster PI1-Monte-Carlo-BB** | **30,13** | **+11,20** | **18/27 = 66,7 %** |
-| Retrospektives Teilnahme-Oracle (nicht einsetzbar) | 29,31 | +14,44 | 18/27 = 66,7 % |
+| Retrospektives Teilnahme-Oracle (nicht einsetzbar) | 29,31 | +14,44 | 17/27 = 63,0 % |
 
 Der Teilnahmearm reduziert den MAE gegenüber Raw um **3,78 Punkte (~11,1 %)** und den positiven Bias um ca. 12 Punkte. Der gepoolte Uplift bleibt im Bias besser, während die Teilnahmesimulation im MAE rund 1,01 Punkte vorn liegt. **Kein deutlicher Sieger**, kleine Stichprobe, nicht unabhängig kalibrierte Priors. Die nominalen 80-%-Intervalle sind auch nach dem Schritt unterdeckend.
 
