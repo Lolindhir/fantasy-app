@@ -42,11 +42,18 @@ population:
     (b) the NFL roster status is RES or PUP, OR (c) in a season whose roster status column exists (data-driven, from 2016) the roster status is
     ACT or INA and the roster position is in the position cut. Report and reserve weeks of every position stay in every season. The position cut
     is QB, RB, WR, TE, K (FANTASY_POSITIONS, a documented product policy; the function parameter healthy_positions=None means all positions).
-    Other roster statuses (DEV, CUT, RET and so on) bring a healthy week into the population only through a report or reserve signal.
+    Issue #1616 (Robert 2026-11-22) extends this within the same version: (d) every other non-null roster status (DEV practice squad, CUT, RET,
+    SUS, EXE and so on) of a position in the cut is a record (G2, State not-on-active-roster, Available no), and (e) a bye week without a roster row is
+    a record (G1, see byeRecords). Quality.Population.ByeWeeksIncluded and OtherRosterStatusesIncluded mark files that carry both.
     Seasons without roster status (before 2016) keep the v1 population (report weeks only); the coverage is stated in Quality.Population
     (RosterWeeksIncluded false). A postseason week in which the team has no game produces no record (it is not a bye).
     The denominator is therefore explicit: a consumer never derives healthy or available from a missing record within the cut; a missing record
-    means the player was not on the game-day roster of that week, or is outside the position cut, or the season has no roster status.
+    means the player is outside the position cut, the season has no roster status, or the player has no NFL roster row at all in that season
+    (for example a free agent never signed that year): "no NFL roster row" is its own case for consumers, never healthy and never a bye.
+  sizeMeasuredIssue1616: >
+    G1 and G2 together measured on the persisted data before the first write: about 86 MB for 2016 to 2026 against 71 MB (about +21 percent):
+    about 1,000 bye records and about 3,600 to 7,100 not-on-active-roster records per season (DEV and CUT dominate). Check on the league rosters 2026 weeks 1 to 10:
+    player-weeks without a record fell from 151 to 9 (all nine belong to one player without any NFL roster row in 2026).
   sizeMeasured: >
     v1: about 3 to 4 MB per season from 2016, about 44 MB for 2009 to 2026. v2 with the fantasy-position cut: about 5.5 to 6 MB per season, about 71 MB in total
     (about 1.6 times v1). All positions would have measured about 10 to 11 MB per season and about 121 MB (2.7 times) and was not chosen.
@@ -95,6 +102,22 @@ state:
       A bye or cancelled week carries the same evidence rules; consumers exclude those weeks through Participation (no-game, unknown).
     Played: >
       true | false | null, from Participation: played is true, not-played is false, unknown and no-game are null. Missing evidence is null, never false.
+  v2AdditionsIssue1616:
+    not-on-active-roster: >
+      Roster status other than ACT, INA, RES, PUP (DEV, CUT, RET, SUS, EXE and so on) of a position in the cut, no report row, game final and not played.
+      Available is no for every such status (the statuses mean the player is not on the active roster; confidence per status is in rosterStatusCodes).
+      A played participation stays played, a report row keeps not-played-reported, missing evidence stays unknown.
+    bye: now also synthesized without any report or reserve signal (see byeRecords).
+  byeRecords:
+    rule: >
+      A regular-season week in which the team has no game, for a player whose roster row of the directly preceding week is a regular-season row with a
+      status in BYE_CARRY_STATUSES (ACT, INA, RES, PUP, DEV, SUS, EXE; confidence: attached-to-team statuses) and a position in the cut (RES and PUP
+      of every position, as in the population), and who has no roster row in the bye week. The team is the one of that preceding roster week, so a
+      team change around the bye keeps the pre-bye team. CUT, RET, TRD and similar statuses end the attachment and never produce a bye record.
+    values: State bye, Available unknown (no roster row, never inferred), Played null, Participation {no-game, bye}, Roster null, GameID null.
+    noteOnIssueText: Issue #1616 names Available null for these records; the existing three-valued field is kept (unknown) so that a consumer handles missing roster rows in one way.
+    postseason: A postseason week without a game of the team never produces a record.
+    cancelled: The hand-maintained cancelled game (2022 week 17 BUF and CIN) keeps Participation unknown with evidence cancelled-game.
   note: State is a derivation for display and for downstream consumers; the evidence fields are the facts.
 
 rosterStatusCodes:
@@ -107,8 +130,8 @@ rosterStatusCodes:
     DEV: Practice or development squad. Confidence high.
     CUT: Released. Confidence high.
     RET: Retired. Confidence high.
-    SUS: Suspended. Confidence medium. Not an injury signal, not in the population.
-    NWT, RSN, RSR, EXE, TRC, TRD, TRT, UFA, RFA, UDF, E01, E14: other transaction or reserve variants. Meaning unverified; recorded as seen, never interpreted, not in the population.
+    SUS: Suspended. Confidence medium. Not an injury signal; a record since Issue #1616 (not-on-active-roster).
+    NWT, RSN, RSR, EXE, TRC, TRD, TRT, UFA, RFA, UDF, E01, E14: other transaction or reserve variants. Meaning unverified; recorded as seen and never interpreted. Since Issue #1616 they are records (not-on-active-roster, Available no) for the position cut; only the status name is evidence, not its meaning.
     "null": the season has no status column (before 2016).
   descriptionCodes:
     A01: Active. Confidence medium.
@@ -132,7 +155,7 @@ quality:
   coverageNotes:
     - Snap counts exist from 2013; earlier seasons can only prove played (stats row), never not-played (unknown).
     - Roster status exists from 2016; earlier seasons have report rows only.
-    - Weekly roster partitions list only teams that play; a bye-week reserve player has no roster row and therefore no record.
+    - Weekly roster partitions list only teams that play; a bye-week player has no roster row, so since Issue #1616 the bye record is synthesized from the preceding week (byeRecords).
     - The roster Status is a weekly snapshot, not a transaction date.
 
 dependencyInvalidation:
@@ -170,5 +193,5 @@ notInScope:
 
 validation:
   tests: tools/tests/test_nfl_player_availability.py, tools/tests/test_player_injury_history_app_publish.py
-  persistedStateGuard: tools/tests/test_nfl_player_availability.py PersistedStateGuard (every roster week of the cut has exactly one record, Available and Played valid; v1 season files are skipped until regenerated).
-  cases: healthy played, healthy scratch, bye, reserve without report, Out and played, Questionable and played, Doubtful, unknown (game not final, snap identity gap), cancelled game, other roster status, configurable position cut, no gaps, population documented; Out played/not played, Questionable played, reserve without report, inactive without report, bye, missing roster row, cancelled 2022 game, player without identity, game not final, no snap coverage, stats fallback, snap identity gap, postseason week without game, determinism and semantic no-op.
+  persistedStateGuard: tools/tests/test_nfl_player_availability.py PersistedStateGuard (every roster week of the cut with any non-null status has exactly one record, every bye week of an attached player has a record, Available and Played valid; files without Population.ByeWeeksIncluded are skipped until regenerated; v1 season files are skipped until regenerated).
+  cases: healthy played, healthy scratch, bye (Issue #1616: synthesized bye, team change around the bye, ended attachment, regular season only), not-on-active-roster (EXE, CUT, DEV, RET, SUS), reserve without report, Out and played, Questionable and played, Doubtful, unknown (game not final, snap identity gap), cancelled game, other roster status, configurable position cut, no gaps, population documented; Out played/not played, Questionable played, reserve without report, inactive without report, bye, missing roster row, cancelled 2022 game, player without identity, game not final, no snap coverage, stats fallback, snap identity gap, postseason week without game, determinism and semantic no-op.
