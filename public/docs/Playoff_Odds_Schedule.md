@@ -4,14 +4,15 @@ Diese Seite erklärt, was hinter den **Playoff-Anzeigen** in der Tabelle und der
 
 ## 🎲 Wie entstehen die Playoff-Chancen?
 
-Wir spielen die **restliche Hauptrunde** gedanklich komplett durch und nehmen dabei an, dass **jedes offene Spiel eine Münze wirft**: Jedes Team gewinnt mit 50 %. Dann zählen wir exakt, in wie vielen der möglichen Ausgänge ein Team welchen Tabellenplatz belegt.
+Wir spielen die **restliche Hauptrunde** viele tausend Mal gedanklich durch. In jedem Durchgang bekommt jedes Team in jedem offenen Spiel eine zufällige Punktzahl: Je **stärker** das Team (siehe unten), desto höher liegen seine Punkte im Schnitt, dazu kommt die übliche Schwankung von Woche zu Woche. Am Ende zählen wir, wie oft ein Team welchen Tabellenplatz belegt.
 
-- Der Wert „Playoffs 62 %“ bedeutet: In 62 von 100 gleich wahrscheinlichen Ausgängen kommt das Team weiter.
-- Die Anzeige „Chancen der Plätze“ in der aufgeklappten Zeile und im **Playoff Picture** zeigt, wie sich diese Ausgänge auf die Endplätze verteilen.
-- Bei gleichem Stand teilen sich die betroffenen Teams die Plätze zu gleichen Teilen, weil künftige Punkte noch unbekannt sind.
+- Der Wert „Playoffs 62 %“ bedeutet: In 62 von 100 Durchgängen kommt das Team weiter.
+- Die Anzeige „Chancen der Plätze“ in der aufgeklappten Zeile und im **Playoff Picture** zeigt, wie sich die Durchgänge auf die Endplätze verteilen.
+- Bei gleichem Siegverhältnis entscheiden die **erzielten Punkte** („Points for“), danach die Gegenpunkte, genau wie in der echten Tabelle. Deshalb zählen auch Punkte in den Restspielen mit.
 - Ein Team, das noch eine Chance hat, zeigt nie „0 %“ oder „100 %“, sondern „<1 %“ bzw. „>99 %“.
+- Im Spielplan eines Teams steht bei jedem offenen Spiel außerdem die **Siegchance** für genau dieses Spiel und der erwartete **Punkteunterschied** zum Gegner. Oben steht die durchschnittliche Siegchance über alle verbleibenden Spiele und die daraus erwartete Zahl an Siegen.
 
-**Wichtig:** Die Spielstärke der Teams fließt hier bewusst **nicht** ein. Es ist ein reines Rechenspiel mit den Spielen, die noch offen sind, **keine Vorhersage**, wer wirklich weiterkommt.
+**Wichtig:** Das ist eine Einschätzung auf Basis bisheriger Punkte, **keine Garantie**. Verletzungen, Trades oder Aufstellungen sind darin nicht vorhergesehen. Ändert sich die Stärkeberechnung eines Teams, ändern sich auch seine Playoff-Chancen.
 
 ## ✅ Clinched und Eliminated
 
@@ -27,8 +28,9 @@ Auf der Übersichtsseite zeigen wir bewusst nur diese Kürzel hinter dem Teamnam
 Im Spielplan eines Teams ordnen wir jeden kommenden Gegner grob ein: **↓ Weaker**, **= Similar** oder **↑ Stronger**. Zusätzlich steht dort, ob der **Restspielplan** insgesamt leichter, durchschnittlich oder schwerer als der Ligadurchschnitt ist.
 
 - Die Stärke eines Teams ergibt sich **aus seinen erzielten Punkten** im Vergleich zum Ligadurchschnitt, nicht aus Prognosen.
-- Zu Beginn der Saison, wenn noch wenige Spiele gespielt sind, fließt zusätzlich die **Vorsaison** ein. Mit jedem Spiel zählt die aktuelle Saison stärker.
+- Zu Beginn der Saison zählt vor allem die **Vorsaison**. Je länger die Saison läuft, desto stärker zählt die aktuelle Saison und desto weniger die Vorsaison.
 - Für den Restspielplan vergleichen wir die verbleibenden Gegner mit den anderen Teams der Liga ohne das Team selbst.
-- Gibt es für einen Gegner noch keine verlässliche Einordnung, zeigen wir nichts an.
+- Ein Tipp auf „How are opponents rated?“ im Spielplan zeigt je Gegner, wie sich seine Stärke aus aktueller Saison und Vorsaison zusammensetzt. Eine Stärke von 1,00× entspricht dem Ligadurchschnitt.
+- Gibt es für einen Gegner noch keine verlässliche Einordnung, zeigen wir nichts an. Fehlt die Stärke ganz, behandeln wir alle Teams als gleich stark und kennzeichnen das.
 
 Die Einordnung ist eine grobe Orientierung. Sie sagt nichts darüber, ob ein Team in dieser Woche in Form ist.

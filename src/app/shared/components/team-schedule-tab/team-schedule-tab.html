@@ -9,7 +9,7 @@
         @if (remainingLabel(); as remaining) {
           <span class="schedule-summary-item">
             <span class="schedule-summary-label">Remaining schedule</span>
-            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}</strong>
+            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored; the longer the season runs, the less last season counts">{{ remaining }}@if (remainingWinLabel()) { <span class="schedule-summary-sub" title="Expected wins in the remaining games, with the average win chance per game">{{ remainingWinLabel() }}</span> }</strong>
           </span>
         }
         @if (playoffRecordLabel(); as playoffs) {
@@ -58,6 +58,28 @@
       </ul>
     }
 
+    @if (explainRows().length) {
+      <button type="button" class="schedule-explain-toggle" [attr.aria-expanded]="explainOpen()" (click)="toggleExplain()">
+        How are opponents rated?
+        <mat-icon aria-hidden="true">{{ explainOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </button>
+      @if (explainOpen()) {
+        <div class="schedule-explain">
+          <p>Strength is a team's points per game against the league average@if (leagueMeanLabel()) { ({{ leagueMeanLabel() }})}, the longer the season runs, the more it is the current season that counts instead of last season.</p>
+          <ul class="schedule-explain-list">
+            @for (item of explainRows(); track item.week) {
+              <li>
+                <strong>W{{ item.week }} {{ item.name }}</strong>
+                @if (item.strength) { <span>{{ item.strength }} league avg</span> }
+                @if (item.current) {
+                  <span class="schedule-muted">{{ item.current }} this season@if (item.currentStrength) { ({{ item.currentStrength }}) }@if (item.previous !== '0%') {, {{ item.previous }} last season@if (item.previousStrength) { ({{ item.previousStrength }}) }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
     @if (playedRows().length) {
       <h4 class="schedule-section">Played</h4>
       <ul class="schedule-list" aria-label="Played games">
@@ -70,7 +92,7 @@
       <p class="schedule-note">No games available for this season.</p>
     }
     <p class="schedule-note">
-      Upcoming games start with the nearest week, played games with the latest. Opponent records are final regular-season results of the selected season.@if (outlook()) { Opponent strength compares the points a team has scored with the league average, early in the season mixed with last season. }
+      Upcoming games start with the nearest week, played games with the latest. Opponent records are final regular-season results of the selected season.@if (outlook()) { Opponent strength compares the points a team has scored with the league average; the longer the season runs, the less last season counts. }
     </p>
   }
 </div>
@@ -121,7 +143,14 @@
           <span aria-hidden="true">{{ chip.symbol }}</span> {{ chip.label }}
         </span>
       }
-      <span class="schedule-record" aria-label="Opponent record">{{ recordLabel(row.opponentRecord) }}</span>
+      <span class="schedule-resultline">
+        <span class="schedule-record" aria-label="Opponent record">{{ recordLabel(row.opponentRecord) }}</span>
+        @if (gameOutlook(row); as game) {
+          @if (game.win || game.margin) {
+            <span class="schedule-oddsline">@if (game.win) { Win {{ game.win }} }@if (game.win && game.margin) { · }@if (game.margin) { {{ game.margin }} pts }</span>
+          }
+        }
+      </span>
     }
   </span>
 </ng-template>
