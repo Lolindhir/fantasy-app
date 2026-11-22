@@ -8,7 +8,7 @@ import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../../.
 import { DataService } from '../../../../core/services/data.service';
 import { TeamIdentityComponent, type TeamIdentityElement, type TeamIdentitySubject } from '../../../../shared/components/team-identity/team-identity';
 import { PositionStylePipe } from '../../../../shared/pipes/position-style.pipe';
-import { buildInjuryImpactByTeam, type InjuryImpactWeekBar, type TeamInjuryImpactView } from '../../../../shared/utils/injury-impact-view.util';
+import { buildInjuryImpactByTeam, type TeamInjuryImpactView } from '../../../../shared/utils/injury-impact-view.util';
 import { buildSeasonHistory } from '../../../../shared/utils/league-standings-view.util';
 import {
   formatAllPlay,
@@ -118,7 +118,6 @@ export class SeasonTabComponent {
   selectSeason(season: string): void {
     this.selectedSeason = season;
     this.expandedTeamId = null;
-    this.activeBar = null;
   }
 
   sortedRows(vm: SeasonStatsViewModel): SeasonStatsRow[] {
@@ -157,20 +156,13 @@ export class SeasonTabComponent {
 
   toggle(row: SeasonStatsRow): void {
     this.expandedTeamId = this.expandedTeamId === row.teamId ? null : row.teamId;
-    this.activeBar = null;
   }
 
   isExpanded(row: SeasonStatsRow): boolean {
     return this.expandedTeamId === row.teamId;
   }
 
-  activeBar: InjuryImpactWeekBar | null = null;
-
   trackRow = (_: number, row: SeasonStatsRow): string => row.teamId;
-
-  pickBar(bar: InjuryImpactWeekBar): void {
-    this.activeBar = bar;
-  }
 
   expectedWins(stat: SeasonStatisticsTeam | null): string {
     return formatDecimal(stat?.ExpectedWins ?? null);

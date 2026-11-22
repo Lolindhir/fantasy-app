@@ -60,31 +60,10 @@
                 {{ injury.totalDisplay }} pts lost in total
                 <span class="injury-dot" aria-hidden="true">·</span>
                 {{ injury.weeksWithImpact }} of {{ injury.weeksComputed }} weeks affected
-                <ng-container *ngIf="injury.peakDisplay"><span class="injury-dot" aria-hidden="true">·</span>Peak {{ injury.peakDisplay }}</ng-container>
               </p>
 
-              <div class="injury-bars" role="group" aria-label="Injury Impact per week">
-                <button
-                  type="button"
-                  *ngFor="let bar of injury.bars"
-                  class="injury-bar"
-                  [class.injury-bar--lower]="bar.lowerBound"
-                  [class.injury-bar--unknown]="bar.unknownEvidence"
-                  [class.injury-bar--na]="bar.unavailable"
-                  [class.injury-bar--active]="activeBar?.week === bar.week"
-                  [attr.aria-label]="bar.label"
-                  (click)="pickBar(bar)"
-                  (mouseenter)="pickBar(bar)"
-                >
-                  <span class="injury-bar__track"><span class="injury-bar__fill" [style.height.%]="bar.heightPercent"></span></span>
-                  <span class="injury-bar__week">{{ bar.week }}</span>
-                </button>
-              </div>
-              <p class="injury-caption" aria-live="polite">{{ activeBar ? activeBar.label : 'Select a week for its value.' }}</p>
-              <p class="injury-note">Bars show points lost per week. Striped: at least that much. Dashed: some availability unknown. Hatched: not available.</p>
-
               <ng-container *ngIf="injury.topPlayers.length > 0">
-                <h4 class="injury-subheading">Players who cost the most</h4>
+                <h4 class="injury-subheading">Most hurt players</h4>
                 <ul class="injury-players">
                   <li *ngFor="let player of injury.topPlayers" class="injury-player">
                     <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
@@ -94,7 +73,6 @@
                     <span class="injury-player__value">{{ player.impactDisplay }} pts<small> · {{ player.weeks }} {{ player.weeks === 1 ? 'week' : 'weeks' }}</small></span>
                   </li>
                 </ul>
-                <p class="injury-note">Each value is what the lineup would have gained with that player healthy. Values do not add up.</p>
               </ng-container>
             </ng-container>
             <ng-template #noInjury><p class="injury-note">No Injury Impact for this team in this season.</p></ng-template>
