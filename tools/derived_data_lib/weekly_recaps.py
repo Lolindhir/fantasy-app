@@ -689,7 +689,7 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
     without it is absent (not an error); evidence that contradicts itself (TeamAwards, matchup facts) still fails the season.
     """
     from nfl_source_data_lib.teams import NflTeamRegistry
-    from schedule_archive import ScheduleArchiveError, build_schedule
+    from derived_data_lib.nfl_schedule_games import ScheduleArchiveError, build_schedule
 
     from .decision_windows import make_team_key
 

@@ -12,16 +12,25 @@ FantasyRelevance slot bridge).
 
 ## Products
 
-PlayerValuation, LeagueTransactions, LeagueDrafts, PlayerWeekFantasy and TeamWeekPerformance per
-league, plus the global NFL Games product. They are built with the productive generators
-(`derived_data.py`, `historical_pwf_batch.py`, `team_week_performance_materialize.py
---all-finalized --require-pwf`, `nfl_games_materialize.py`); there is no second implementation.
+The 13 products listed in `PRODUCTS` of `tools/derived_clean_root_audit.py` (per league: PlayerValuation,
+LeagueTransactions, LeagueDrafts, PlayerWeekFantasy, TeamWeekPerformance, SeasonStatistics, LeagueStandings,
+LeagueRivalry, MatchupContext, WeeklyRecaps; global: NFL Games, NFL Injuries, NFL Player Availability). They are
+built with the productive generators (`derived_data.py`, `historical_pwf_batch.py`,
+`team_week_performance_materialize.py --all-finalized --require-pwf`, `nfl_games_materialize.py` and the
+product materializers); there is no second implementation.
+
+`data-derived/README.md` registers 16 products. Three are deliberately **outside** the probe
+(`OUTSIDE_RESTORE_PROBE` in `tools/tests/test_data_derived_inventory.py`): `league-schedule-outlook` (own
+materializer with consistency guard, Issue #1519), `team-cap-outlook` (current-season snapshot of the live rosters,
+Issue #1571) and `team-injury-impact` (depends on the current PlayerWeekFantasy partition, Issue #1584). Their
+coverage is their own materializer tests, not a clean-root replay; this is an accepted, documented exception.
 
 ## Three-way comparison
 
 * empty root: only `data-source`, `data-meta` and `public/requests` are visible; each product is built twice.
 * productive-like root: a copy of the published `data-derived` plus the published
-  `public/data/Standings.json` and `Players.json` (identity-hold seed, as in `update-players.yml`); built once.
+  `public/data/Standings.json` (historical shadow only); built once. The published Players identity-hold seed was
+  retired by ADR-076 and is never copied.
 * published: the files in the repository.
 
 | Status | Meaning | Severity |
@@ -39,13 +48,12 @@ status; hints keep exit code 0 (`HintProducts` in the JSON).
 
 ## Known open owner decisions
 
-* LeagueDrafts needs `public/data/Standings.json` only when a current-season draft has no
-  Sleeper order (`league_drafts.py`, typically at the next season change). The probe reports this
-  as `latent-blocker`; the source-owned predecessor belongs to Issue #987 (LeagueStandings as
-  Shared Derived). Do not treat copying Standings as source-only restoration.
-* Identity hold: the productive PlayerValuation run seeds holds from `public/data/Players.json`. A
-  hold row that only the seed can supply shows up as `restore-defect`; resolving it is an owner
-  decision, not a silent model change.
+* LeagueDrafts no longer needs `public/data/Standings.json` for the draft order: the order placements come from the
+  league-standings product (`derived_data_lib/league_standings.draft_order_placements`, Issue #1263). The probe's
+  `latent-blocker` hint for the transitional Standings input stays for a pre-existing path and is reported only if it
+  actually occurs.
+* Identity hold: since ADR-076 a hold row comes only from persisted PlayerValuation snapshots (no published
+  Players.json seed). A hold row no snapshot knows is a visible gap, not a silent carry-over.
 
 ## Weekly CI gate (Issue #471, step 2)
 
