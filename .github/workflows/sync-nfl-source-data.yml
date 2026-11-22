@@ -1153,6 +1153,15 @@ jobs:
             esac
           fi
 
+      # Cached copies are not authoritative: require every accepted frozen
+      # Original Release to remain present and digest/size-identical before
+      # any historical Derived replay can trust a local cached file.
+      - name: Verify immutable historical PBP Releases before cached replay
+        if: steps.historical_pbp_due.outputs.run == 'true'
+        env:
+          PBP_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python3 tools/nfl_pbp_source_history.py --limit 0
+
       - name: Compute historical original-PBP cache identity
         id: historical_pbp_cache_key
         if: steps.historical_pbp_due.outputs.run == 'true'
