@@ -1204,9 +1204,14 @@ consumerReadClassification:
         legacy:WeeklyRecaps: app-output-owner
         legacy:PlayerAwardHistory: app-output-owner
       note: 'Consumer generator of the weekly recaps (ADR-063, Issue #1199 section 4 step 4). Since Issue #499 it also renders PlayerAwardHistory.json; since ADR-089 (L3 of Issue #1571) it renders all of them from the persisted data-derived/weekly-recaps product (materialized by tools/weekly_recaps_materialize.py from the computed recap function) and reads no published past_seasons archive as an input. write renders WeeklyRecaps.json, PlayerAwardHistory.json and the past_seasons WeeklyRecaps files and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and updates the WeeklyRecaps key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+    tools/team_injury_impact_materialize.py:
+      reads:
+        legacy:InjuryImpact: app-output-owner
+      note: 'Materializer of the Shared Derived product team-injury-impact (Issue #1584 CP5, ADR-096). It mentions the App file InjuryImpact.json only as the downstream consumer rendering the product (--scope current|history runs before tools/injury_impact_app_publish.py); the product is built from canonical league source, nfl-player-availability, player-week-fantasy and week finality, never from the published App file.'
     tools/injury_impact_app_publish.py:
       reads:
         legacy:Timestamps: app-output-owner
+        legacy:InjuryImpact: app-output-owner
       note: 'Consumer generator of the Fantasy Injury Impact (Issue #1584 CP5, ADR-096). write renders InjuryImpact.json from the persisted Shared Derived product team-injury-impact (materialized beforehand by tools/team_injury_impact_materialize.py) and joins the season team identity from the canonical league source, only on a semantic difference. It reads the existing App file only to detect that difference and updates the InjuryImpact key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/season_statistics_app_publish.py:
       reads:
