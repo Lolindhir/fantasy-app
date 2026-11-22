@@ -63,13 +63,15 @@
               <h4 class="injury-subheading">Most hurt players</h4>
               <ul class="injury-players">
                 <li *ngFor="let player of injury.topPlayers" class="injury-player">
-                  <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
-                  <span *ngIf="!player.picture" class="injury-player__photo injury-player__photo--empty" aria-hidden="true"></span>
+                  <span class="injury-player__photo-wrap">
+                    <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
+                    <span *ngIf="!player.picture" class="injury-player__photo injury-player__photo--empty" aria-hidden="true"></span>
+                    <img *ngIf="nflLogo(vm, player.team) as logo" class="injury-player__nfl-logo" [src]="logo" [alt]="player.team" />
+                  </span>
                   <span class="injury-player__body">
                     <span class="injury-player__name">{{ player.name }}</span>
                     <span class="injury-player__meta">
                       <span *ngIf="player.position" class="position-chip" [ngStyle]="player.position | positionStyle">{{ player.position }}</span>
-                      <span *ngIf="player.team" class="injury-player__team">{{ player.team }}</span>
                       <span class="injury-player__value">{{ player.impactDisplay }}<small> pts · {{ player.weeks }}w</small></span>
                     </span>
                   </span>

@@ -35,6 +35,8 @@ interface SeasonStatsViewModel {
   /** True when at least one season has Injury Impact; otherwise the column is hidden. */
   hasInjuryImpact: boolean;
   rows(season: string): SeasonStatsRow[];
+  /** NFL team logo by canonical abbreviation. */
+  nflLogos: ReadonlyMap<string, string>;
 }
 
 const DEFAULT_AVATAR = 'assets/default-team-avatar.png';
@@ -64,9 +66,10 @@ export class SeasonTabComponent {
   readonly vm$ = forkJoin({
     data: this.dataService.getLeagueWithPlayers(),
     injury: this.dataService.getInjuryImpact(),
+    nflTeams: this.dataService.getNflTeams(),
     stats: this.dataService.getAllSeasonStatistics()
   }).pipe(
-    map(({ data: { league, teams }, injury, stats }): SeasonStatsViewModel => {
+    map(({ data: { league, teams }, injury, nflTeams, stats }): SeasonStatsViewModel => {
       const history = buildSeasonHistory(league).seasons.filter(season => season.regularSeasonStandings.length > 0);
       const statsDocs = new Map<string, SeasonStatisticsReadModel>(stats.bySeason);
       if (stats.current) statsDocs.set(String(stats.current.Season), stats.current);
@@ -79,6 +82,7 @@ export class SeasonTabComponent {
         seasons,
         defaultSeason: seasons.includes(String(league.Season)) ? String(league.Season) : (seasons[0] ?? null),
         hasInjuryImpact: injurySeasons.size > 0,
+        nflLogos: new Map(nflTeams.filter(team => team.Logo).map(team => [team.ID, team.Logo])),
         rows: season => {
           const cached = cache.get(season);
           if (cached) return cached;
@@ -160,6 +164,10 @@ export class SeasonTabComponent {
 
   isExpanded(row: SeasonStatsRow): boolean {
     return this.expandedTeamId === row.teamId;
+  }
+
+  nflLogo(vm: SeasonStatsViewModel, team: string | null): string | null {
+    return team ? (vm.nflLogos.get(team) ?? null) : null;
   }
 
   trackRow = (_: number, row: SeasonStatsRow): string => row.teamId;
