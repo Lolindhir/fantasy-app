@@ -180,6 +180,8 @@ def run(
 ) -> dict[str, Any]:
     if repository != _DEST_REPOSITORY:
         raise ValueError("Unexpected PBP archive repository")
+    if pin_path is not None and not write:
+        raise ValueError("A pinned PBP historical batch is valid for write mode only")
     saved = None
     if pin_path is not None and pin_path.is_file():
         if selected is not None:
