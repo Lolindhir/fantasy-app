@@ -68,9 +68,9 @@ describe('injury impact view utility', () => {
   });
 
   it('resolves top players through the generator references and tolerates files without references', () => {
-    const withRefs = season({ PlayerRefs: { P1: { Name: 'A Player', Position: 'WR', Picture: 'x.png' } } });
+    const withRefs = season({ PlayerRefs: { P1: { Name: 'A Player', Position: 'WR', Picture: 'x.png', Team: 'BUF' } } });
     expect(buildInjuryImpactByTeam(withRefs).get('1')!.topPlayers[0]).toEqual({
-      id: 'P1', name: 'A Player', position: 'WR', picture: 'x.png', impactDisplay: '9.0', weeks: 2
+      id: 'P1', name: 'A Player', position: 'WR', picture: 'x.png', team: 'BUF', impactDisplay: '9.0', weeks: 2
     });
     expect(buildInjuryImpactByTeam(season()).get('1')!.topPlayers[0].name).toBe('Unknown player');
   });

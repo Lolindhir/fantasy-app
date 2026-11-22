@@ -33,10 +33,10 @@ class SlimSeasonTests(unittest.TestCase):
         self.assertEqual(slim["SeasonTotals"], [{**document()["SeasonTotals"][0], "CostlyPlayersPerWeek": 1.0}])
 
     def test_player_refs_cover_every_top_player_and_never_drop_unknown_ones(self):
-        profiles = {"P1": {"DisplayName": "A Player", "Position": "WR", "Headshot": None}}
+        profiles = {"P1": {"DisplayName": "A Player", "Position": "WR", "Headshot": None, "LatestTeam": "BUF"}}
         refs = publisher.slim_season(document(), [], profiles)["PlayerRefs"]
-        self.assertEqual(refs["P1"], {"Name": "A Player", "Position": "WR", "Picture": None})
-        self.assertEqual(refs["P2"], {"Name": None, "Position": None, "Picture": None})
+        self.assertEqual(refs["P1"], {"Name": "A Player", "Position": "WR", "Picture": None, "Team": "BUF"})
+        self.assertEqual(refs["P2"], {"Name": None, "Position": None, "Picture": None, "Team": None})
 
 
 if __name__ == "__main__":

@@ -198,20 +198,20 @@
   background: rgba(148, 163, 184, 0.05);
 }
 
-.stats-mobile-facts {
+.stats-facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 8px 0 4px;
 }
 
-.stats-mobile-facts div {
+.stats-facts div {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.stats-mobile-facts dt {
+.stats-facts dt {
   color: #64748b;
   font-size: 0.66rem;
   font-weight: 800;
@@ -219,31 +219,10 @@
   text-transform: uppercase;
 }
 
-.stats-mobile-facts dd {
+.stats-facts dd {
   margin: 0;
   font-size: 0.92rem;
   font-weight: 800;
-}
-
-.injury-heading {
-  margin: 12px 0 2px;
-  color: #475569;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-}
-
-.injury-summary {
-  margin: 0 0 8px;
-  color: #334155;
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.injury-dot {
-  margin: 0 4px;
-  color: #94a3b8;
 }
 
 .injury-subheading {
@@ -256,7 +235,7 @@
 .injury-players {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -264,14 +243,14 @@
 
 .injury-player {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto auto;
+  grid-template-columns: 24px minmax(0, 1fr) auto 2.2em auto;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .injury-player__photo {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: rgba(148, 163, 184, 0.25);
   object-fit: cover;
@@ -279,10 +258,16 @@
 
 .injury-player__name {
   overflow: hidden;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.injury-player__team {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .injury-player__value {
@@ -332,7 +317,7 @@
     display: block;
   }
 
-  .stats-mobile-facts {
+  .stats-fact--table {
     display: none;
   }
 

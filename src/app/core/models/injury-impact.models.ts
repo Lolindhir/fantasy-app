@@ -45,6 +45,8 @@ export interface InjuryImpactPlayerRef {
   Name: string | null;
   Position: string | null;
   Picture: string | null;
+  /** Latest NFL team abbreviation; absent in older files. */
+  Team?: string | null;
 }
 
 export interface InjuryImpactSeason {

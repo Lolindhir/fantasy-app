@@ -68,6 +68,7 @@ def player_refs(document: dict[str, Any], profiles: dict[str, dict[str, Any]]) -
                 "Name": profile.get("DisplayName") or None,
                 "Position": profile.get("Position") or None,
                 "Picture": sized_headshot(headshot) if headshot else None,
+                "Team": profile.get("LatestTeam") or None,
             }
     return dict(sorted(refs.items()))
 

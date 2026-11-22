@@ -20,6 +20,7 @@ export interface InjuryImpactTopPlayerView {
   name: string;
   position: string | null;
   picture: string | null;
+  team: string | null;
   impactDisplay: string;
   weeks: number;
 }
@@ -80,6 +81,7 @@ export function buildInjuryImpactByTeam(season: InjuryImpactSeason | null | unde
           name: ref?.Name ?? 'Unknown player',
           position: ref?.Position ?? null,
           picture: ref?.Picture ?? null,
+          team: ref?.Team ?? null,
           impactDisplay: formatDecimal(player.SingleReturnImpact, 1),
           weeks: player.Weeks
         };

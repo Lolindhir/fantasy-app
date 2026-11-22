@@ -45,38 +45,35 @@
         </div>
 
         <div class="stats-details" *ngIf="isExpanded(row)">
-          <dl class="stats-mobile-facts" *ngIf="row.stats as s">
-            <div><dt>Expected Wins</dt><dd>{{ expectedWins(s) }}</dd></div>
-            <div><dt>Luck</dt><dd [ngClass]="'stats-luck--' + signClass(s.Luck)">{{ formatSigned(s.Luck) }}</dd></div>
-            <div><dt>All-Play</dt><dd>{{ formatAllPlay(s) }}</dd></div>
+          <dl class="stats-facts">
+            <ng-container *ngIf="row.stats as s">
+              <div class="stats-fact--table"><dt>Expected Wins</dt><dd>{{ expectedWins(s) }}</dd></div>
+              <div class="stats-fact--table"><dt>Luck</dt><dd [ngClass]="'stats-luck--' + signClass(s.Luck)">{{ formatSigned(s.Luck) }}</dd></div>
+              <div class="stats-fact--table"><dt>All-Play</dt><dd>{{ formatAllPlay(s) }}</dd></div>
+            </ng-container>
+            <ng-container *ngIf="vm.hasInjuryImpact && row.injury as injury">
+              <div><dt>Hurt / Week</dt><dd>{{ injury.hurtDisplay }}</dd></div>
+              <div><dt>Points Lost</dt><dd>{{ injury.totalDisplay }}</dd></div>
+              <div><dt>Weeks Hit</dt><dd>{{ injury.weeksWithImpact }} of {{ injury.weeksComputed }}</dd></div>
+            </ng-container>
           </dl>
 
-          <ng-container *ngIf="vm.hasInjuryImpact">
-            <ng-container *ngIf="row.injury as injury; else noInjury">
-              <h3 class="injury-heading">Injury Impact</h3>
-              <p class="injury-summary">
-                <strong>{{ injury.hurtDisplay }} players</strong> per week
-                <span class="injury-dot" aria-hidden="true">·</span>
-                {{ injury.totalDisplay }} pts lost in total
-                <span class="injury-dot" aria-hidden="true">·</span>
-                {{ injury.weeksWithImpact }} of {{ injury.weeksComputed }} weeks affected
-              </p>
-
-              <ng-container *ngIf="injury.topPlayers.length > 0">
-                <h4 class="injury-subheading">Most hurt players</h4>
-                <ul class="injury-players">
-                  <li *ngFor="let player of injury.topPlayers" class="injury-player">
-                    <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
-                    <span *ngIf="!player.picture" class="injury-player__photo injury-player__photo--empty" aria-hidden="true"></span>
-                    <span class="injury-player__name">{{ player.name }}</span>
-                    <span *ngIf="player.position" class="position-chip" [ngStyle]="player.position | positionStyle">{{ player.position }}</span>
-                    <span class="injury-player__value">{{ player.impactDisplay }} pts<small> · {{ player.weeks }} {{ player.weeks === 1 ? 'week' : 'weeks' }}</small></span>
-                  </li>
-                </ul>
-              </ng-container>
+          <ng-container *ngIf="vm.hasInjuryImpact && row.injury as injury">
+            <ng-container *ngIf="injury.topPlayers.length > 0">
+              <h4 class="injury-subheading">Most hurt players</h4>
+              <ul class="injury-players">
+                <li *ngFor="let player of injury.topPlayers" class="injury-player">
+                  <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
+                  <span *ngIf="!player.picture" class="injury-player__photo injury-player__photo--empty" aria-hidden="true"></span>
+                  <span class="injury-player__name">{{ player.name }}</span>
+                  <span *ngIf="player.position" class="position-chip" [ngStyle]="player.position | positionStyle">{{ player.position }}</span>
+                  <span class="injury-player__team">{{ player.team ?? '' }}</span>
+                  <span class="injury-player__value">{{ player.impactDisplay }}<small> pts · {{ player.weeks }}w</small></span>
+                </li>
+              </ul>
             </ng-container>
-            <ng-template #noInjury><p class="injury-note">No Injury Impact for this team in this season.</p></ng-template>
           </ng-container>
+          <p class="injury-note" *ngIf="vm.hasInjuryImpact && !row.injury">No injury data for this team in this season.</p>
         </div>
       </ng-container>
     </div>
