@@ -1,4 +1,4 @@
-"""Kickoff overlay for the canonical NFL schedule (Issue #1627, design draft; not wired into the materializer).
+"""Kickoff overlay for the canonical NFL schedule (Issue #1627, ADR-097).
 
 nflverse stays the only schedule source. When an independent ESPN observation (a Source Evidence snapshot,
 joined by ProviderGameIDs.ESPN) proves a different kickoff of a game that is not scored yet, the materialized
@@ -9,9 +9,12 @@ evidence never changes a game (fail closed towards nflverse).
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import SOURCE_TIME_ZONE, kickoff_utc
 
 # Versioned method parameters (never league data). A flex move stays inside its NFL week, which spans at most
@@ -102,3 +105,25 @@ def apply_overlay(
         decisions.append(_decision(game, APPLIED, "espn-differs", NflverseKickoffUtc=canonical, EspnKickoffUtc=observed))
     return games, decisions
 
+
+
+def load_espn_observations(repo_root: Path, season: int) -> list[dict[str, str]]:
+    """Observations of data-source/providers/espn/schedule/<season>.json; missing or unreadable means none."""
+    path = repo_root / DATA_SOURCE_ROOT / "providers" / "espn" / "schedule" / f"{season}.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+        return [
+            {"EspnGameID": str(o["EspnGameID"]), "KickoffUtc": str(o["KickoffUtc"])} for o in payload["Observations"]
+        ]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+
+
+def apply_espn_kickoff_overlay(
+    repo_root: Path, season: int, games: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Overlay the persisted ESPN observations of one season onto the nflverse-derived games."""
+    observations = load_espn_observations(repo_root, season)
+    if not observations:
+        return games, []
+    return apply_overlay(games, observations)

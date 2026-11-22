@@ -1029,9 +1029,17 @@ participationContract:
 
 scheduleKickoffOverlayContract:
   issue: 1627
-  status: design-draft-not-active
+  status: active-after-merge
   decision: ADR-097
-  implementation: tools/nfl_source_data_lib/schedule_kickoff_overlay.py (pure function, not yet wired into the schedule materializer)
+  implementation: tools/nfl_source_data_lib/schedule_kickoff_overlay.py (pure function, applied in phase1._build_schedules)
+  snapshot:
+    dataset: espn.schedule
+    path: data-source/providers/espn/schedule/<season>.json
+    writer: tools/espn_schedule_snapshot.py sync, job espn-schedule of the existing nfl-live.yml (rebuild-and-retry, scope nfl-espn-schedule, path prefix data-source/providers/espn/schedule)
+    content: Observations [EspnGameID, KickoffUtc]; no timestamps (history is in git), written only on semantic change
+    cadence: at most about twice an hour (UTC minute below 20), one scoreboard request per distinct game day of the next 14 days
+    merge: new observations are merged into the previous snapshot; an ESPN outage keeps earlier observations; entries of scored games are pruned
+    failure: the job is continue-on-error and never blocks the chain
   rule: >
     nflverse stays the only schedule source. An independent ESPN observation (Source Evidence snapshot, joined by
     ProviderGameIDs.ESPN) may replace only GameDay, GameTime and WeekDay of a game that is not scored yet, when exactly
@@ -1046,9 +1054,10 @@ scheduleKickoffOverlayContract:
     Derived (nfl-games, Decision Windows, schedule archives) and consumers keep reading the canonical schedule only;
     no consumer reads the ESPN snapshot.
   activation: >
-    Not active. Activation needs the ESPN snapshot dataset (scoreboard per day, low cadence, inside the existing
-    nfl-live Source writer), the materializer wiring, a contract test of semantic no-op, and Robert's targeted approval
-    of the Source-authority change (elevated).
+    Active with the merge of the wiring PR (Robert approved the elevated Source-authority and writer-scope change on
+    2026-11-22: one PR, snapshot dataset plus materializer overlay, nflverse always the fallback). Every applied
+    override appears in the schedule diagnostics (kickoffOverlayApplied) printed by the materializer, and the parity job keeps reporting remaining differences. Rollback: remove
+    the espn-schedule job and the apply_espn_kickoff_overlay call; the next materialization restores the nflverse times.
 
 publication:
   rawFirst: true

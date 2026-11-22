@@ -1288,7 +1288,7 @@ consumerReadClassification:
       reads:
         network: repository-infrastructure
         provider:espn: repository-infrastructure
-      note: 'Read-only kickoff freshness check of the canonical NFL schedule against the ESPN scoreboard (independent observation); reports differences only, writes no data and never overrides the canonical schedule.'
+      note: 'Read-only kickoff freshness check of the canonical NFL schedule against the ESPN scoreboard (independent observation); reports differences only. Its scoreboard fetch is reused by tools/espn_schedule_snapshot.py (Issue #1627), which stores the observations as Source Evidence.'
     tools/nfl_injuries_refresh.py:
       reads:
         network: source-layer-acquisition
