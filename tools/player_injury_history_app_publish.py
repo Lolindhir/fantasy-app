@@ -20,7 +20,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT  # noqa: E402
-from derived_data_lib.nfl_player_availability import PRODUCT, PRODUCT_VERSION  # noqa: E402
+from derived_data_lib.nfl_player_availability import PRODUCT, PRODUCT_VERSION, RESERVE_STATUSES  # noqa: E402
 from matchup_context_app_publish import Writer, _load, _warn, diff_values  # noqa: E402
 
 CONTRACT_VERSION = 1
@@ -123,6 +123,9 @@ def build_document(
         for record in document.get("Records", []):
             # Only fantasy-relevant weeks: regular season up to the league's last week (the product keeps every NFL week).
             if record.get("GameType") != "REG" or (cap is not None and record["Week"] > cap):
+                continue
+            # v2 adds healthy roster weeks (the denominator); the App file keeps showing only weeks with a signal (report or reserve).
+            if record["Report"] is None and (record["Roster"] or {}).get("Status") not in RESERVE_STATUSES:
                 continue
             sleeper = wanted.get(record["CanonicalPlayerID"])
             if sleeper is not None:
