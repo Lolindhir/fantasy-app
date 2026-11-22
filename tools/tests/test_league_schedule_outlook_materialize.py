@@ -386,7 +386,7 @@ class ConsistencyTests(Harness):
     def test_model_comes_from_data_meta_and_fails_closed(self):
         repo = TOOLS.parent
         league = "nfl-reise"
-        selected = "schedule-outlook-v2"
+        selected = "schedule-outlook-v3"
         self.assertEqual(selected, mat.selected_model_id(repo, league, 2025))
         self.assertEqual(selected, mat.selected_model_id(repo, league, 2025, asserted=selected))
         with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "not the asserted"):

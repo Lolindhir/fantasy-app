@@ -36,7 +36,7 @@ foreach ($s in $manifest.Seasons) {
     Assert-Equal 'season-stats-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'SeasonStats') "SeasonStats model $($s.Season)."
     Assert-Equal 'rivalry-v2' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Rivalry') "Rivalry model $($s.Season)."
     Assert-Equal 'weekly-recap-v2' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'WeeklyRecap') "WeeklyRecap model $($s.Season)."
-    Assert-Equal 'schedule-outlook-v2' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'ScheduleOutlook') "ScheduleOutlook model $($s.Season)."
+    Assert-Equal 'schedule-outlook-v3' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'ScheduleOutlook') "ScheduleOutlook model $($s.Season)."
     Assert-Equal 'playoff-odds-v2' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'PlayoffOdds') "PlayoffOdds model $($s.Season)."
 }
 foreach ($retired in @('public/data/Metadata.json', 'public/data/Metadata.ai-doc.yaml', 'data-source/leagues/_bootstrap', 'public/requests/config.ps1')) {

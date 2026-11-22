@@ -20,6 +20,12 @@ implementationState: >
 strengthOfSchedule:
   issue: 1589
   architectureDecision: ADR-091
+  modelV3: >
+    schedule-outlook-v3 (Issue #1607, ADR-094, tools/derived_data_lib/models/schedule_outlook/v3.py, selected for all seasons) changes only the
+    weight: the current season counts with min(1, g / (R / 2)), R = regular-season weeks from the canonical week structure
+    (PARAMS.FadeFraction 0.5), so the previous season counts 100 percent before game 1, fades evenly and is gone from half of the
+    regular season on (12 weeks: after week 6; 14 weeks: after week 7). Everything else equals v2 (points-based strength, remaining
+    schedule, bands); StrengthParams carries FadeFraction instead of CurrentSeasonWeightK. v2 stays immutable.
   model: schedule-outlook-v2 (tools/derived_data_lib/models/schedule_outlook/v2.py), chosen per season in data-meta Models.ScheduleOutlook; v1 stays immutable
   principle: >
     Strength is a pure statement about points scored, never a projection: the RelativeScoringStrength of the season-statistics
