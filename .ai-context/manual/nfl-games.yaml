@@ -374,6 +374,18 @@ futureGameDetailDirection:
       tools/nfl_pbp_source_auto.py in the established full Source publisher owns
       dynamically discovered active-season intake and revisions, while the
       pre-existing 2025 original remains frozen with its own contract.
+    historicalOriginalTeamIdentity: >-
+      For accepted historical original PBP the canonical GameID, season, week
+      and type remain strict. Source home_team, away_team, posteam and defteam
+      may differ from the canonical game only through the existing
+      season-bounded tools/derived_data_lib/nfl_franchise_aliases.py
+      SD/LAC (through 2016), OAK/LV (through 2019), STL/LA (through 2015).
+      Resolve each possession/defense team uniquely against that game's
+      canonical away/home teams before team aggregations; two observed teams
+      resolving to the same franchise, unknown or out-of-era pairings fail
+      closed. Keep the original provider strings intact as SourceRow evidence
+      and in the immutable Source archive; do not globally rewrite teams,
+      GameIDs, Source manifests, fingerprints or change completeness claims.
     outputContract: >-
       Existing compact NFL Games season index remains SchemaVersion=1.
       The same per-GameID details path contains the full pre-existing
