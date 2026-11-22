@@ -14,6 +14,7 @@ export const routes: Routes = [
   { path: 'weeks', redirectTo: 'schedule', pathMatch: 'full' },
   { path: 'teams', loadComponent: () => import('./features/teams/teams-page/teams-page').then(m => m.TeamsPageComponent) },
   { path: 'teams/legacy', component: TeamListComponent },
+  { path: 'stats', loadComponent: () => import('./features/stats/stats-page').then(m => m.StatsPageComponent) },
   { path: 'standings', loadComponent: () => import('./features/standings/standings-page').then(m => m.StandingsPageComponent) },
   { path: 'players', component: PlayersPageComponent },
   { path: 'drafts', component: DraftsPageComponent },

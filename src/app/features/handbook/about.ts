@@ -21,7 +21,8 @@ const HANDBOOK_PAGES: readonly HandbookPage[] = [
   { id: 'Offseason_Schedule', label: 'Offseason Regeln' },
   { id: 'Draft_Waiver_Order', label: 'Draft & Waiver Regeln' },
   { id: 'Playoff_Odds_Schedule', label: 'Playoff-Chancen & Gegnerstärke' },
-  { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' }
+  { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' },
+  { id: 'Injury_Impact', label: 'Verletzungs-Impact' }
 ];
 
 @Component({

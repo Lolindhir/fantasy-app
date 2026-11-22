@@ -1,0 +1,464 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.season-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.season-stats__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.season-stats__title {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.season-stats__select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+
+.season-stats__select select {
+  padding: 6px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.season-stats__note,
+.season-stats__empty {
+  margin: 4px 2px 0;
+  color: #64748b;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.season-stats__note a {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* Table: # | Team | Record | Exp. W | Luck | All-Play | Injury Impact | chevron. Exp. W, Luck and All-Play move into the detail row on small screens. */
+.stats-table {
+  --stats-grid: 24px minmax(0, 1fr) 52px 70px 26px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table--no-injury {
+  --stats-grid: 24px minmax(0, 1fr) 52px 26px;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: var(--stats-grid);
+  column-gap: 6px;
+  align-items: center;
+  padding: 7px 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.stats-row--head {
+  border-top: 0;
+  background: rgba(148, 163, 184, 0.08);
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.stats-row--head .stats-cell,
+.stats-row--head .stats-sort {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.stats-row--head .stats-impact {
+  white-space: normal;
+  line-height: 1.1;
+}
+
+.stats-place {
+  font-weight: 800;
+  text-align: center;
+}
+
+.stats-team {
+  min-width: 0;
+}
+
+.stats-team app-team-identity {
+  --team-identity-avatar-size: 26px;
+  --team-identity-gap: 6px;
+  --team-identity-title-font-size: 0.82rem;
+}
+
+.stats-cell {
+  text-align: right;
+  white-space: nowrap;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.stats-impact {
+  font-weight: 800;
+}
+
+.stats-desktop {
+  display: none;
+}
+
+.stats-sort {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.stats-sort:hover,
+.stats-sort[aria-sort='ascending'],
+.stats-sort[aria-sort='descending'] {
+  color: #1d4ed8;
+}
+
+.stats-sort[aria-sort='ascending']::after {
+  content: ' ▲';
+  font-size: 0.55rem;
+}
+
+.stats-sort[aria-sort='descending']::after {
+  content: ' ▼';
+  font-size: 0.55rem;
+}
+
+.stats-luck--pos {
+  color: #15803d;
+}
+
+.stats-luck--neg {
+  color: #b91c1c;
+}
+
+.stats-expand {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.stats-chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.stats-chevron--open {
+  transform: rotate(-135deg);
+}
+
+.stats-details {
+  padding: 4px 12px 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.stats-mobile-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.stats-mobile-facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stats-mobile-facts dt {
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.stats-mobile-facts dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.injury-heading {
+  margin: 12px 0 2px;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.injury-summary {
+  margin: 0 0 8px;
+  color: #334155;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.injury-dot {
+  margin: 0 4px;
+  color: #94a3b8;
+}
+
+.injury-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.injury-bar {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  font: inherit;
+  cursor: pointer;
+}
+
+.injury-bar__track {
+  display: flex;
+  align-items: flex-end;
+  height: 64px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.injury-bar__fill {
+  display: block;
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: #3b82f6;
+}
+
+.injury-bar--lower .injury-bar__fill {
+  background: repeating-linear-gradient(135deg, #3b82f6 0 4px, #93c5fd 4px 8px);
+}
+
+/* Amber dashed is reserved for unknown evidence. */
+.injury-bar--unknown .injury-bar__track {
+  outline: 1.5px dashed #d97706;
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.injury-bar--na .injury-bar__track {
+  background: repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.18) 0 3px, transparent 3px 6px);
+}
+
+.injury-bar--active .injury-bar__fill {
+  filter: brightness(0.85);
+}
+
+.injury-bar--active .injury-bar__week {
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
+.injury-bar__week {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.injury-caption {
+  min-height: 1.2em;
+  margin: 6px 0 4px;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.injury-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 4px;
+  padding: 0;
+  color: #64748b;
+  font-size: 0.68rem;
+  list-style: none;
+}
+
+.injury-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.injury-key {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #3b82f6;
+}
+
+.injury-key--lower {
+  background: repeating-linear-gradient(135deg, #3b82f6 0 3px, #93c5fd 3px 6px);
+}
+
+.injury-key--unknown {
+  background: transparent;
+  outline: 1.5px dashed #d97706;
+  outline-offset: 0;
+}
+
+.injury-key--na {
+  background: repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.35) 0 2px, transparent 2px 4px);
+}
+
+.injury-subheading {
+  margin: 12px 0 4px;
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.injury-players {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.injury-player {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.injury-player__photo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.25);
+  object-fit: cover;
+}
+
+.injury-player__name {
+  overflow: hidden;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.injury-player__value {
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.injury-player__value small {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.injury-note {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.position-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 27px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .stats-table {
+    --stats-grid: 32px minmax(0, 1fr) 64px 56px 56px 64px 104px 26px;
+  }
+
+  .stats-table--no-injury {
+    --stats-grid: 32px minmax(0, 1fr) 64px 56px 56px 64px 26px;
+  }
+
+  .stats-row {
+    column-gap: 10px;
+    padding: 8px 12px;
+  }
+
+  .stats-desktop {
+    display: block;
+  }
+
+  .stats-mobile-facts {
+    display: none;
+  }
+
+  .stats-team app-team-identity {
+    --team-identity-title-font-size: 0.9rem;
+  }
+
+  .injury-bar__track {
+    height: 80px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stats-chevron {
+    transition: none;
+  }
+}

@@ -29,6 +29,7 @@ import type { RawTransaction, Transaction } from '../models/transaction.models';
 import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
+import type { InjuryImpactReadModel } from '../models/injury-impact.models';
 import type { PlayerInjuryHistoryReadModel } from '../models/player-injury-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 import type { ScheduleOutlookReadModel } from '../models/schedule-outlook.models';
@@ -347,8 +348,37 @@ export class DataService {
     return this.dataApiService.getPlayerInjuryHistoryRaw().pipe(catchError(() => of(null)));
   }
 
+  /** Fantasy Injury Impact per team and week; null when the file is unavailable so the column is hidden. */
+  getInjuryImpact(): Observable<InjuryImpactReadModel | null> {
+    return this.dataApiService.getInjuryImpactRaw().pipe(catchError(() => of(null)));
+  }
+
   getSeasonStatistics(): Observable<SeasonStatisticsReadModel> {
     return this.dataApiService.getSeasonStatisticsRaw();
+  }
+
+  /** Current and archived season statistics; files that are unavailable never block the caller. */
+  getAllSeasonStatistics(): Observable<{ current: SeasonStatisticsReadModel | null; bySeason: Map<string, SeasonStatisticsReadModel> }> {
+    return forkJoin({
+      current: this.getSeasonStatistics().pipe(catchError(() => of(null))),
+      index: this.getPastSeasonsIndex().pipe(catchError(() => of(null)))
+    }).pipe(
+      switchMap(({ current, index }) => {
+        const entries = (index?.Seasons ?? [])
+          .map(entry => ({ season: String(entry.Season), path: entry.Resources?.SeasonStatistics }))
+          .filter(item => item.path?.Exists && item.path.Path);
+        if (entries.length === 0) return of({ current, bySeason: new Map<string, SeasonStatisticsReadModel>() });
+        return forkJoin(entries.map(item =>
+          this.getPastSeasonStatisticsRaw(item.path!.Path as string).pipe(
+            map(doc => [item.season, doc] as const),
+            catchError(() => of(null))
+          )
+        )).pipe(map(results => ({
+          current,
+          bySeason: new Map(results.filter((r): r is readonly [string, SeasonStatisticsReadModel] => r !== null))
+        })));
+      })
+    );
   }
 
   getScheduleOutlook(): Observable<ScheduleOutlookReadModel> {
