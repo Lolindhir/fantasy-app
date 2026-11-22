@@ -138,9 +138,8 @@ def plan(
             continue
         asset = official[year]
         official_sha = asset.get("digest")
-        stored_sha = record.get("UpstreamSHA256")
-        if (official_sha is not None and stored_sha is not None
-                and official_sha != f"sha256:{stored_sha}"):
+        stored_sha = record.get("OriginalSHA256") or record.get("UpstreamSHA256")
+        if official_sha is not None and official_sha != f"sha256:{stored_sha}":
             revisions.append({"Season": year, "Reason": "official-provider-digest-changed"})
         elif asset["size"] != record["CompressedBytes"]:
             revisions.append({"Season": year, "Reason": "official-provider-size-changed"})
