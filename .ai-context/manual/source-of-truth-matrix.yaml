@@ -1279,6 +1279,11 @@ consumerReadClassification:
         network: source-layer-acquisition
         provider:espn: source-layer-acquisition
       note: 'ESPN kona_player_info injury status snapshot into data-source/nfl/player-availability (#347); consumed by RequestLeague as canonical input.'
+    tools/nfl_schedule_parity.py:
+      reads:
+        network: repository-infrastructure
+        provider:espn: repository-infrastructure
+      note: 'Read-only kickoff freshness check of the canonical NFL schedule against the ESPN scoreboard (independent observation); reports differences only, writes no data and never overrides the canonical schedule.'
     tools/nfl_injuries_refresh.py:
       reads:
         network: source-layer-acquisition
