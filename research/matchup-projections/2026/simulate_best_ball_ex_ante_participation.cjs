@@ -108,11 +108,34 @@ function run(options={}) {
     const projected=distinct(pwf.Records.filter(x=>x.PlayerID!==null&&x.PlayerID!==undefined)
       .map(x=>({...x,PlayerID:String(x.PlayerID)})),'PlayerID');
     const actual=distinct(final.Records,'CanonicalPlayerID');
-    const snapMap=snapsByPlayer(snaps);
+    // The full NFL snap feed contains unrelated multi-position identity collisions.
+    // Do not turn those into candidate non-participation or suppress them silently.
+    // Only a relevant fantasy position (RB also accepts source HB) can label a player.
+    const expectedPositions=new Map();
+    for(const team of dw.FantasyRelevance.Teams)for(const p of team.Players) {
+      if(!['starter','bench'].includes(p.Placement)||
+         p.GameState!=='unlocked'||!p.GameID||!POS.has(p.Position))continue;
+      const rec=projected.get(String(p.PlayerID));
+      if(rec?.Projection?.Status!=='available'||rec.Projection.PredictionRange?.Level!==0.9)continue;
+      const old=expectedPositions.get(rec.CanonicalPlayerID);
+      assert(!old||old===p.Position,'Fantasy player position conflict '+rec.CanonicalPlayerID);
+      expectedPositions.set(rec.CanonicalPlayerID,p.Position);
+    }
+    let conflictingSnapPositionRows=0;
+    const relevantSnaps=[];
+    for(const rec of snaps.Records) {
+      const expected=expectedPositions.get(rec.CanonicalPlayerID);
+      if(!expected)continue;
+      if(rec.Position!==expected && !(expected==='RB'&&rec.Position==='HB')) {
+        conflictingSnapPositionRows++;continue;
+      }
+      relevantSnaps.push({...rec,Position:expected});
+    }
+    const snapMap=snapsByPlayer({...snaps,Records:relevantSnaps});
     assert.equal(dw.FantasyRelevance.Teams.length,6);
     const updates={},stats={week,revision:sha,cutoff:observed,rosterPlayers:0,
       candidatePlayers:0,knownStatus:0,unknownStatus:0,byStatus:{},complete:0,incomplete:0,
-      missingSnapEvidence:0};
+      missingSnapEvidence:0,conflictingSnapPositionRows};
     const seenTeams=new Set(),seenPlayers=new Set();
     let teamOrdinal=0;
     for(const team of dw.FantasyRelevance.Teams) {
