@@ -1,4 +1,4 @@
-"""Synthetic Fast cases for nfl-player-availability-v2 (Issues #1590, #1610). No real players or seasons are wired in."""
+"""Synthetic Fast cases for nfl-player-availability-v3 (Issues #1590, #1610, #1612). No real players or seasons are wired in."""
 from __future__ import annotations
 
 import copy
@@ -74,7 +74,7 @@ class StateTests(unittest.TestCase):
         rec = one(doc, 1, p)
         self.assertEqual(rec["State"], "not-played-reported")
         self.assertEqual(rec["Report"][0]["Game"], "Out")
-        self.assertEqual(rec["Participation"], {"State": "not-played", "Evidence": "snap-counts"})
+        self.assertEqual(rec["Participation"], {"State": "not-played", "Evidence": "snap-counts", "Plays": None})
 
     def test_out_but_played_stays_visible_as_played(self):
         p = player(1)
@@ -145,13 +145,13 @@ class StateTests(unittest.TestCase):
         doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]})
         rec = one(doc, 1, p)
         self.assertEqual(rec["State"], "unknown")
-        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": None})
+        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": None, "Plays": None})
 
     def test_stats_row_is_participation_evidence_without_snaps(self):
         p = player(1)
         gid = game(1, "AAA", "BBB")["GameID"]
         doc = build([report(p, 1, "Questionable")], {1: [roster(p, "AAA")]}, stats={1: [{"CanonicalPlayerID": p, "Stats": {"game_id": gid}}]})
-        self.assertEqual(one(doc, 1, p)["Participation"], {"State": "played", "Evidence": "player-stats"})
+        self.assertEqual(one(doc, 1, p)["Participation"], {"State": "played", "Evidence": "player-stats", "Plays": None})
 
     def test_unresolved_snap_row_of_same_team_blocks_not_played_claim(self):
         p = player(1)
@@ -168,7 +168,7 @@ class StateTests(unittest.TestCase):
         doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, rows, tokens={p: ["OWN-1", "OWN-ALIAS"]})
         rec = one(doc, 1, p)
         self.assertEqual(rec["State"], "not-played-reported")
-        self.assertEqual(rec["Participation"], {"State": "not-played", "Evidence": "snap-counts-token-excluded"})
+        self.assertEqual(rec["Participation"], {"State": "not-played", "Evidence": "snap-counts-token-excluded", "Plays": None})
         doc = build([], {1: [roster(p, "AAA", "RES", "R01")]}, rows, tokens={p: ["OWN-1"]})
         self.assertEqual(one(doc, 1, p)["State"], "not-played-reserve")
 
@@ -179,7 +179,7 @@ class StateTests(unittest.TestCase):
         doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA")]}, rows, tokens={p: ["OWN-1", "OWN-ALIAS"]})
         rec = one(doc, 1, p)
         self.assertEqual(rec["State"], "unknown")
-        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": "snap-counts-identity-gap"})
+        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": "snap-counts-identity-gap", "Plays": None})
 
     def test_player_without_pfr_token_or_row_without_token_stays_unknown(self):
         p = player(1)
@@ -198,7 +198,7 @@ class StateTests(unittest.TestCase):
         doc = build([], {1: [roster(p, "AAA", "RES", "R01")]}, {1: snaps(gid, played=[player(9)], unresolved_team="AAA")})
         rec = one(doc, 1, p)
         self.assertEqual(rec["State"], "not-played-reserve")
-        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": "snap-counts-identity-gap"})
+        self.assertEqual(rec["Participation"], {"State": "unknown", "Evidence": "snap-counts-identity-gap", "Plays": None})
         doc = build([report(p, 1, None, "Did Not Participate In Practice")], {1: [roster(p, "AAA", "RES", "R01")]}, {1: snaps(gid, played=[player(9)], unresolved_team="AAA")})
         self.assertEqual(one(doc, 1, p)["State"], "not-played-reported")
 
@@ -213,6 +213,44 @@ class StateTests(unittest.TestCase):
         doc = build([], {1: [roster(p, "AAA", None, "A01")]}, {1: snaps(game(1, "AAA", "BBB")["GameID"], played=[player(9)])})
         self.assertEqual(doc["Records"], [])
         self.assertFalse(doc["Inputs"]["RosterStatusAvailable"])
+
+
+
+class ParticipationTests(unittest.TestCase):
+    """v3 (Issue #1612): participation is positive-only evidence; absence is never evidence."""
+
+    GID = game(1, "AAA", "BBB")["GameID"]
+
+    def run_case(self, plays, snap_rows=None, **kw):
+        p = player(1)
+        doc = build([], {1: [roster(p, "AAA", position="WR")]}, snap_rows, participation_plays=({self.GID: {p: plays}} if plays is not None else None), **kw)
+        return doc, one(doc, 1, p)
+
+    def test_unknown_with_plays_becomes_played(self):
+        doc, rec = self.run_case(7)
+        self.assertEqual((rec["State"], rec["Played"], rec["Participation"]), ("played", True, {"State": "played", "Evidence": "participation", "Plays": 7}))
+
+    def test_absent_participation_stays_unknown(self):
+        _, rec = self.run_case(None)
+        self.assertEqual((rec["State"], rec["Played"], rec["Participation"]["Plays"]), ("unknown", None, None))
+
+    def test_conflict_with_snap_not_played_becomes_unknown(self):
+        _, rec = self.run_case(26, {1: snaps(self.GID, played=[player(9)])})
+        self.assertEqual((rec["State"], rec["Played"], rec["Participation"]["Evidence"]), ("unknown", None, "participation-conflict"))
+
+    def test_single_play_does_not_override_not_played(self):
+        _, rec = self.run_case(1, {1: snaps(self.GID, played=[player(9)])})
+        self.assertEqual((rec["State"], rec["Played"], rec["Participation"]["Plays"]), ("healthy-scratch", False, 1))
+
+    def test_snap_evidence_wins_and_keeps_plays(self):
+        _, rec = self.run_case(3, {1: snaps(self.GID, played=[player(1)])})
+        self.assertEqual((rec["State"], rec["Participation"]["Evidence"], rec["Participation"]["Plays"]), ("played", "snap-counts", 3))
+
+    def test_parameters_are_recorded_in_the_document(self):
+        doc, _ = self.run_case(7)
+        self.assertEqual(doc["ProductVersion"], "nfl-player-availability-v3")
+        self.assertEqual(doc["Inputs"]["ParticipationParameters"], {"MinPlaysUnknownToPlayed": 1, "MinPlaysConflict": 5})
+        self.assertTrue(doc["Inputs"]["ParticipationAvailable"])
 
 
 class DeterminismTests(unittest.TestCase):
@@ -407,7 +445,7 @@ class NonActiveAndByeTests(unittest.TestCase):
                     {1: snaps(self._g(1), played=[p]), 3: snaps(self._g(3), played=[p])})
         rec = one(doc, 2, p)
         self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("bye", "bye", None))
-        self.assertEqual(rec["Participation"], {"State": "no-game", "Evidence": "bye"})
+        self.assertEqual(rec["Participation"], {"State": "no-game", "Evidence": "bye", "Plays": None})
         self.assertIsNone(rec["GameID"])
         self.assertIsNone(rec["Roster"])
         self.assertIsNone(rec["Report"])
@@ -456,7 +494,7 @@ class NonActiveAndByeTests(unittest.TestCase):
 
 
 class PersistedStateGuard(unittest.TestCase):
-    """Persisted v2 season files have a record with Available and Played for every roster week of the position cut (no gaps).
+    """Persisted v2/v3 season files have a record with Available and Played for every roster week of the position cut (no gaps).
 
     Seasons still persisted as v1 are skipped until the existing writer regenerates them; nothing is wired to real players.
     """
@@ -468,7 +506,7 @@ class PersistedStateGuard(unittest.TestCase):
         checked = 0
         for path in sorted((repo / "data-derived" / "nfl-player-availability").glob("*.json")):
             document = json.loads(path.read_text(encoding="utf-8"))
-            if document.get("ProductVersion") != "nfl-player-availability-v2":
+            if document.get("ProductVersion") not in ("nfl-player-availability-v2", "nfl-player-availability-v3"):
                 continue
             checked += 1
             season = document["Season"]

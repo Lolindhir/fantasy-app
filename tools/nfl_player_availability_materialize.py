@@ -55,6 +55,14 @@ def pfr_tokens(nfl: Path) -> dict[str, list[str]]:
     return tokens
 
 
+def participation_plays(nfl: Path, season: int) -> dict[str, dict[str, int]]:
+    """GameID -> CanonicalPlayerID -> plays from the compact participation Source projection (empty when the season has none)."""
+    path = nfl / "participation" / f"{season}.json"
+    if not path.is_file():
+        return {}
+    return {g["GameID"]: {p: int(n) for p, n in g.get("Players", {}).items()} for g in _load(path).get("Games", [])}
+
+
 def build(repo_root: Path, season: int, derived_root: Path | None = None) -> dict:
     nfl = repo_root / DATA_SOURCE_ROOT / "nfl"
     derived = derived_root or (repo_root / DATA_DERIVED_ROOT)
@@ -68,6 +76,7 @@ def build(repo_root: Path, season: int, derived_root: Path | None = None) -> dic
         schedule=_load(nfl / "schedules" / f"{season}.json"),
         finality=_load(nfl / "game-finality" / f"{season}.json"),
         player_pfr_tokens=pfr_tokens(nfl),
+        participation_plays=participation_plays(nfl, season),
     )
 
 

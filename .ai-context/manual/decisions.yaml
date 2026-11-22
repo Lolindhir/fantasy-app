@@ -3270,6 +3270,12 @@ decisions:
       report or reserve weeks). Rollback: restore the previous function and rematerialize.
     amendment20261122c: >-
       Issue #1616 follow-up (Robert 2026-11-22): every record with State bye carries Available bye (explicit not-applicable value, never null or unknown); Played stays null. Same product, writer and permissions; content change only, same size. Rollback: restore the previous function and rematerialize.
+    amendment20261122d: >-
+      Issue #1612 CP5 (Robert 2026-11-22, following the recommendation, after a read-only state diff): version nfl-player-availability-v3 adds the compact nflverse participation
+      Source (ADR-095) as independent positive evidence. Same product, path, writer (nfl_injuries_derived) and permissions; no new workflow, scheduler target or prefix (risk standard).
+      Participation.Plays is added; unknown with at least 1 play becomes played, a not-played with at least 5 plays becomes unknown (participation-conflict), both thresholds are versioned
+      model parameters recorded in Inputs.ParticipationParameters. Measured replay 2016 to 2025: 48 records change (42 unknown to played, 6 not-played to unknown), the record set and all other fields stay equal.
+      Rollback: restore the v2 function and rematerialize. Contract: .ai-context/manual/nfl-player-availability.yaml.
 
   - id: ADR-093
     title: Playoff odds use the outlook strength and the points tiebreak (playoff-odds-v2, seeded simulation)

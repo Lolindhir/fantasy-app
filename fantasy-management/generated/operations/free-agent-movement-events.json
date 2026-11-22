@@ -2,16 +2,16 @@
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
   "generated_at": "2026-11-22T04:22:21.834404Z",
-  "input_fingerprint": "ec0495dc28c7969b7275000e857e9800ae8e6946e3bd6e73d9819829732c0904",
+  "input_fingerprint": "a1408a3c5b9586f311e4ebe6015e7051545b09a04dafea498c2f349bb03ca957",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "7aca9e6f39c04b62aa4d413a3fe16bff244022bd3a77d3ba059cf0a1d1246f4c"
+      "input_fingerprint": "7e80c9e5ee2a1cdafb4412d927b34dcf2b03751810d5f743ee17237d51da9c0a"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "075d2eedb24161f3fd89973cb4a1cac2298972f3821bf06b70745008134baabc"
+      "input_fingerprint": "15073464733fa35376cfa546b0291cab73b459460bdfcca9b8d06f3d8de88bd6"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -25,24 +25,103 @@
     ],
     "current_discovery_count": 248,
     "previous_discovery_count": 248,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "changed": 1
+    },
+    "event_priority_counts": {
+      "high": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "34669b0a2c307dd27e15f5c726ee55531066c9fed84904fb8b3d32283fa58802",
-    "previous_evidence_fingerprint": "d720ded2b6bfc551a0c81abae786a0307ba252e61cd46e47694442d7ba658930",
+    "current_evidence_fingerprint": "9594bf8057b3d939fc279212eee9eb30450ed1fa227488923af4e3045559a8a9",
+    "previous_evidence_fingerprint": "a02a85ae53e871b6edf1398b7cf4e1a82fde5b2f044bc1a93cb5f0f42f8312b3",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "10235",
+      "name": "Roschon Johnson",
+      "position": "RB",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "c8e6fc6f6b56b4b4f0aef7b09169e7304d5978841090d62a8e737ff836658381",
+      "previous_state_hash": "edc99cc09afecd9660755063eaa83993a701ae4f60fd995971f4eb7e0c356768",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "high",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "high",
+          "from": false,
+          "to": true
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": null,
+          "to": "Questionable"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
