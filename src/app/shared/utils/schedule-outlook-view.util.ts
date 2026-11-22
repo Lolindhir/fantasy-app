@@ -87,7 +87,7 @@ export function formatPlayoffCell(probability: number): string {
   return probability <= 0 ? '' : formatPlayoffPercent(probability).replace('%', '');
 }
 
-function ordinal(place: number): string {
+export function ordinal(place: number): string {
   const rest = place % 100;
   if (rest >= 11 && rest <= 13) return `${place}th`;
   return `${place}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[place % 10] ?? 'th'}`;

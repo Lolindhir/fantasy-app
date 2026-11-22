@@ -31,8 +31,8 @@
             </span>
             <app-champion-badge *ngIf="row.team.IsDefendingChampion" class="weekly-team-champion" title="Defending Champion"></app-champion-badge>
           </span>
-          <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}<sup *ngIf="playoffFlag(row) as flag" class="weekly-standing-flag" [attr.aria-label]="playoffFlagLabel(row)" [title]="playoffFlagLabel(row)">{{ flag }}<i *ngIf="playoffFlagPlace(row) as place" class="weekly-standing-flag-place">{{ place }}</i></sup></span>
-          <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}<sup *ngIf="playoffFlag(row) as flag" class="weekly-standing-flag" [attr.aria-label]="playoffFlagLabel(row)" [title]="playoffFlagLabel(row)">{{ flag }}<i *ngIf="playoffFlagPlace(row) as place" class="weekly-standing-flag-place">{{ place }}</i></sup></span>
+          <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}<sup *ngIf="playoffFlag(row) as flag" class="weekly-standing-flag" [attr.aria-label]="playoffFlagLabel(row)" [title]="playoffFlagLabel(row)">{{ playoffFlagText(row) }}</sup></span>
+          <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}<sup *ngIf="playoffFlag(row) as flag" class="weekly-standing-flag" [attr.aria-label]="playoffFlagLabel(row)" [title]="playoffFlagLabel(row)">{{ playoffFlagText(row) }}</sup></span>
           <strong class="weekly-standing-record">{{ row.record }}</strong>
           <strong
             class="weekly-standing-movement"
@@ -43,7 +43,7 @@
             [title]="standingMovementLabel(row.placeDelta)"
           ><span aria-hidden="true">{{ standingMovementText(row.placeDelta) }}</span></strong>
         </div>
-        <p *ngIf="playoffOdds?.hasDecidedTeam" class="weekly-standing-legend"><span *ngIf="playoffLegend.clinched"><b>x</b> clinched</span><span *ngIf="playoffLegend.eliminated"><b>e</b> eliminated</span><span *ngIf="playoffLegendPlace"><b>| n</b> final place locked</span></p>
+        <p *ngIf="playoffLegend.clinched || playoffLegend.eliminated" class="weekly-standing-legend"><span *ngIf="playoffLegend.clinched"><b>x</b> clinched</span><span *ngIf="playoffLegend.eliminated"><b>e</b> eliminated</span></p>
       </div>
     </a>
 

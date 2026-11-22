@@ -2,6 +2,7 @@ import type { PlayoffOddsStatus, ScheduleOutlookReadModel } from '../../core/mod
 import {
   formatPlayoffCell,
   formatPlayoffPercent,
+  ordinal,
   playoffLockedPlace,
   playoffMarker,
   playoffPillText,
@@ -59,6 +60,8 @@ describe('schedule outlook view', () => {
     expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [1, 0, 0, 0] })).toBe('Clinched 1st');
     expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [0, 0, 1, 0] })).toBe('Clinched 3rd');
     expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [0, 0.5, 0.5, 0] })).toBe('Clinched');
+    expect(ordinal(1)).toBe('1st');
+    expect([2, 3, 4, 11, 12, 22].map(ordinal)).toEqual(['2nd', '3rd', '4th', '11th', '12th', '22nd']);
     expect(playoffLockedPlace(odds, 1)).toBe(1);
     expect(playoffLockedPlace(odds, 2)).toBeNull();
     expect(playoffMarker(odds, 1)).toBe('x');

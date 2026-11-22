@@ -52,7 +52,7 @@ import {
   type OverviewTopContext,
   type OverviewWeeklyPhase
 } from '../../utils/overview-weekly-dashboard.util';
-import { playoffLockedPlace, playoffMarker, resolvePlayoffOdds, type PlayoffOddsView } from '../../utils/schedule-outlook-view.util';
+import { ordinal, playoffLockedPlace, playoffMarker, resolvePlayoffOdds, type PlayoffOddsView } from '../../utils/schedule-outlook-view.util';
 import type { ScheduleOutlookReadModel } from '../../../core/models/schedule-outlook.models';
 import { formatProjectionPoints } from '../../utils/projection-range.util';
 import { WinChanceBarComponent } from '../win-chance-bar/win-chance-bar';
@@ -227,8 +227,10 @@ export class LeagueMatchupsComponent {
   }
   private playoffOddsMemo: { outlook: ScheduleOutlookReadModel | null; season: string | undefined; value: PlayoffOddsView | null } | null = null;
 
+  /** Legend lists only the letters that are actually shown (a locked place replaces the letter). */
   get playoffLegend(): { clinched: boolean; eliminated: boolean } {
-    const teams = [...(this.playoffOdds?.teams.values() ?? [])];
+    const odds = this.playoffOdds;
+    const teams = [...(odds?.teams.values() ?? [])].filter(team => playoffLockedPlace(odds, team.teamId) === null);
     return { clinched: teams.some(team => team.status === 'clinched'), eliminated: teams.some(team => team.status === 'eliminated') };
   }
 
@@ -240,9 +242,10 @@ export class LeagueMatchupsComponent {
     return playoffLockedPlace(this.playoffOdds, row.team.TeamID);
   }
 
-  get playoffLegendPlace(): boolean {
-    const teams = [...(this.playoffOdds?.teams.keys() ?? [])];
-    return teams.some(id => playoffLockedPlace(this.playoffOdds, id) !== null);
+  /** Chip text: the locked final place ("1st") when certain, otherwise x (clinched) or e (eliminated). */
+  playoffFlagText(row: OverviewStandingRow): string | null {
+    const place = this.playoffFlagPlace(row);
+    return place !== null ? ordinal(place) : this.playoffFlag(row);
   }
 
   playoffFlagLabel(row: OverviewStandingRow): string | null {
