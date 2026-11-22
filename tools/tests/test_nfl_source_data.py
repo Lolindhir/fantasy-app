@@ -773,11 +773,48 @@ class NflPbpHistoricalReconciliationTests(unittest.TestCase):
                               side_effect=lambda _url, path: path.write_bytes(b"forged!!")), \
                  patch.object(pbp_history, "_create_release") as release, \
                  patch.object(pbp_history, "_upload") as upload:
-                with self.assertRaisesRegex(ValueError, "digest changed"):
-                    pbp_history.run(root, "Lolindhir/fantasy-app", "token", write=True)
+                report = pbp_history.run(root, "Lolindhir/fantasy-app", "token", write=True)
+                self.assertEqual(report["Status"], "historical-pbp-blocked")
+                self.assertEqual([x["Season"] for x in report["BlockedSeasons"]], [2001, 2000])
                 release.assert_not_called()
                 upload.assert_not_called()
                 self.assertFalse(list(root.rglob("metadata-*.json")))
+
+    def test_invalid_legacy_season_does_not_block_other_verified_sources(self):
+        payloads = {2000: b"original-2000", 2001: b"original-2001",
+                    2002: b"original-2002"}
+        official = {year: self._asset(year, data)
+                    for year, data in payloads.items()}
+        uploaded = {}
+        def upload(_token, _release, path, year, sha, size):
+            result = {
+                "id": year, "size": size, "digest": f"sha256:{sha}",
+                "name": f"play_by_play_{year}.csv.gz", "state": "uploaded",
+                "browser_download_url": pbp_auto._archive_url(year, sha),
+            }
+            uploaded[year] = result
+            return result
+        def download(url, path):
+            year = int(url.rsplit("_", 1)[-1].split(".")[0])
+            path.write_bytes(b"malformed----" if year == 2001 else payloads[year])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._root(root, payloads)
+            with patch.object(pbp_history, "current_source_season", return_value=2026), \
+                 patch.object(pbp_history, "official_inventory", return_value=official), \
+                 patch.object(pbp_history, "download", side_effect=download), \
+                 patch.object(pbp_history, "_audit", return_value={"SourceRowCount": 1}), \
+                 patch.object(pbp_history, "_get_release", return_value=None), \
+                 patch.object(pbp_history, "_create_release", return_value={"id": 4}), \
+                 patch.object(pbp_history, "_upload", side_effect=upload):
+                result = pbp_history.run(root, "Lolindhir/fantasy-app", "token", write=True)
+            self.assertEqual(result["Status"], "historical-pbp-partial")
+            self.assertEqual(result["NewlyAccepted"], [2002, 2000])
+            self.assertEqual([x["Season"] for x in result["BlockedSeasons"]], [2001])
+            self.assertEqual(sorted(uploaded), [2000, 2002])
+            self.assertFalse((root /
+                "data-source/providers/nflverse/play-by-play-original/metadata-2001.json"
+            ).exists())
 
     def test_digestless_original_keeps_source_and_hash_provenance_distinct(self):
         year, data = 1999, b"1999-source-bytes"
