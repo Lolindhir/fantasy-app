@@ -1,4 +1,4 @@
-"""Synthetic Fast cases for nfl-player-availability-v1 (Issue #1590). No real players or seasons are wired in."""
+"""Synthetic Fast cases for nfl-player-availability-v2 (Issues #1590, #1610). No real players or seasons are wired in."""
 from __future__ import annotations
 
 import copy
@@ -33,8 +33,8 @@ def report(pid, week, status=None, practice=None, reasons=("Knee",), team="AAA",
     }
 
 
-def roster(pid, team, status="ACT", code="A01", gtype="REG"):
-    return {"CanonicalPlayerID": pid, "Team": team, "Status": status, "StatusDescription": code, "GameType": gtype}
+def roster(pid, team, status="ACT", code="A01", gtype="REG", position=None):
+    return {"CanonicalPlayerID": pid, "Team": team, "Status": status, "StatusDescription": code, "GameType": gtype, "Position": position}
 
 
 def snaps(game_id, played=(), idle=(), unresolved_team=None, token="TOKEN-X"):
@@ -45,7 +45,7 @@ def snaps(game_id, played=(), idle=(), unresolved_team=None, token="TOKEN-X"):
     return rows
 
 
-def build(reports=(), rosters=None, snap_rows=None, stats=None, games=None, final=True, season=SEASON, tokens=None):
+def build(reports=(), rosters=None, snap_rows=None, stats=None, games=None, final=True, season=SEASON, tokens=None, **options):
     games = games if games is not None else [game(1, "AAA", "BBB"), game(2, "CCC", "BBB"), game(3, "AAA", "BBB"), game(4, "AAA", "CCC")]
     injuries = {"Season": season, "ProductVersion": "nfl-injuries-v1", "SourceAssetSha256": "x", "IdentityGraphFingerprint": "y",
                 "ObservedPlayerWeeks": list(reports)}
@@ -56,7 +56,7 @@ def build(reports=(), rosters=None, snap_rows=None, stats=None, games=None, fina
         snap_counts={w: {"Week": w, "Records": r} for w, r in (snap_rows or {}).items()},
         player_stats={w: {"Week": w, "Records": r} for w, r in (stats or {}).items()},
         schedule={"Season": season, "Games": games}, finality={"Season": season, "Games": final_games},
-        player_pfr_tokens=tokens,
+        player_pfr_tokens=tokens, **options,
     )
 
 
@@ -94,9 +94,9 @@ class StateTests(unittest.TestCase):
         self.assertIsNone(rec["Report"])
         self.assertEqual(rec["Roster"], {"Status": "RES", "Code": "R01"})
 
-    def test_inactive_without_report_is_outside_population(self):
+    def test_inactive_without_report_outside_position_cut_is_not_recorded(self):
         p = player(1)
-        doc = build([], {1: [roster(p, "AAA", "INA", "I01")]}, {1: snaps(game(1, "AAA", "BBB")["GameID"], played=[player(9)])})
+        doc = build([], {1: [roster(p, "AAA", "INA", "I01", position="OL")]}, {1: snaps(game(1, "AAA", "BBB")["GameID"], played=[player(9)])})
         self.assertEqual(doc["Records"], [])
 
     def test_inactive_with_report_keeps_roster_status(self):
@@ -255,3 +255,145 @@ class DeterminismTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HealthyWeekTests(unittest.TestCase):
+    """v2 (Issue #1610): every roster week of the position cut is a record with separate Available and Played fields."""
+
+    def _g(self, week=1):
+        return game(week, "AAA", "BBB")["GameID"]
+
+    def test_healthy_played_week_is_recorded(self):
+        p = player(1)
+        doc = build([], {1: [roster(p, "AAA", position="WR")]}, {1: snaps(self._g(), played=[p])})
+        rec = one(doc, 1, p)
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("played", "yes", True))
+        self.assertIsNone(rec["Report"])
+
+    def test_healthy_scratch_is_available_and_not_played(self):
+        p = player(1)
+        doc = build([], {1: [roster(p, "AAA", "INA", "I01", position="RB")]}, {1: snaps(self._g(), played=[player(9)])})
+        rec = one(doc, 1, p)
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("healthy-scratch", "yes", False))
+        self.assertEqual(doc["Quality"]["StateCounts"]["healthy-scratch"], 1)
+
+    def test_bye_week_has_no_played_value(self):
+        p = player(1)
+        doc = build([report(p, 2, "Questionable")], {2: [roster(p, "AAA", position="QB")]})
+        rec = one(doc, 2, p)
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("bye", "yes", None))
+
+    def test_reserve_without_report_is_unavailable(self):
+        p = player(1)
+        doc = build([], {1: [roster(p, "AAA", "RES", "R01", position="OL")]}, {1: snaps(self._g(), played=[player(9)])})
+        rec = one(doc, 1, p)
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("not-played-reserve", "no", False))
+
+    def test_out_but_played_keeps_available_and_played_separate(self):
+        p = player(1)
+        doc = build([report(p, 1, "Out")], {1: [roster(p, "AAA", position="TE")]}, {1: snaps(self._g(), played=[p])})
+        rec = one(doc, 1, p)
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("played", "no", True))
+
+    def test_questionable_and_played_is_available(self):
+        p = player(1)
+        doc = build([report(p, 1, "Questionable")], {1: [roster(p, "AAA", position="K")]}, {1: snaps(self._g(), played=[p])})
+        rec = one(doc, 1, p)
+        self.assertEqual((rec["Available"], rec["Played"]), ("yes", True))
+
+    def test_doubtful_is_unavailable(self):
+        p = player(1)
+        doc = build([report(p, 1, "Doubtful")], {1: [roster(p, "AAA", position="WR")]}, {1: snaps(self._g(), played=[player(9)])})
+        self.assertEqual(one(doc, 1, p)["Available"], "no")
+
+    def test_unknown_participation_keeps_played_null(self):
+        p = player(1)
+        not_final = build([], {1: [roster(p, "AAA", position="WR")]}, final=False)
+        rec = one(not_final, 1, p)
+        self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("unknown", "yes", None))
+        gap = build([], {1: [roster(p, "AAA", position="WR")]}, {1: snaps(self._g(), played=[player(9)], unresolved_team="AAA", token=None)})
+        rec = one(gap, 1, p)
+        self.assertEqual((rec["State"], rec["Played"]), ("unknown", None))
+
+    def test_cancelled_game_has_no_played_value(self):
+        p = player(1)
+        games = [game(16, "BUF", "NYJ"), game(18, "BUF", "NYJ")]
+        doc = build([], {17: [roster(p, "BUF", position="WR")]}, games=games, season=2022)
+        rec = one(doc, 17, p)
+        self.assertEqual((rec["State"], rec["Played"]), ("unknown", None))
+
+    def test_other_roster_status_without_signal_is_unknown_and_not_recorded(self):
+        p = player(1)
+        doc = build([], {1: [roster(p, "AAA", "DEV", "P01", position="WR")]}, {1: snaps(self._g(), played=[player(9)])})
+        self.assertEqual(doc["Records"], [])
+        doc = build([report(p, 1, "Questionable")], {1: [roster(p, "AAA", "DEV", "P01", position="WR")]}, {1: snaps(self._g(), played=[player(9)])})
+        self.assertEqual(one(doc, 1, p)["Available"], "unknown")
+
+    def test_position_cut_is_configurable_and_does_not_limit_signal_weeks(self):
+        p, q = player(1), player(2)
+        rosters = {1: [roster(p, "AAA", position="OL"), roster(q, "AAA", "RES", "R01", position="OL")]}
+        snap_rows = {1: snaps(self._g(), played=[p])}
+        fantasy = build([], rosters, snap_rows)
+        self.assertEqual([r["CanonicalPlayerID"] for r in fantasy["Records"]], [q])  # reserve week of any position stays
+        everyone = build([], rosters, snap_rows, healthy_positions=None)
+        self.assertEqual({r["CanonicalPlayerID"] for r in everyone["Records"]}, {p, q})
+        self.assertIsNone(everyone["Quality"]["Population"]["Positions"])
+
+    def test_no_gaps_every_roster_week_of_the_cut_has_one_record(self):
+        ids = [player(i) for i in range(6)]
+        rosters = {w: [roster(pid, "AAA", "INA" if i % 2 else "ACT", position="WR") for i, pid in enumerate(ids)] for w in (1, 3, 4)}
+        rosters[4][0] = roster(ids[0], "AAA", "CUT", "C01", position="WR")  # not on the game-day roster in week 4
+        doc = build([], rosters, {1: snaps(self._g(1), played=ids[:3]), 3: snaps(self._g(3), played=ids[:3]), 4: snaps(game(4, "AAA", "CCC")["GameID"], played=ids[1:3])})
+        keys = [(r["Week"], r["CanonicalPlayerID"]) for r in doc["Records"]]
+        self.assertEqual(len(keys), len(set(keys)))
+        expected = {(w, r["CanonicalPlayerID"]) for w, rows in rosters.items() for r in rows if r["Status"] in ("ACT", "INA")}
+        self.assertEqual(set(keys), expected)
+        for rec in doc["Records"]:
+            self.assertIn(rec["Available"], ("yes", "no", "unknown"))
+            self.assertIn("Played", rec)
+
+    def test_population_is_documented_in_quality(self):
+        doc = build([], {1: [roster(player(1), "AAA", position="WR")]}, {1: snaps(self._g(), played=[player(1)])})
+        population = doc["Quality"]["Population"]
+        self.assertTrue(population["RosterWeeksIncluded"])
+        self.assertEqual(population["Positions"], ["K", "QB", "RB", "TE", "WR"])
+        statusless = build([report(player(1), 1, "Out")], {1: [{**roster(player(1), "AAA"), "Status": None}]}, {1: snaps(self._g(), played=[player(9)])})
+        self.assertFalse(statusless["Quality"]["Population"]["RosterWeeksIncluded"])
+
+
+class PersistedStateGuard(unittest.TestCase):
+    """Persisted v2 season files have a record with Available and Played for every roster week of the position cut (no gaps).
+
+    Seasons still persisted as v1 are skipped until the existing writer regenerates them; nothing is wired to real players.
+    """
+
+    def test_every_roster_week_of_the_cut_is_recorded(self):
+        from derived_data_lib.nfl_player_availability import FANTASY_POSITIONS, ROSTER_WEEK_STATUSES
+
+        repo = Path(__file__).resolve().parents[2]
+        checked = 0
+        for path in sorted((repo / "data-derived" / "nfl-player-availability").glob("*.json")):
+            document = json.loads(path.read_text(encoding="utf-8"))
+            if document.get("ProductVersion") != "nfl-player-availability-v2":
+                continue
+            checked += 1
+            season = document["Season"]
+            population = document["Quality"]["Population"]
+            positions = None if population["Positions"] is None else frozenset(population["Positions"])
+            self.assertEqual(positions, FANTASY_POSITIONS, f"{season}: position cut changed without a decision")
+            recorded = {(r["Week"], r["CanonicalPlayerID"]) for r in document["Records"]}
+            self.assertEqual(len(recorded), len(document["Records"]), f"{season}: duplicate player-week")
+            for record in document["Records"]:
+                self.assertIn(record["Available"], ("yes", "no", "unknown"))
+                self.assertIn(record["Played"], (True, False, None))
+            if not population["RosterWeeksIncluded"]:
+                continue
+            for week_file in sorted((repo / "data-source" / "nfl" / "weekly-rosters" / str(season)).glob("*.json")):
+                week = int(week_file.stem)
+                for row in json.loads(week_file.read_text(encoding="utf-8")).get("Records", []):
+                    pid = row.get("CanonicalPlayerID")
+                    if pid and row.get("Status") in ROSTER_WEEK_STATUSES and row.get("Position") in positions:
+                        if row.get("GameType") != "REG" and (week, pid) not in recorded:
+                            continue  # postseason week without a game of the team is not a record
+                        self.assertIn((week, pid), recorded, f"{season} week {week}: roster week without a record")
+        self.assertGreaterEqual(checked, 0)

@@ -32,7 +32,7 @@ export class PlayoffPlaceBarsComponent {
       probability,
       heightPercent: probability <= 0 ? 0 : Math.max(4, (probability / max) * 100),
       inPlayoffs: this.playoffTeams !== null && index < this.playoffTeams,
-      label: probability <= 0 ? '' : formatPlayoffPercent(probability)
+      label: formatPlayoffPercent(probability)
     }));
   }
 
