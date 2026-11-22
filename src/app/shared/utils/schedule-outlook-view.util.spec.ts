@@ -7,6 +7,8 @@ import {
   playoffMarker,
   playoffPillText,
   resolvePlayoffOdds,
+  formatExpectedWins,
+  formatMargin,
   formatPoints,
   formatShare,
   formatStrength,
@@ -114,14 +116,16 @@ describe('schedule outlook view', () => {
         ...base.PlayoffOdds!,
         Scoring: { LeagueMeanPoints: 190.4, PointsStdDev: 30, MeanSource: 'current-season' },
         Teams: base.PlayoffOdds!.Teams.map(team => team.TeamID === 1
-          ? { ...team, Upcoming: [{ Week: 5, OpponentTeamID: 2, WinProbability: 0.62, OpponentExpectedPoints: 171.4 }] }
+          ? { ...team, Upcoming: [{ Week: 5, OpponentTeamID: 2, WinProbability: 0.62, OpponentExpectedPoints: 171.4, ExpectedMargin: 12.4 }], RemainingExpectedWins: 0.62, RemainingWinProbability: 0.62 }
           : team)
       }
     };
     const view = resolveTeamScheduleOutlook(model, 2026, 1)!;
     const game = view.gameByWeek.get(5)!;
     expect(game.winProbability).toBe(0.62);
-    expect(game.opponentPoints).toBe(171.4);
+    expect(game.margin).toBe(12.4);
+    expect(view.remainingWinProbability).toBe(0.62);
+    expect(view.remainingExpectedWins).toBe(0.62);
     expect(game.opponentStrength).toBe(0.9);
     expect(game.opponentMix).toEqual({ currentWeight: 0.25, currentRelative: 0.88, previousRelative: 0.95, gamesPlayed: 1 });
     expect(view.remainingStrength).toBe(1.1);
@@ -130,6 +134,10 @@ describe('schedule outlook view', () => {
 
   it('formats published numbers for display only', () => {
     expect(formatPoints(171.4)).toBe('171');
+    expect(formatMargin(12.4)).toBe('+12');
+    expect(formatMargin(-7.6)).toBe('−8');
+    expect(formatMargin(0.2)).toBe('0');
+    expect(formatExpectedWins(1.2345)).toBe('1.2');
     expect(formatStrength(0.9)).toBe('0.90×');
     expect(formatShare(0.77)).toBe('77%');
   });

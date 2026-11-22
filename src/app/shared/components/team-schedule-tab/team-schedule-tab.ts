@@ -16,6 +16,8 @@ import {
   type TeamScheduleRow
 } from '../../utils/team-schedule.util';
 import {
+  formatExpectedWins,
+  formatMargin,
   formatPoints,
   formatShare,
   formatStrength,
@@ -143,10 +145,12 @@ export class TeamScheduleTabComponent {
     return remaining ? REMAINING_CLASS_LABEL[remaining] : '';
   });
 
-  /** Remaining opponents' average strength relative to the league, e.g. "0.95×"; empty while unknown. */
-  readonly remainingStrengthLabel = computed(() => {
-    const value = this.outlook()?.remainingStrength;
-    return typeof value === 'number' ? formatStrength(value) : '';
+  /** Accumulated win chance of the remaining games, e.g. "Ø 40% · 1.2 of 3 wins"; empty while unknown. */
+  readonly remainingWinLabel = computed(() => {
+    const view = this.outlook();
+    if (!view || view.remainingWinProbability === null) return '';
+    const wins = view.remainingExpectedWins === null ? '' : ` · ${formatExpectedWins(view.remainingExpectedWins)} of ${view.remainingGames} wins`;
+    return `Ø ${formatPlayoffPercent(view.remainingWinProbability)}${wins}`;
   });
 
   readonly explainOpen = signal(false);
@@ -161,7 +165,7 @@ export class TeamScheduleTabComponent {
     const game = this.outlook()?.gameByWeek.get(row.week);
     if (!game) return null;
     return {
-      points: game.opponentPoints === null ? '' : formatPoints(game.opponentPoints),
+      margin: game.margin === null ? '' : formatMargin(game.margin),
       win: game.winProbability === null ? '' : formatPlayoffPercent(game.winProbability)
     };
   }
@@ -178,7 +182,6 @@ export class TeamScheduleTabComponent {
         week: row.week,
         name: this.opponentShort(row),
         strength: game.opponentStrength === null ? '' : formatStrength(game.opponentStrength),
-        points: game.opponentPoints === null ? '' : formatPoints(game.opponentPoints),
         current: mix ? formatShare(mix.currentWeight) : '',
         currentStrength: mix?.currentRelative == null ? '' : formatStrength(mix.currentRelative),
         previous: mix ? formatShare(1 - mix.currentWeight) : '',

@@ -10,7 +10,7 @@ Wir spielen die **restliche Hauptrunde** viele tausend Mal gedanklich durch. In 
 - Die Anzeige „Chancen der Plätze“ in der aufgeklappten Zeile und im **Playoff Picture** zeigt, wie sich die Durchgänge auf die Endplätze verteilen.
 - Bei gleichem Siegverhältnis entscheiden die **erzielten Punkte** („Points for“), danach die Gegenpunkte, genau wie in der echten Tabelle. Deshalb zählen auch Punkte in den Restspielen mit.
 - Ein Team, das noch eine Chance hat, zeigt nie „0 %“ oder „100 %“, sondern „<1 %“ bzw. „>99 %“.
-- Im Spielplan eines Teams steht bei jedem offenen Spiel außerdem die **Siegchance** für genau dieses Spiel und die Punkte, die der Gegner im Schnitt erzielen dürfte.
+- Im Spielplan eines Teams steht bei jedem offenen Spiel außerdem die **Siegchance** für genau dieses Spiel und der erwartete **Punkteunterschied** zum Gegner. Oben steht die durchschnittliche Siegchance über alle verbleibenden Spiele und die daraus erwartete Zahl an Siegen.
 
 **Wichtig:** Das ist eine Einschätzung auf Basis bisheriger Punkte, **keine Garantie**. Verletzungen, Trades oder Aufstellungen sind darin nicht vorhergesehen. Ändert sich die Stärkeberechnung eines Teams, ändern sich auch seine Playoff-Chancen.
 

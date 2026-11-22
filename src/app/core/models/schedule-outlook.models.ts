@@ -17,6 +17,10 @@ export interface PlayoffOddsTeam {
   Status: PlayoffOddsStatus | null;
   /** Expected points of the team per game (generator-owned: league mean x strength). */
   ExpectedPoints?: number | null;
+  /** Sum of the win chances of all remaining games; null when any is unknown. */
+  RemainingExpectedWins?: number | null;
+  /** Mean win chance over all remaining games (share between 0 and 1); null when any is unknown. */
+  RemainingWinProbability?: number | null;
   Upcoming?: PlayoffOddsUpcoming[] | null;
 }
 
@@ -26,6 +30,8 @@ export interface PlayoffOddsUpcoming {
   /** Share between 0 and 1; null when the strength is unknown. */
   WinProbability: number | null;
   OpponentExpectedPoints: number | null;
+  /** Expected points of the viewed team minus the opponent (generator-owned); null when unknown. */
+  ExpectedMargin?: number | null;
 }
 
 export interface PlayoffOddsScoring {

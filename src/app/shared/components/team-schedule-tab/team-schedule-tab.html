@@ -9,7 +9,7 @@
         @if (remainingLabel(); as remaining) {
           <span class="schedule-summary-item">
             <span class="schedule-summary-label">Remaining schedule</span>
-            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}@if (remainingStrengthLabel()) { <span class="schedule-summary-sub"> · opponents {{ remainingStrengthLabel() }} league avg</span> }</strong>
+            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}@if (remainingWinLabel()) { <span class="schedule-summary-sub"> · win chance {{ remainingWinLabel() }}</span> }</strong>
           </span>
         }
         @if (playoffRecordLabel(); as playoffs) {
@@ -68,7 +68,7 @@
           <p>
             Strength compares a team's points per game with the league average@if (leagueMeanLabel()) { ({{ leagueMeanLabel() }} points per team and game)}.
             Early in the season it is mixed with last season; each played game shifts the mix towards this season.
-            "Opp" is the points the opponent is expected to score, "Win" is your chance to win that game.
+            "Win" is the team's chance to win that game, followed by the expected point margin. The remaining schedule shows the average win chance over all remaining games.
           </p>
           <ul class="schedule-explain-list">
             @for (item of explainRows(); track item.week) {
@@ -150,8 +150,8 @@
       <span class="schedule-resultline">
         <span class="schedule-record" aria-label="Opponent record">{{ recordLabel(row.opponentRecord) }}</span>
         @if (gameOutlook(row); as game) {
-          @if (game.points || game.win) {
-            <span class="schedule-oddsline">@if (game.points) { Opp {{ game.points }} pts }@if (game.points && game.win) { · }@if (game.win) { Win {{ game.win }} }</span>
+          @if (game.win || game.margin) {
+            <span class="schedule-oddsline">@if (game.win) { Win {{ game.win }} }@if (game.win && game.margin) { · }@if (game.margin) { {{ game.margin }} pts }</span>
           }
         }
       </span>

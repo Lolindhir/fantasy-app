@@ -147,8 +147,8 @@ export interface UpcomingGameOutlook {
   opponentClass: OpponentStrengthClass | null;
   /** Share between 0 and 1 that the viewed team wins. */
   winProbability: number | null;
-  /** Expected points per game of the opponent. */
-  opponentPoints: number | null;
+  /** Expected points of the viewed team minus the opponent. */
+  margin: number | null;
   /** Opponent strength relative to the league average (1.0 = average). */
   opponentStrength: number | null;
   opponentMix: StrengthMix | null;
@@ -168,6 +168,9 @@ export interface TeamScheduleOutlookView {
   remainingGames: number;
   /** Average strength of the remaining opponents relative to the league average; null when unknown. */
   remainingStrength: number | null;
+  /** Mean win chance over the remaining games (share between 0 and 1) and the summed expected wins. */
+  remainingWinProbability: number | null;
+  remainingExpectedWins: number | null;
   opponentByWeek: ReadonlyMap<number, OpponentStrengthClass>;
   gameByWeek: ReadonlyMap<number, UpcomingGameOutlook>;
   /** Points per team and game of the league; null when unknown. */
@@ -208,7 +211,7 @@ export function resolveTeamScheduleOutlook(
       opponentTeamId: game.OpponentTeamID,
       opponentClass: game.OpponentClass ?? null,
       winProbability: finiteOrNull(odd?.WinProbability),
-      opponentPoints: finiteOrNull(odd?.OpponentExpectedPoints),
+      margin: finiteOrNull(odd?.ExpectedMargin),
       opponentStrength: finiteOrNull(game.OpponentStrength),
       opponentMix: strengthMix(opponent)
     });
@@ -217,6 +220,8 @@ export function resolveTeamScheduleOutlook(
     remaining: team.RemainingSoSClass ?? null,
     remainingGames: team.RemainingGames,
     remainingStrength: finiteOrNull(team.RemainingSoS),
+    remainingWinProbability: finiteOrNull(oddsTeam?.RemainingWinProbability),
+    remainingExpectedWins: finiteOrNull(oddsTeam?.RemainingExpectedWins),
     opponentByWeek,
     gameByWeek,
     leagueMeanPoints: oddsUsable ? finiteOrNull(odds.Scoring?.LeagueMeanPoints) : null
@@ -226,6 +231,17 @@ export function resolveTeamScheduleOutlook(
 /** Whole points, e.g. "212". */
 export function formatPoints(value: number): string {
   return String(Math.round(value));
+}
+
+/** Signed whole points, e.g. "+12" or "−8". */
+export function formatMargin(value: number): string {
+  const rounded = Math.round(value);
+  return rounded > 0 ? `+${rounded}` : rounded < 0 ? `−${Math.abs(rounded)}` : '0';
+}
+
+/** Expected wins with one decimal, e.g. "1.4". */
+export function formatExpectedWins(value: number): string {
+  return value.toFixed(1);
 }
 
 /** Strength relative to the league average as published, e.g. "1.02×". */
