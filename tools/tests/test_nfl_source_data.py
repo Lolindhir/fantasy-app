@@ -351,6 +351,76 @@ class NflPbpArchiveSourcePilotTests(unittest.TestCase):
 
 
 
+class NflPbpHistoricalFranchiseSourceAuditTests(unittest.TestCase):
+    """Original PBP may use modern franchise tokens against era-specific GameIDs."""
+
+    def test_source_aliases_are_symmetric_only_within_historical_windows(self):
+        from nfl_source_data_lib.pbp_original import _team_matches
+
+        for season in (2017, 2018, 2019):
+            with self.subTest(season=season, franchise="OAK/LV"):
+                self.assertTrue(_team_matches("LV", "OAK", season))
+                self.assertTrue(_team_matches("OAK", "LV", season))
+        self.assertTrue(_team_matches("LAC", "SD", 2016))
+        self.assertTrue(_team_matches("SD", "LAC", 2016))
+        self.assertTrue(_team_matches("LA", "STL", 2015))
+        self.assertTrue(_team_matches("STL", "LA", 2015))
+        for observed, canonical, season in (
+            ("LV", "OAK", 2020), ("OAK", "LV", 2020),
+            ("LAC", "SD", 2017), ("SD", "LAC", 2017),
+            ("LA", "STL", 2016), ("STL", "LA", 2016),
+            ("LV", "SD", 2016), ("LAC", "OAK", 2019),
+            ("UNKNOWN", "OAK", 2018),
+        ):
+            with self.subTest(observed=observed, canonical=canonical, season=season):
+                self.assertFalse(_team_matches(observed, canonical, season))
+
+    def test_historical_game_id_with_modern_pbp_team_tokens_passes_full_source_audit(self):
+        from io import BytesIO
+
+        for season, game_id, away, home, pbp_away, pbp_home in (
+            (2019, "2019_01_DEN_OAK", "DEN", "OAK", "DEN", "LV"),
+            (2018, "2018_01_LA_OAK", "LA", "OAK", "LA", "LV"),
+            (2017, "2017_01_OAK_TEN", "OAK", "TEN", "LV", "TEN"),
+            (2016, "2016_01_SD_KC", "SD", "KC", "LAC", "KC"),
+            (2015, "2015_01_STL_SEA", "STL", "SEA", "LA", "SEA"),
+        ):
+            with self.subTest(season=season), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                schedule = root / f"data-source/nfl/schedules/{season}.json"
+                schedule.parent.mkdir(parents=True)
+                schedule.write_text(json.dumps({
+                    "SchemaVersion": 2,
+                    "SourceDataset": "nflverse.schedules",
+                    "Season": season,
+                    "Games": [{
+                        "GameID": game_id, "Week": 1, "GameType": "REG",
+                        "AwayTeam": away, "HomeTeam": home,
+                    }],
+                }))
+                compressed = BytesIO()
+                with gzip.open(compressed, "wt", encoding="utf-8", newline="") as out:
+                    writer = csv.DictWriter(out, fieldnames=[
+                        "game_id", "play_id", "season", "week", "season_type",
+                        "away_team", "home_team", "posteam", "defteam", "play_type",
+                    ])
+                    writer.writeheader()
+                    writer.writerow({
+                        "game_id": game_id, "play_id": "1", "season": str(season),
+                        "week": "1", "season_type": "REG",
+                        "away_team": pbp_away, "home_team": pbp_home,
+                        "posteam": pbp_away, "defteam": pbp_home, "play_type": "run",
+                    })
+                path = root / "original.csv.gz"
+                payload = compressed.getvalue()
+                path.write_bytes(payload)
+                audit = audit_original_pbp(
+                    root, season, path, hashlib.sha256(payload).hexdigest(),
+                )
+                self.assertEqual(audit["SourceRowCount"], 1)
+                self.assertEqual(audit["ObservedGameIDs"], 1)
+                self.assertEqual(audit["UnmatchedCanonicalGameRows"], 0)
+
 class NflPbpCurrentSourceTests(unittest.TestCase):
     """Mocked regression of real Source boundaries; no network or binary commits."""
 

@@ -35,10 +35,22 @@ def _integer(value: str | None, field: str) -> int:
 
 
 def _team_matches(observed: str, canonical: str, season: int) -> bool:
+    """Match provider and canonical team tokens within franchise-era boundaries.
+
+    Historical canonical GameIDs retain OAK/SD/STL, whereas current nflverse
+    original PBP may spell those same franchises LV/LAC/LA. The historical
+    aliases must be checked in either direction, but only through the recorded
+    last valid season. Unrelated and out-of-era tokens still fail closed.
+    """
     if observed == canonical or PROVIDER_SPELLING_ALIASES.get(observed) == canonical:
         return True
-    historical = HISTORICAL_ALIAS_LAST_SEASON.get(observed)
-    return bool(historical and historical[0] == canonical and season <= historical[1])
+    observed_historical = HISTORICAL_ALIAS_LAST_SEASON.get(observed)
+    if (observed_historical and observed_historical[0] == canonical
+            and season <= observed_historical[1]):
+        return True
+    canonical_historical = HISTORICAL_ALIAS_LAST_SEASON.get(canonical)
+    return bool(canonical_historical and canonical_historical[0] == observed
+                and season <= canonical_historical[1])
 
 
 def _source_schedule(root: Path, season: int) -> tuple[dict[str, dict], str]:
