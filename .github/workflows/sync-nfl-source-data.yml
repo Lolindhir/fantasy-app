@@ -1150,8 +1150,10 @@ jobs:
           import hashlib
           import json
           from pathlib import Path
-          from tools.nfl_source_data_lib.common import current_source_season
+          import sys
           root = Path.cwd()
+          sys.path.insert(0, str(root / "tools"))
+          from nfl_source_data_lib.common import current_source_season
           current = current_source_season(root)
           records = []
           for path in sorted((root / "data-source/providers/nflverse/play-by-play-original").glob("metadata-*.json")):
