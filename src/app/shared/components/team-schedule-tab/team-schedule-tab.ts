@@ -145,12 +145,11 @@ export class TeamScheduleTabComponent {
     return remaining ? REMAINING_CLASS_LABEL[remaining] : '';
   });
 
-  /** Accumulated win chance of the remaining games, e.g. "Ø 40% · 1.2 of 3 wins"; empty while unknown. */
+  /** Expected wins out of the remaining games with the average win chance, e.g. "1.2 of 3 wins (Ø 40%)"; empty while unknown. */
   readonly remainingWinLabel = computed(() => {
     const view = this.outlook();
-    if (!view || view.remainingWinProbability === null) return '';
-    const wins = view.remainingExpectedWins === null ? '' : ` · ${formatExpectedWins(view.remainingExpectedWins)} of ${view.remainingGames} wins`;
-    return `Ø ${formatPlayoffPercent(view.remainingWinProbability)}${wins}`;
+    if (!view || view.remainingWinProbability === null || view.remainingExpectedWins === null) return '';
+    return `${formatExpectedWins(view.remainingExpectedWins)} of ${view.remainingGames} wins (Ø ${formatPlayoffPercent(view.remainingWinProbability)})`;
   });
 
   readonly explainOpen = signal(false);

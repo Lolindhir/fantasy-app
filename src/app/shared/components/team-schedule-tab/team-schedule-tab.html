@@ -9,7 +9,7 @@
         @if (remainingLabel(); as remaining) {
           <span class="schedule-summary-item">
             <span class="schedule-summary-label">Remaining schedule</span>
-            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}@if (remainingWinLabel()) { <span class="schedule-summary-sub"> · win chance {{ remainingWinLabel() }}</span> }</strong>
+            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}@if (remainingWinLabel()) { <span class="schedule-summary-sub" title="Expected wins in the remaining games, with the average win chance per game">{{ remainingWinLabel() }}</span> }</strong>
           </span>
         }
         @if (playoffRecordLabel(); as playoffs) {
@@ -65,11 +65,7 @@
       </button>
       @if (explainOpen()) {
         <div class="schedule-explain">
-          <p>
-            Strength compares a team's points per game with the league average@if (leagueMeanLabel()) { ({{ leagueMeanLabel() }} points per team and game)}.
-            Early in the season it is mixed with last season; each played game shifts the mix towards this season.
-            "Win" is the team's chance to win that game, followed by the expected point margin. The remaining schedule shows the average win chance over all remaining games.
-          </p>
+          <p>Strength is a team's points per game against the league average@if (leagueMeanLabel()) { ({{ leagueMeanLabel() }})}, early in the season mixed with last season.</p>
           <ul class="schedule-explain-list">
             @for (item of explainRows(); track item.week) {
               <li>
