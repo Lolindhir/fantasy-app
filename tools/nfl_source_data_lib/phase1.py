@@ -10,6 +10,7 @@ from typing import Any, Iterable
 from .canonical_identity import identity_lookup
 from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_float, as_int, clean, load_json
 from .lifecycle import effective_partition_payload
+from .schedule_kickoff_overlay import APPLIED as KICKOFF_OVERLAY_APPLIED, apply_espn_kickoff_overlay
 from .player_profiles import PLAYER_PROFILES_DATASET_ID, build_player_profiles
 from .teams import TEAMS_DATASET_ID, TEAMS_RELATIVE_PATH, build_teams_payload
 from data_roots import DATA_SOURCE_ROOT
@@ -168,7 +169,14 @@ def _build_schedules(
 
     outputs: list[tuple[Path, dict[str, Any]]] = []
     preserved = 0
+    overlay_applied: list[dict[str, Any]] = []
     for season, games in sorted(grouped.items()):
+        games, decisions = apply_espn_kickoff_overlay(repo_root, season, games)
+        for decision in decisions:
+            if decision["Outcome"] == KICKOFF_OVERLAY_APPLIED:
+                overlay_applied.append({"Season": season, **decision})
+                game_index[decision["GameID"]] = {"Season": season, **next(g for g in games if g["GameID"] == decision["GameID"])}
+        grouped[season] = games
         games.sort(key=lambda item: (item["Week"], item["GameType"], item["GameDay"] or "", item["GameID"]))
         payload = {
             "SchemaVersion": CANONICAL_SCHEMA_VERSION,
@@ -194,6 +202,8 @@ def _build_schedules(
         "earliestSeason": min(grouped) if grouped else None,
         "latestSeason": max(grouped) if grouped else None,
     }
+    if overlay_applied:
+        audit["kickoffOverlayApplied"] = overlay_applied
     return outputs, audit, preserved, game_index
 
 

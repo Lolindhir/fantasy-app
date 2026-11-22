@@ -342,7 +342,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     consecutiveFailures: 1
-    rationale: NFL Live pipeline dispatched by the central scheduler in game-window mode (Issue #946, S3) - every ten minutes inside NFL game windows and every six hours (September through January) otherwise. One run chains canonical game finality (hardened NFL source workflow, game-finality scope), the Schedule.json publication (only when finality or the canonical schedule changed) and a League Live wake-up (only when finality changed). One production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow rests outside game windows and outside its season months by design.
+    rationale: NFL Live pipeline dispatched by the central scheduler in game-window mode (Issue #946, S3) - every ten minutes inside NFL game windows and every six hours (September through January) otherwise. One run chains canonical game finality (hardened NFL source workflow, game-finality scope), the Schedule.json publication (only when finality or the canonical schedule changed) and a League Live wake-up (only when finality changed). One production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow rests outside game windows and outside its season months by design. Since Issue #1627 the chain also contains the non-blocking espn-schedule job (ESPN kickoff observations, continue-on-error) and a read-only schedule-parity job; their failures do not fail the run, and an ESPN outage keeps the nflverse times.
   .github/workflows/sync-nfl-player-availability.yml:
     category: important
     relevantEvents:

@@ -1027,6 +1027,38 @@ participationContract:
     dynamic season discovery up to the current Source season). No new workflow, writer, permission or schedule; the output
     prefix is inside the existing data-source write set. Rollback: remove the step and the module; delete the directory.
 
+scheduleKickoffOverlayContract:
+  issue: 1627
+  status: active-after-merge
+  decision: ADR-097
+  implementation: tools/nfl_source_data_lib/schedule_kickoff_overlay.py (pure function, applied in phase1._build_schedules)
+  snapshot:
+    dataset: espn.schedule
+    path: data-source/providers/espn/schedule/<season>.json
+    writer: tools/espn_schedule_snapshot.py sync, job espn-schedule of the existing nfl-live.yml (rebuild-and-retry, scope nfl-espn-schedule, path prefix data-source/providers/espn/schedule)
+    content: Observations [EspnGameID, KickoffUtc]; no timestamps (history is in git), written only on semantic change
+    cadence: at most about twice an hour (UTC minute below 20), one scoreboard request per distinct game day of the next 14 days
+    merge: new observations are merged into the previous snapshot; an ESPN outage keeps earlier observations; entries of scored games are pruned
+    failure: the job is continue-on-error and never blocks the chain
+  rule: >
+    nflverse stays the only schedule source. An independent ESPN observation (Source Evidence snapshot, joined by
+    ProviderGameIDs.ESPN) may replace only GameDay, GameTime and WeekDay of a game that is not scored yet, when exactly
+    one observation and exactly one canonical game match, the instant parses and the shift is within the versioned
+    maxShiftDays of the method. The overridden game carries TimeSource=espn and TimeSourceNflverse (original GameDay
+    and GameTime); absent TimeSource means nflverse. The overlay is applied to the nflverse-derived games on every
+    materialization (never to its own output), so it disappears automatically when nflverse delivers the same time.
+  failClosed: >
+    Missing or unavailable ESPN evidence, missing ESPN ID, duplicates, ambiguous joins, scored games, unknown or
+    unparsable time and implausible shifts keep the nflverse time. Unknown is never turned into an invented time.
+  consumers: >
+    Derived (nfl-games, Decision Windows, schedule archives) and consumers keep reading the canonical schedule only;
+    no consumer reads the ESPN snapshot.
+  activation: >
+    Active with the merge of the wiring PR (Robert approved the elevated Source-authority and writer-scope change on
+    2026-11-22: one PR, snapshot dataset plus materializer overlay, nflverse always the fallback). Every applied
+    override appears in the schedule diagnostics (kickoffOverlayApplied) printed by the materializer, and the parity job keeps reporting remaining differences. Rollback: remove
+    the espn-schedule job and the apply_espn_kickoff_overlay call; the next materialization restores the nflverse times.
+
 publication:
   rawFirst: true
   failClosed: true

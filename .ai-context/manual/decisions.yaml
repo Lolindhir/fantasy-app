@@ -3379,3 +3379,28 @@ decisions:
       negative:
         - Weeks with missing injured-player projections are lower bounds only.
         - The App file is about 600 KB; a trimmed delivery is a later UI-driven decision.
+
+  - id: ADR-097
+    title: ESPN kickoff observation may override unscored kickoff times in the canonical NFL schedule, nflverse stays the fallback
+    status: accepted
+    context: >-
+      On 2026-11-22 two Week-11 kickoff times (JAX@NYG, PIT@PHI) were stale in nflverse games.csv since 2026-11-09 while ESPN
+      was correct (Issue #1624). The pipeline reproduced nflverse faithfully, so Decision Windows, lock timing and consumers
+      showed wrong times. A read-only parity check (Issue #1624, step A) now detects such differences.
+    decision: >-
+      Robert approved on 2026-11-22 (Issue #1627, elevated Source-authority and writer-scope change, one PR for snapshot and overlay). Keep nflverse as the only schedule source and add an overlay in the
+      canonical schedule materializer: an independent ESPN observation (new Source Evidence dataset espn.schedule, one
+      scoreboard request per game day, low cadence in the existing nfl-live writer) replaces only the kickoff of a game that
+      is not scored, with a unique ESPN join, a parsable instant and a shift within the versioned maxShiftDays. The result
+      carries TimeSource and the original nflverse time. All other evidence cases keep nflverse. Consumers read only the
+      canonical schedule. Pure function and tests exist (tools/nfl_source_data_lib/schedule_kickoff_overlay.py); the ESPN snapshot
+      is written by the new job espn-schedule of the existing nfl-live.yml (scoreboard per game day, about twice an hour, merge, no timestamps)
+      and applied inside the nflverse schedule materializer; the override is visible in the schedule diagnostics. No new workflow or credential.
+    consequences:
+      positive:
+        - Flex moves reach every consumer within the ESPN observation cadence instead of waiting for nflverse.
+        - The override disappears by itself when nflverse catches up; unchanged data writes nothing.
+      negative:
+        - ESPN is an unofficial API without a stability promise; its terms of use are not reviewed.
+        - A wrong ESPN time overrides a correct nflverse time until the plausibility rule or the next observation corrects it.
+
