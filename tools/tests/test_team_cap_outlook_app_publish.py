@@ -13,6 +13,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 import team_cap_outlook_app_publish as pub  # noqa: E402
+from derived_data_lib import team_cap_outlook as model  # noqa: E402
 
 
 def rosters():
@@ -82,8 +83,8 @@ class TeamCapOutlookTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             with mock.patch.object(mat, "load", return_value=document), \
-                    mock.patch.object(pub, "current_season", return_value=2026), \
-                    mock.patch.object(pub, "manifest", return_value={}):
+                    mock.patch.object(model, "current_season", return_value=2026), \
+                    mock.patch.object(model, "manifest", return_value={}):
                 with self.assertRaises(pub.OutlookError):  # no product yet: never recomputed here
                     pub.write(root, "league")
                 self.assertTrue(mat.materialize(root, "league"))

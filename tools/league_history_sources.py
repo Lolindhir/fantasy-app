@@ -51,16 +51,16 @@ def load_manual_overlay(repo_root: Path, league_id: str) -> list[dict[str, Any]]
 
 
 def make_standings_loader(repo_root: Path, league_id: str, league_year: int):
-    """Draft-order input from the league-standings product (ADR-072, Issue #987 step 4).
+    """Draft-order input from the league-standings product (ADR-072, Issue #987 step 4; neutral placement view, Issue #1263 CP2).
 
     The product is built in memory from canonical facts, so the draft order depends neither on a published
-    App file nor on a previously generated product file.
+    App file, on a previously generated product file nor on an App renderer.
     """
     def load() -> list[dict[str, Any]]:
-        # Lazy imports: derived_data imports this module.
+        # Lazy import: derived_data imports this module.
         from derived_data import build_league_standings
-        from league_standings_app_publish import render_standings
-        return render_standings(build_league_standings(repo_root, league_id), league_year)
+        from derived_data_lib.league_standings import draft_order_placements
+        return draft_order_placements(build_league_standings(repo_root, league_id))
     return load
 
 

@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -90,18 +91,25 @@ class PublisherTests(unittest.TestCase):
             root = Path(tmp)
             (root / "data-derived" / "nfl-player-availability").mkdir(parents=True)
             (root / "data-derived" / "nfl-player-availability" / "2024.json").write_text(json.dumps(season_doc(2024, [record("NFLP-a", 1)])))
-            (root / "public" / "data").mkdir(parents=True)
-            (root / "public" / "data" / "Players.json").write_text(json.dumps([{"ID": "S1"}]))
             ident = root / "data-source" / "nfl" / "identities"
             ident.mkdir(parents=True)
             (ident / "players.json").write_text(json.dumps({"Players": [{"CanonicalPlayerID": "NFLP-a", "IDs": {"Sleeper": "S1"}}]}))
             now = datetime(2026, 1, 1, tzinfo=timezone.utc)
             first = publisher.CompactWriter(root, now)
-            publisher.publish(root, first)
+            with patch.object(publisher, "population_players", return_value=[{"ID": "S1"}]):
+                publisher.publish(root, first)
             self.assertIn("public/data/PlayerInjuryHistory.json", first.finish())
             second = publisher.CompactWriter(root, now)
-            publisher.publish(root, second)
+            with patch.object(publisher, "population_players", return_value=[{"ID": "S1"}]):
+                publisher.publish(root, second)
             self.assertEqual(second.finish(), [])
+
+    def test_published_players_json_is_not_an_input(self):
+        source = Path(publisher.__file__).read_text(encoding="utf-8")
+        self.assertNotIn("Players.json\"", source.split("def publish", 1)[1].split("def parse_args", 1)[0])
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(publisher, "list_league_ids", return_value=[]):
+                self.assertEqual(publisher.population_players(Path(tmp)), [])
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Materializer of the team-cap-outlook Shared Derived product (ADR-089, amends ADR-079; Issue #1571).
 
-Persists the current-season TeamCapOutlook model (tools/team_cap_outlook_app_publish.py::load: canonical rosters plus the newest
+Persists the current-season TeamCapOutlook model (tools/derived_data_lib/team_cap_outlook.py::load: canonical rosters plus the newest
 player-valuation snapshot) per league at
   <repo>/data-derived/team-cap-outlook/<CanonicalLeagueID>/<Season>.json
 Only a byte difference writes. The document carries no clock. The App delivery file is rendered from it by
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from league_metadata import data_meta_root, list_league_ids  # noqa: E402
 from league_standings_sources import current_season, manifest  # noqa: E402
-from team_cap_outlook_app_publish import OutlookError, PRODUCT, load, product_path, serialize  # noqa: E402,F401
+from derived_data_lib.team_cap_outlook import OutlookError, PRODUCT, load, product_path, serialize  # noqa: E402,F401
 
 
 def materialize(repo_root: Path, league_id: str, *, check_only: bool = False) -> bool:
