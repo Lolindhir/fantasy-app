@@ -14,8 +14,8 @@ DERIVED = ROOT / "data-derived"
 README = DERIVED / "README.md"
 WORKFLOWS = ROOT / ".github" / "workflows"
 # Own materializer with consistency guard and its own tests; not part of the restore probe (Issue #1519; team-cap-outlook is a
-# current-season snapshot of the live rosters, Issue #1571).
-OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook", "team-cap-outlook"})
+# current-season snapshot of the live rosters, Issue #1571; team-injury-impact depends on the current PlayerWeekFantasy partition, Issue #1584).
+OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook", "team-cap-outlook", "team-injury-impact"})
 # Documented before the first productive fill created the directory (Issue #1571).
 NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps", "nfl-player-availability"})
 

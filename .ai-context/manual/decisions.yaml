@@ -3344,3 +3344,30 @@ decisions:
         - Source plays include no_play entries (no play type), so the consumer needs a documented threshold.
         - The ShareAlike question for derived facts stays open (documented, not decided).
 
+  - id: ADR-096
+    title: Fantasy Injury Impact is a Shared Derived product with the central model injury-impact-v1
+    status: accepted
+    amends: [ADR-092]
+    context: >-
+      The availability product (ADR-092) says who was injured or absent, but not what the absences cost a team. Issue #1584 asked for the
+      historical Fantasy Injury Impact per team and week; the analysis (CP1 to CP4) fixed the rules and showed the offline numbers.
+    decision: >-
+      Robert approved on 2026-11-22 (Issue #1584 CP5, including the elevated effect of one new write prefix through existing writers). The central,
+      league-independent, versioned model injury-impact-v1 (tools/derived_data_lib/models/injury_impact/v1.py, chosen per season in data-meta
+      Models.InjuryImpact) computes per team and league-scored week: Impact = best lineup of the full roster minus best lineup of the roster without
+      injured and unknown-evidence players, both with the participation-conditional PlayerWeekFantasy projection and the league lineup slots.
+      IR and Taxi players count like any rostered player. Classification comes from the availability State only: played and healthy-scratch are
+      usable; not-played-reported and not-played-reserve are injured; unknown and not-played-unexplained leave the pool and mark unknown evidence;
+      bye, not-on-active-roster and no record are in neither pool and are only counted; any other State fails closed. An injured player without a
+      projection makes the week a lower bound (never zero-filled). Per injured player the single-return value is shown (not additive). Season totals
+      are the sum of the rounded weekly impacts. The product data-derived/team-injury-impact/<CanonicalLeagueID>/<Season>.json (contract
+      .ai-context/manual/team-injury-impact.yaml) carries input digests per week; a PlayerWeekFantasy partition built under other scoring settings makes the
+      week unavailable. It is written by the existing league-live.yml (current season, fail-soft) and update-transactions.yml (history); the App file
+      public/data/InjuryImpact.json is a pure rendering by tools/injury_impact_app_publish.py. No new workflow, credential or permission; no UI yet.
+      The product is outside the restore probe (it depends on the current PlayerWeekFantasy partition). Rollback: remove the prefix and the generator calls.
+    consequences:
+      positive:
+        - One reproducible injury cost per team and week for App, Fantasy Management and chat analyses.
+      negative:
+        - Weeks with missing injured-player projections are lower bounds only.
+        - The App file is about 600 KB; a trimmed delivery is a later UI-driven decision.
