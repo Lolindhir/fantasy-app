@@ -5,6 +5,7 @@ name: APP • Pipeline • NFL Live
 #   finality  canonical game finality (plus the schedule snapshot without odds)
 #   publish-schedule  Schedule.json, only when finality or the canonical schedule changed
 #   league    wake the League Live chain, only when finality changed
+#   schedule-parity  read-only, non-blocking: compares canonical kickoff times with ESPN and warns on differences
 # Player Availability keeps its own ten-minute target (sync-nfl-player-availability.yml).
 
 on:
@@ -115,3 +116,28 @@ jobs:
             "https://api.github.com/repos/${REPO}/dispatches" \
             -d '{"event_type":"scheduler-league-live","client_payload":{"source":"nfl-live"}}'
           echo "- League Live chain dispatched (finality changed)" >> "$GITHUB_STEP_SUMMARY"
+
+  # Read-only freshness check: nflverse can lag behind NFL flex scheduling, so a green sync does not prove
+  # current kickoff times. Compares canonical kickoffs with the ESPN scoreboard and only warns (annotation and
+  # Job Summary); it writes nothing, never overrides the canonical schedule and never fails the chain.
+  schedule-parity:
+    needs: finality
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository (sparse)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/
+            /data-source/nfl/schedules/
+            /data-source/leagues/*/manifest.json
+
+      - name: Compare canonical kickoff times with ESPN
+        run: python3 tools/nfl_schedule_parity.py check
