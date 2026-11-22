@@ -691,6 +691,24 @@ class NflPbpHistoricalReconciliationTests(unittest.TestCase):
         for year in years:
             (base / f"{year}.json").write_text("{}")
 
+    def test_current_original_manifest_does_not_block_historical_discovery(self):
+        """Real main has metadata-2026 beside the accepted historical manifests."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._root(root, [2024, 2026])
+            live = (root /
+                "data-source/providers/nflverse/play-by-play-original/metadata-2026.json"
+            )
+            live.parent.mkdir(parents=True)
+            live.write_text(json.dumps({"Season": 2026, "ManagedBy": "current importer"}))
+            with patch.object(pbp_history, "current_source_season", return_value=2026), \
+                 patch.object(pbp_history, "official_inventory", return_value={
+                     2024: self._asset(2024),
+                 }):
+                report, _ = pbp_history.plan(root, "token")
+            self.assertEqual(report["Seasons"], [2024])
+            self.assertEqual(report["AcceptedSeasons"], [])
+
     def test_dynamic_inventory_accepts_digestless_1999_but_rejects_bad_metadata(self):
         first = self._asset(1999, b"legacy", official_digest=False)
         second = self._asset(2000)
