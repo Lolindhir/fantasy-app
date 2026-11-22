@@ -77,6 +77,11 @@ function summarize(rows,onlyAfterWarmup) {
     results[key]={bias:metric(r=>r[key]-r.target),mae:metric(r=>Math.abs(r[key]-r.target)),
       coverage80:lower&&key!=='projected'?metric(r=>+(r.target>=r[lower]&&r.target<=r[upper])):null};
   }
+  const uplift=a.filter(r=>r.uplift!==null);
+  results.uplift={n:uplift.length,
+    bias:uplift.length?rnd(mean(uplift.map(r=>r.uplift-r.target))):null,
+    mae:uplift.length?rnd(mean(uplift.map(r=>Math.abs(r.uplift-r.target)))):null,
+    coverage80:null};
   return results;
 }
 function run(options={}) {
@@ -92,6 +97,14 @@ function run(options={}) {
   assert(startAtWeek===5?!options.initialHistory:!!options.initialHistory,
     'Warm-start history required exactly when replay starts after W5');
   const history=options.initialHistory?JSON.parse(JSON.stringify(options.initialHistory)):{};
+  assert(startAtWeek===5?!options.initialUpliftHistory:!!options.initialUpliftHistory,
+    'Warm-start Uplift state required exactly when replay starts after W5');
+  const upliftHistory=options.initialUpliftHistory?
+    {...options.initialUpliftHistory}:{n:0,sumTarget:0,sumProjected:0};
+  assert(Number.isInteger(upliftHistory.n)&&upliftHistory.n>=0&&
+    Number.isFinite(upliftHistory.sumTarget)&&
+    Number.isFinite(upliftHistory.sumProjected)&&
+    (upliftHistory.n===0||upliftHistory.sumProjected>0),'Invalid Uplift history');
   const rows=[],byWeek=[];
   for(const [week,observed,sha] of SAMPLES.filter(s=>s[0]>=startAtWeek&&s[0]<=last)) {
     const cut=Date.parse(observed),w=String(week).padStart(2,'0');
@@ -141,7 +154,8 @@ function run(options={}) {
     assert.equal(dw.FantasyRelevance.Teams.length,6);
     const updates={},stats={week,revision:sha,cutoff:observed,rosterPlayers:0,
       candidatePlayers:0,knownStatus:0,unknownStatus:0,byStatus:{},complete:0,incomplete:0,
-      missingSnapEvidence:0,conflictingSnapPositionRows};
+      missingSnapEvidence:0,conflictingSnapPositionRows,brierSum:0,allPlayBrierSum:0};
+    const weekUplift=[];
     const seenTeams=new Set(),seenPlayers=new Set();
     let teamOrdinal=0;
     for(const team of dw.FantasyRelevance.Teams) {
@@ -173,16 +187,25 @@ function run(options={}) {
         const played=playedFromSnap(snap);
         const h=updates[status]||(updates[status]={n:0,played:0});
         h.n++;h.played+=+played;
-        const g=stats.byStatus[status]||(stats.byStatus[status]={n:0,played:0,pSum:0});
-        g.n++;g.played+=+played;g.pSum+=probability(status,history);
+        const priorProbability=probability(status,history);
+        const g=stats.byStatus[status]||(stats.byStatus[status]={n:0,played:0,pSum:0,brierSum:0});
+        g.n++;g.played+=+played;g.pSum+=priorProbability;
+        g.brierSum+=(priorProbability-(+played))**2;
+        stats.brierSum+=(priorProbability-(+played))**2;
+        stats.allPlayBrierSum+=(1-(+played))**2;
         pool.push({id,pos:p.Position,mean:q.Points,sigma:(nums[2]-nums[1])/(2*Z90),
-          actual:finalRow.Actual.Points,p:probability(status,history),played,draw:0});
+          actual:finalRow.Actual.Points,p:priorProbability,played,draw:0});
         stats.candidatePlayers++;
       }
       const maxMean=optimize(slots,pool,'mean'),maxActual=optimize(slots,pool,'actual');
       const row={week,teamID,complete:maxMean.unfilled===0,
         target:maxActual.points,projected:maxMean.points,projectedP10:null,projectedP90:null,
-        poolSize:pool.length,unfilledBefore:maxMean.unfilled};
+        poolSize:pool.length,unfilledBefore:maxMean.unfilled,
+        // Pooled PRIOR-WEEK ex-post-BB uplift, same outcome as both Monte-Carlo arms.
+        // Not the CP3a team-specific manager-score/coach-efficiency model.
+        uplift:maxMean.unfilled===0&&upliftHistory.n>0?
+          rnd(maxMean.points*(upliftHistory.sumTarget/upliftHistory.sumProjected)):null};
+      if(row.complete)weekUplift.push({target:row.target,projected:row.projected});
       if(row.complete) {
         stats.complete++;
         const norm=randomNormal((seed+week*4099+teamOrdinal*13)>>>0);
@@ -213,21 +236,30 @@ function run(options={}) {
       }
       if(week>=first)rows.push(row);
     }
+    // Past-week-only pooled Uplift: do not let this week's result affect its forecast.
+    for(const r of weekUplift) {
+      upliftHistory.n++;upliftHistory.sumTarget+=r.target;upliftHistory.sumProjected+=r.projected;
+    }
     // The current week's outcomes are never used for that week's p(play).
     for(const [status,next] of Object.entries(updates)) {
       const h=history[status]||(history[status]={n:0,played:0});
       h.n+=next.n;h.played+=next.played;
     }
     if(week>=first)byWeek.push({...stats,
+      brier:rnd(stats.brierSum/stats.candidatePlayers),
+      allPlayBrier:rnd(stats.allPlayBrierSum/stats.candidatePlayers),
       byStatus:Object.fromEntries(Object.entries(stats.byStatus).map(([s,x])=>[s,
-        {count:x.n,playedProxy:x.played,meanPriorProbability:rnd(x.pSum/x.n)}]))});
+        {count:x.n,playedProxy:x.played,meanPriorProbability:rnd(x.pSum/x.n),
+          brier:rnd(x.brierSum/x.n)}]))});
   }
   const s={researchOnly:true,method:'conditional-PWF-independent-normal-with-walkforward-bernoulli-v0',
     season:2026,weeks:[first,last],draws,seed,finalOutcomeRef:FINAL,
     replayFromWeek:startAtWeek,externallySuppliedTraining:!!options.initialHistory,
+    upliftHistoryAtEnd:upliftHistory,
     prior:{strength:STRENGTH,values:PRIOR},
     notes:['Week 5 is calibration warm-up for the primary W6-W10 comparison.',
       'Per-status beta prior is illustrative and uncalibrated; earlier snap proxies update later weeks only.',
+      'The pooled rolling ex-post Best-Ball Uplift is NOT the CP3a manager-score uplift; no coach efficiency.',
       'Missing positive snap evidence is treated as nonparticipation proxy, not as injury diagnosis.',
       'As-of DecisionWindows and PWF are historical publication evidence; never productive consumer input.',
       'Target is ex-post optimal as-of roster points from later finalized PWF; NOT manager actual score or win chance.',
