@@ -28,7 +28,7 @@ Auf der Übersichtsseite zeigen wir bewusst nur diese Kürzel hinter dem Teamnam
 Im Spielplan eines Teams ordnen wir jeden kommenden Gegner grob ein: **↓ Weaker**, **= Similar** oder **↑ Stronger**. Zusätzlich steht dort, ob der **Restspielplan** insgesamt leichter, durchschnittlich oder schwerer als der Ligadurchschnitt ist.
 
 - Die Stärke eines Teams ergibt sich **aus seinen erzielten Punkten** im Vergleich zum Ligadurchschnitt, nicht aus Prognosen.
-- Vor dem ersten Spiel zählt nur die **Vorsaison**. Mit jedem Spiel zählt die aktuelle Saison stärker und die Vorsaison weniger. Ab der Hälfte der Hauptrunde zählt nur noch die aktuelle Saison.
+- Zu Beginn der Saison zählt vor allem die **Vorsaison**. Je länger die Saison läuft, desto stärker zählt die aktuelle Saison und desto weniger die Vorsaison.
 - Für den Restspielplan vergleichen wir die verbleibenden Gegner mit den anderen Teams der Liga ohne das Team selbst.
 - Ein Tipp auf „How are opponents rated?“ im Spielplan zeigt je Gegner, wie sich seine Stärke aus aktueller Saison und Vorsaison zusammensetzt. Eine Stärke von 1,00× entspricht dem Ligadurchschnitt.
 - Gibt es für einen Gegner noch keine verlässliche Einordnung, zeigen wir nichts an. Fehlt die Stärke ganz, behandeln wir alle Teams als gleich stark und kennzeichnen das.

@@ -28,7 +28,7 @@ Hier findest du unsere **Sonderregeln und eigenen Berechnungen** auf einen Blick
 ## 🎯 Playoff-Chancen & Gegnerstärke
 - In der Tabelle zeigen wir die Playoff-Chancen aus vielen durchgespielten Restsaisons. Dabei zählt die **Stärke** der Teams, bei Gleichstand entscheiden die **erzielten Punkte**. Das ist eine Einschätzung, **keine Garantie**.
 - **Clinched** und **Eliminated** sind sicher: Das Team ist in jedem möglichen Ausgang dabei bzw. draußen.
-- Im Spielplan eines Teams ordnen wir kommende Gegner nach ihren **erzielten Punkten** ein. Die Vorsaison zählt nur in der ersten Hälfte der Hauptrunde mit und verliert dabei Spiel für Spiel an Gewicht.
+- Im Spielplan eines Teams ordnen wir kommende Gegner nach ihren **erzielten Punkten** ein. Je länger die Saison läuft, desto weniger zählt die Vorsaison.
 
 ## 📊 Rankings & Auswertungen
 - Fantasy-Leistung bildet die Grundlage unserer Spieler- und Positionsrankings.
