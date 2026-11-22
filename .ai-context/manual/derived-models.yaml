@@ -61,6 +61,7 @@ identity:
       - schedule-outlook-v1
       - schedule-outlook-v2
       - playoff-odds-v1
+      - playoff-odds-v2
       - rivalry-v1
       - weekly-recap-v1
       - weekly-recap-v2
@@ -96,7 +97,11 @@ identity:
       status: staged-I1-read-only-not-yet-a-published-derived-product
     playoff-odds:
       module: tools/derived_data_lib/models/playoff_odds/v1.py
-      produces: Exact 50/50 combinatorial playoff chances per team (probability of every regular-season place, playoff and elimination probability, strict clinched/eliminated/alive status); no strength, no projection (Issue #1588, ADR-090)
+      produces: Exact 50/50 combinatorial playoff chances per team (probability of every regular-season place, playoff and elimination probability, strict clinched/eliminated/alive status); no strength, no projection (Issue #1588, ADR-090). Superseded for all seasons by playoff-odds-v2 (immutable, kept for history).
+    playoff-odds-v2:
+      module: tools/derived_data_lib/models/playoff_odds/v2.py
+      produces: Seeded strength-based playoff chances with the standings-v1 points tiebreak; strength = outlook Strength.Value of the same run, league mean and scoring spread from the league's own scores (nothing hard-coded), exact single-game win probabilities, strict clinched/eliminated (Issue #1607, ADR-093)
+      parameters: Seed, Simulations, Digits (versioned PARAMS)
     team-range:
       module: tools/derived_data_lib/models/team_range/v1.py
       produces: Team projection (ProjectedFinalScore, StandardDeviation, 50/80/90 percent Ranges) from the starters' PlayerWeekFantasy projections (computed, not persisted, ADR-075)

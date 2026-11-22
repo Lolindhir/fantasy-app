@@ -46,7 +46,7 @@ from derived_data_lib.playoff_brackets import round_windows  # noqa: E402
 import league_schedule_outlook_preview as source  # noqa: E402
 from league_schedule_outlook_preview import ScheduleOutlookSourceError, SeasonInputs  # noqa: E402
 
-FINGERPRINT_VERSION = 2
+FINGERPRINT_VERSION = 3
 INDEX_PRODUCT = "league-schedule-outlook-index"
 INDEX_NAME = "index.json"
 MODES = ("incremental", "full")
@@ -103,8 +103,9 @@ def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str, odds
 
     Included: schema/fingerprint/model versions, identities, week structure, team identity, the future
     regular-season pairings, the ratings of the cutoff's rating week only, and the cutoff-visible
-    bracket facts, the played win/loss/tie records (points only once the regular season is complete,
-    for the official tiebreak) and the playoff-odds model. Excluded (by design): scores, lineups, later ratings, masked bracket results.
+    bracket facts, the played win/loss/tie records, the scored regular-season points per week up to the cutoff
+    (strength-based playoff odds: league mean, spread and tiebreak points), every team-game score of the previous regular season (spread) and the playoff-odds model. Excluded (by design):
+    lineups, later ratings, scores of weeks after the cutoff and masked bracket results.
     """
     rating_week = source.rating_week_for(inputs, after_week)
     stats = inputs.stats() if rating_week else {}
@@ -124,9 +125,10 @@ def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str, odds
         "ModelID": model_id,
         "PlayoffOddsModelID": odds_model_id,
         "Records": [(r["CanonicalLeagueRosterID"], r["Wins"], r["Losses"], r["Ties"],
-                     r["Points"] if after_week >= inputs.regular_end else None,
-                     r["PointsAgainst"] if after_week >= inputs.regular_end else None)
+                     r["Points"], r["PointsAgainst"])
                     for r in sorted(inputs.records(after_week), key=lambda r: r["CanonicalLeagueRosterID"])],
+        "PointsHistory": {rid: pts for rid, pts in sorted(inputs.points_history(after_week).items())},
+        "PreviousSeasonPoints": inputs.previous_points(),
         "League": [inputs.league_id, inputs.season_id, inputs.season],
         "AfterWeek": after_week,
         "RatingWeek": rating_week or None,

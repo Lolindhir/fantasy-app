@@ -1,1 +1,1 @@
-"""Versioned playoff odds models (Issue #1588)."""
+"""Versioned playoff odds models (Issue #1588, #1607)."""

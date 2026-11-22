@@ -47,6 +47,7 @@ strengthOfSchedule:
   invalidation: input fingerprint of v2 additionally covers the previous-season strengths per TeamID and the model parameters; changing K or a band is a new model version.
 
 playoffOdds:
+  supersededBy: playoffOddsV2 (all seasons select playoff-odds-v2 since Issue #1607; v1 stays immutable and selectable)
   issue: 1588
   architectureDecision: ADR-090
   model: playoff-odds-v1 (tools/derived_data_lib/models/playoff_odds/v1.py), chosen per season in data-meta Models.PlayoffOdds (no default)
@@ -78,6 +79,42 @@ playoffOdds:
     season is complete) and the playoff-odds model ID; a played result dirties only the cutoffs that count it.
   performance: Measured 2026-11-20 for nfl-reise (6 teams, 3 games per week) - all 47 cutoffs 2024-2026 in about 20 s; the full 14-week season alone in about 3 s. Larger leagues hit MAX_STATES and report unavailable until a better algorithm is approved.
   noNewWriter: Runs inside the existing league-live (incremental) and update-transactions (full) outlook writers; same prefix data-derived/league-schedule-outlook, same App file ScheduleOutlook.json (unchanged transfer).
+
+playoffOddsV2:
+  issue: 1607
+  architectureDecision: ADR-093
+  model: playoff-odds-v2 (tools/derived_data_lib/models/playoff_odds/v2.py), chosen per season in data-meta Models.PlayoffOdds (all seasons); v1 stays immutable and is no longer selected
+  principle: >
+    Strength-based and seeded. The team strength is the RegularSeason.Teams[].Strength.Value of the selected schedule-outlook model computed in the SAME run
+    (relative to the league average, 1.0 = average; a test pins this contract); the odds model has no strength formula, so a new outlook version flows in
+    automatically. Nothing is hard-coded: LeagueMeanPoints = points per team-game up to the cutoff (before the first game the previous regular season);
+    PointsStdDev = pooled standard deviation of the team-game scores around their season means (current season up to the cutoff plus the previous regular
+    season). Expected points of a team = LeagueMeanPoints * Strength.Value. Every open game draws both scores from a normal distribution around the expected
+    points with that spread; the higher score wins; the points count for the standings-v1 tiebreak (win percentage, points for, points against). Seed, simulation
+    count and digits are versioned PARAMS (seed 1607, 20000 simulations, 4 digits); the same inputs give byte-identical output.
+  rules:
+    - 'Single-game WinProbability is the exact result Phi((expectedA - expectedB) / (PointsStdDev * sqrt 2)), not simulated; both teams of a game add up to 1.'
+    - 'Unknown strength for any team, or no score at all, treats every team as equally strong and says so (Provenance.StrengthBasis equal-unknown with StrengthReason strength-unknown | no-scored-games | no-positive-mean | no-spread). Nothing is invented.'
+    - 'Status is strictly mathematical as in v1 (exact win/loss enumeration over the open games; clinched = place in every outcome even if every tiebreak is lost, eliminated = no place in any outcome even if every tiebreak is won). If the enumeration exceeds MAX_STATES the status is null (Provenance.StatusAvailable false) while the probabilities stay available.'
+    - 'After the regular season the official table decides (probabilities 0 or 1, Method official-table).'
+    - 'A team that is mathematically alive can have a simulated probability of 0.0; consumers must not show a hard 0 percent for an alive team.'
+  documentShape: |
+    PlayoffOdds { Model, Available, Reason, Provenance { OpenGames, PlayoffTeams, RegularSeasonComplete, TieRule, Method, StrengthBasis, StrengthReason,
+                  StrengthSource, Seed, Simulations, StatusAvailable },
+      Scoring { LeagueMeanPoints, PointsStdDev, MeanSource current-season | previous-season, ScoredTeamGames, PreviousSeasonTeamGames },
+      Teams[] { TeamID, CanonicalLeagueRosterID, Record, PlaceProbabilities[], PlayoffProbability, EliminationProbability, Status, ExpectedPoints,
+                Upcoming[] { Week, CanonicalLeagueMatchupID, OpponentCanonicalLeagueRosterID, OpponentTeamID, WinProbability, OpponentExpectedPoints } } }
+    The share of the current and previous season in a strength stays in RegularSeason.Teams[].Strength (CurrentWeight, CurrentRelative, PreviousRelative).
+  inputs: >-
+    the outlook strengths of the same run, the scored regular-season points per roster week by week up to the cutoff, every team-game score of the previous regular season (spread, mean before game 1), records, playoff size and open pairings.
+  invalidation: >-
+    FINGERPRINT_VERSION 3 additionally covers the scored points per week and the previous-season scores (points of a scored week dirty exactly the cutoffs that count it; a previous-season change dirties every cutoff).
+  backtest: >-
+    research/playoff-odds/2026 (walk-forward over all cutoffs 2024-2026, 162 team-cutoffs, 222 single games). Playoff-field Brier 0.0379 (v1) -> 0.0129 (v2), log loss 0.1315 -> 0.0517; single games Brier 0.2500 -> 0.2345, log loss 0.6931 -> 0.6682. Small sample (two completed seasons): a tendency, not a calibration; calibrated forecasts for titles and projection-based future weeks stay with Issue #1536.
+  performance: >-
+    Measured 2026-11-22 for nfl-reise (6 teams): a full pass over all 47 cutoffs takes about 37 s (about 1 s per cutoff with open games); League Live recomputes only dirty cutoffs.
+  noNewWriter: >-
+    Same writers, prefix and App file as playoff-odds-v1; ScheduleOutlook.json passes the block unchanged.
 
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
