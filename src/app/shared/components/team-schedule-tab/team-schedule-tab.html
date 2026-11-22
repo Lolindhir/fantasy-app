@@ -9,7 +9,7 @@
         @if (remainingLabel(); as remaining) {
           <span class="schedule-summary-item">
             <span class="schedule-summary-label">Remaining schedule</span>
-            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}@if (remainingWinLabel()) { <span class="schedule-summary-sub" title="Expected wins in the remaining games, with the average win chance per game">{{ remainingWinLabel() }}</span> }</strong>
+            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored; last season only counts early in the season">{{ remaining }}@if (remainingWinLabel()) { <span class="schedule-summary-sub" title="Expected wins in the remaining games, with the average win chance per game">{{ remainingWinLabel() }}</span> }</strong>
           </span>
         }
         @if (playoffRecordLabel(); as playoffs) {
@@ -65,14 +65,14 @@
       </button>
       @if (explainOpen()) {
         <div class="schedule-explain">
-          <p>Strength is a team's points per game against the league average@if (leagueMeanLabel()) { ({{ leagueMeanLabel() }})}, early in the season mixed with last season.</p>
+          <p>Strength is a team's points per game against the league average@if (leagueMeanLabel()) { ({{ leagueMeanLabel() }})}, last season counts less with every game and not at all from the middle of the season.</p>
           <ul class="schedule-explain-list">
             @for (item of explainRows(); track item.week) {
               <li>
                 <strong>W{{ item.week }} {{ item.name }}</strong>
                 @if (item.strength) { <span>{{ item.strength }} league avg</span> }
                 @if (item.current) {
-                  <span class="schedule-muted">{{ item.current }} this season@if (item.currentStrength) { ({{ item.currentStrength }}) }, {{ item.previous }} last season@if (item.previousStrength) { ({{ item.previousStrength }}) }</span>
+                  <span class="schedule-muted">{{ item.current }} this season@if (item.currentStrength) { ({{ item.currentStrength }}) }@if (item.previous !== '0%') {, {{ item.previous }} last season@if (item.previousStrength) { ({{ item.previousStrength }}) }}</span>
                 }
               </li>
             }
@@ -92,7 +92,7 @@
       <p class="schedule-note">No games available for this season.</p>
     }
     <p class="schedule-note">
-      Upcoming games start with the nearest week, played games with the latest. Opponent records are final regular-season results of the selected season.@if (outlook()) { Opponent strength compares the points a team has scored with the league average, early in the season mixed with last season. }
+      Upcoming games start with the nearest week, played games with the latest. Opponent records are final regular-season results of the selected season.@if (outlook()) { Opponent strength compares the points a team has scored with the league average; last season only counts in the first half of the season. }
     </p>
   }
 </div>
