@@ -86,8 +86,14 @@ function run(options={}) {
   assert(Number.isInteger(seed)&&Number.isInteger(first)&&Number.isInteger(last)
     &&first>=5&&last<=10&&first<=last,'Invalid options');
   // Selecting a suffix replays earlier training weeks; predictions remain walk-forward.
-  const history={},rows=[],byWeek=[];
-  for(const [week,observed,sha] of SAMPLES.filter(s=>s[0]<=last)) {
+  const startAtWeek=options.startAtWeek??5;
+  assert(Number.isInteger(startAtWeek)&&startAtWeek>=5&&startAtWeek<=first,
+    'Bad warm-start boundary');
+  assert(startAtWeek===5?!options.initialHistory:!!options.initialHistory,
+    'Warm-start history required exactly when replay starts after W5');
+  const history=options.initialHistory?JSON.parse(JSON.stringify(options.initialHistory)):{};
+  const rows=[],byWeek=[];
+  for(const [week,observed,sha] of SAMPLES.filter(s=>s[0]>=startAtWeek&&s[0]<=last)) {
     const cut=Date.parse(observed),w=String(week).padStart(2,'0');
     const dw=read(sha,'public/data/DecisionWindows.json');
     const pwf=read(sha,'public/data/PlayerWeekFantasy.json');
@@ -218,6 +224,7 @@ function run(options={}) {
   }
   const s={researchOnly:true,method:'conditional-PWF-independent-normal-with-walkforward-bernoulli-v0',
     season:2026,weeks:[first,last],draws,seed,finalOutcomeRef:FINAL,
+    replayFromWeek:startAtWeek,externallySuppliedTraining:!!options.initialHistory,
     prior:{strength:STRENGTH,values:PRIOR},
     notes:['Week 5 is calibration warm-up for the primary W6-W10 comparison.',
       'Per-status beta prior is illustrative and uncalibrated; earlier snap proxies update later weeks only.',
