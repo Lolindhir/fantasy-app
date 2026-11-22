@@ -9,6 +9,8 @@ on:
       - "tools/nfl_source_data.py"
       - "tools/nfl_source_data_lib/**"
       - "tools/nfl_pbp_source_auto.py"
+      - "tools/nfl_pbp_source_history.py"
+      - "tools/derived_data_lib/nfl_pbp_accepted_season.py"
       - "tools/nfl_game_details_materialize.py"
       - "tools/derived_data_lib/nfl_game_detail_core.py"
       - "tools/derived_data_lib/nfl_pbp_accepted_season.py"
@@ -776,6 +778,40 @@ jobs:
                   echo "- Original PBP archive $pbp_script: $pbp_archive_result" >> "$GITHUB_STEP_SUMMARY"
                 fi
               done
+
+              # Issue #1077: dynamic, bounded historical original-PBP intake.
+              # Only scheduled/manual full runs; code pushes and called/scoped
+              # runs never silently admit historical Original Source.
+              # A runner-temp selection pins up to three seasons over Raw retries.
+              if [[ ( "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ) && "${FORCE:-false}" != "true" ]]; then
+                history_log="$(mktemp)"
+                set +e
+                python3 tools/nfl_pbp_source_history.py \
+                  --repo-root . --repository "$GITHUB_REPOSITORY" --limit 3 \
+                  --pin-path "$RUNNER_TEMP/nfl-pbp-history-batch.json" --write \
+                  2>&1 | tee "$history_log"
+                history_status=${PIPESTATUS[0]}
+                set -e
+                if (( history_status != 0 )); then
+                  # A blocked PBP historical intake never blocks independent
+                  # canonical NFL Sources. Accepted frozen assets stay untouched.
+                  echo "::warning::Historical original PBP intake blocked (exit $history_status); check batch/source identity."
+                  echo "- Historical original PBP: BLOCKED (exit $history_status)" >> "$GITHUB_STEP_SUMMARY"
+                else
+                  history_result="$(tail -n 1 "$history_log")"
+                  echo "- Historical original PBP: $history_result" >> "$GITHUB_STEP_SUMMARY"
+                  if python3 - "$history_log" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1])
+          sys.exit(0 if report.get("BlockedSeasons") else 1)
+          PY
+                  then
+                    echo "::warning::One or more historical original PBP years failed Source preflight; other verified years may have been accepted. See Source summary."
+                  fi
+                fi
+              fi
             fi
 
             assert_source_data_only
@@ -1052,7 +1088,7 @@ jobs:
     # NFL Live game-finality and all other targeted datasets remain excluded.
     if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && inputs.materialization_scope != 'injuries' && (!inputs.dataset || inputs.dataset == 'nflverse.schedule-odds') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     steps:
       - name: Checkout current main
         uses: actions/checkout@v4
@@ -1087,36 +1123,92 @@ jobs:
           --
           python3 tools/nfl_game_details_materialize.py --current-season --write
 
-      - name: Reconcile and publish historical NFL GameDetails weekly
-        # The centrally scheduled *full* NFL Source sync runs daily at 04:00
-        # Europe/Berlin. Only Monday's full sync rederives accepted history.
-        # On a full Source run, additionally perform one needed SchemaVersion=2
-        # upgrade outside Monday; stable history returns to Monday-only audits.
-        # Scoped odds refresh never enters this historical step. Existing
-        # rebuild-and-retry handles branch races.
+      # A newly accepted historical Original PBP requires an immediate replay,
+      # not a wait until the next Monday. Stable history is still replayed
+      # every Monday to catch rule/model changes without a Source delta.
+      - name: Decide historical NFL GameDetail replay
+        id: historical_pbp_due
         if: ${{ !inputs.dataset && (inputs.materialization_scope == 'full' || !inputs.materialization_scope) }}
         shell: bash
         run: |
           set -euo pipefail
-          reason="weekly-Monday"
-          if [[ "$(TZ=Europe/Berlin date +%u)" != "1" ]]; then
-            status="$(python3 tools/nfl_game_details_materialize.py --historical-v2-upgrade-needed)"
-            if [[ "$status" == "schema-current" ]]; then
-              echo "Historical NFL GameDetail reconciliation: schema current; weekly audit remains Monday" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-            if [[ "$status" != "upgrade-needed" ]]; then
-              echo "::error::Unrecognized GameDetail historical schema check: $status"
-              exit 1
-            fi
-            reason="one-time-schema-v2-upgrade"
+          if [[ "$(TZ=Europe/Berlin date +%u)" == "1" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=weekly-Monday" >> "$GITHUB_OUTPUT"
+          else
+            status="$(python3 tools/nfl_game_details_materialize.py --historical-rebuild-needed)"
+            case "$status" in
+              history-current)
+                echo "run=false" >> "$GITHUB_OUTPUT"
+                echo "reason=historical-inputs-current" >> "$GITHUB_OUTPUT"
+                ;;
+              *-rebuild-needed)
+                echo "run=true" >> "$GITHUB_OUTPUT"
+                echo "reason=$status" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "::error::Unrecognized historical NFL Games status: $status"
+                exit 1
+                ;;
+            esac
           fi
+
+      # Cached copies are not authoritative: require every accepted frozen
+      # Original Release to remain present and digest/size-identical before
+      # any historical Derived replay can trust a local cached file.
+      - name: Verify immutable historical PBP Releases before cached replay
+        if: steps.historical_pbp_due.outputs.run == 'true'
+        env:
+          PBP_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python3 tools/nfl_pbp_source_history.py --limit 0
+
+      - name: Compute historical original-PBP cache identity
+        id: historical_pbp_cache_key
+        if: steps.historical_pbp_due.outputs.run == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib
+          import json
+          from pathlib import Path
+          import sys
+          root = Path.cwd()
+          sys.path.insert(0, str(root / "tools"))
+          from nfl_source_data_lib.common import current_source_season
+          current = current_source_season(root)
+          records = []
+          for path in sorted((root / "data-source/providers/nflverse/play-by-play-original").glob("metadata-*.json")):
+              season = int(path.stem.split("-")[1])
+              if season >= current:
+                  continue
+              manifest = json.loads(path.read_text(encoding="utf-8"))
+              sha = manifest.get("OriginalSHA256") or manifest["UpstreamSHA256"]
+              records.append(f"{season}:{sha}")
+          print("key=" + hashlib.sha256("\n".join(records).encode("utf-8")).hexdigest())
+          PY
+
+      - name: Restore reusable historical original-PBP archive cache
+        if: steps.historical_pbp_due.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/nfl-pbp-evidence-cache
+          key: nfl-pbp-history-original-v1-${{ steps.historical_pbp_cache_key.outputs.key }}
+          restore-keys: |
+            nfl-pbp-history-original-v1-
+
+      - name: Reconcile and publish historical NFL GameDetails
+        if: steps.historical_pbp_due.outputs.run == 'true'
+        shell: bash
+        env:
+          NFL_PBP_ARCHIVE_CACHE_DIR: ${{ runner.temp }}/nfl-pbp-evidence-cache
+        run: |
+          set -euo pipefail
           python3 tools/rebuild_and_publish.py \
             --scope nfl-games \
             --path data-derived/nfl-games/details \
             -- \
             python3 tools/nfl_game_details_materialize.py --historical-seasons --write
-          echo "Historical NFL GameDetail reconciliation: completed ($reason), all accepted indexed seasons before current" >> "$GITHUB_STEP_SUMMARY"
+          echo "Historical NFL GameDetail reconciliation: completed (${{ steps.historical_pbp_due.outputs.reason }}), all accepted indexed seasons before current" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize isolated Derived publication
         if: ${{ always() }}

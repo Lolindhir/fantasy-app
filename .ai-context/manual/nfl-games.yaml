@@ -414,6 +414,37 @@ futureGameDetailDirection:
       --game-id <canonical-GameID> --v2
       --pbp-csv-gz /local/play_by_play_<season>.csv.gz
       --expected-sha256 <accepted-manifest-sha256>
+  historicalOriginalPbpDelivery:
+    issue: 1077
+    status: automatic-historical-reconciliation-in-implementation
+    sourceContract: .ai-context/manual/nfl-source-data.yaml::fullPlayByPlayTarget
+    sourceBoundary: >-
+      An original PBP Source manifest represents accepted immutable history;
+      a derived product never searches or downloads unaccepted provider archives.
+      Legacy UpstreamSHA256 and new OriginalSHA256/self-hash provenance both
+      identify the actual accepted compressed bytes.
+    recurrentDerived: >-
+      Rebuild all supported historical GameDetail v2 seasons every Monday
+      within the already classified nfl_games_derived job. Rebuild immediately
+      after the first accepted original of a historical year even on another
+      weekday. Derive from accepted Source and current versioned model code,
+      not a previous Derived/Consumer file as an algorithm input.
+    memoryAndCache: >-
+      Keep no more than one decompressed season of PBP in memory at once.
+      Reuse a verified content-addressed local Actions archive cache across
+      rebuild attempts and recurring runs where available. Every cached
+      gzip must still match the accepted Source manifest SHA256/size and
+      full-stream Source evidence before use; cache miss redownloads from
+      its immutable Release. Actions cache restoration transfers bytes and
+      must not be mistaken for zero bandwidth.
+    rollout: >-
+      Bounded source intake adds up to three missing historical seasons
+      per normal full scheduled/manual run; no hard-coded season list.
+      When a new Product/Metric is explicitly registered with its writer,
+      model version and dependencies, its own supported historical targets
+      may be rebuilt in the appropriate existing weekly publisher. New
+      output roots/writers are not auto-authorized by file discovery.
+
   pbpDerivedMetricCatalog:
     path: .ai-context/manual/nfl-games-pbp-metrics.yaml
     catalogVersion: 1

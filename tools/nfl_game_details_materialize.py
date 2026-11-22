@@ -20,7 +20,7 @@ from typing import Any
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_game_detail import _season_index
 from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_v2
-from derived_data_lib.nfl_pbp_accepted_season import AcceptedPBPSeasons
+from derived_data_lib.nfl_pbp_accepted_season import AcceptedPBPSeasons, _manifest
 from nfl_source_data_lib.common import current_source_season
 
 
@@ -198,6 +198,8 @@ def main() -> int:
     group.add_argument("--historical-seasons", action="store_true")
     group.add_argument("--historical-v2-upgrade-needed", action="store_true",
                        help="Read-only fast check for older stored GameDetail schemas")
+    group.add_argument("--historical-rebuild-needed", action="store_true",
+                       help="Read-only check for historical schema or newly accepted original PBP")
     parser.add_argument("--write", action="store_true", help="Opt-in to per-GameID Derived writes")
     parser.add_argument("--check", action="store_true", help="Read-only; exit 3 when output differs")
     args = parser.parse_args()
@@ -205,21 +207,38 @@ def main() -> int:
         parser.error("--write and --check are mutually exclusive")
     try:
         root = args.repo_root.resolve()
-        if args.historical_v2_upgrade_needed:
+        if args.historical_v2_upgrade_needed or args.historical_rebuild_needed:
             if args.write or args.check or args.out_root is not None:
-                raise ValueError("Historical schema preflight is read-only and takes no output options")
+                raise ValueError("Historical preflight is read-only and takes no output options")
             current = current_source_season(root)
             historical = [s for s in discover_seasons(root) if s < current]
             base = root / DATA_DERIVED_ROOT / "nfl-games" / "details"
-            upgrade_needed = False
+            refresh_needed = False
+            reason = "schema"
             for season in historical:
                 files = sorted((base / str(season)).glob("*.json"))
                 if not files or any(
                     _json(path).get("SchemaVersion") != 2 for path in files
                 ):
-                    upgrade_needed = True
+                    refresh_needed = True
                     break
-            print("upgrade-needed" if upgrade_needed else "schema-current")
+                if not args.historical_rebuild_needed:
+                    continue
+                accepted = _manifest(root, season)
+                if accepted is None:
+                    continue
+                original_sha = accepted.get("OriginalSHA256") or accepted["UpstreamSHA256"]
+                if not any(
+                    (_json(path).get("PlayByPlayMetrics") or {}).get("OriginalAssetSHA256")
+                    == original_sha for path in files
+                ):
+                    refresh_needed = True
+                    reason = "newly-accepted-original-pbp"
+                    break
+            if args.historical_v2_upgrade_needed:
+                print("upgrade-needed" if refresh_needed else "schema-current")
+            else:
+                print(reason + "-rebuild-needed" if refresh_needed else "history-current")
             return 0
         if args.season:
             seasons = sorted(set(args.season))

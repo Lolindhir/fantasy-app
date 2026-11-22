@@ -616,6 +616,9 @@ nflGamesSharedDerivation:
       existingJob: nfl_games_derived
       activeScope: season index from schedules, game finality and schedule odds
       detailRefresh: current-season after full Source or scoped schedule-odds
+      historicalOriginalIntake: existing-full-nfl-source-writer-bounded-three-per-scheduled-or-manual-run
+      acceptedOriginalArchiveCache: verified-sha-addressed-local-actions-cache
+      historicalReplayTrigger: newly-accepted-original-immediate-or-Monday-full-replay
       historicalRefresh: Monday full-Source run (Europe/Berlin), all accepted
         indexed historical seasons recomputed with semantic per-GameID no-op;
         one-time non-Monday v1-to-v2 schema upgrade on full Source if needed
