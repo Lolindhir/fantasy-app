@@ -39,9 +39,11 @@ def main() -> int:
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
     seasons = standings.manifest_seasons(standings.manifest(ROOT, args.league))
-    entry = {"v1": [], "v2": []}
+    VARIANTS = {"v1": ("playoff-odds-v1", "schedule-outlook-v2"), "v2": ("playoff-odds-v2", "schedule-outlook-v2"),
+                "v2-fade": ("playoff-odds-v2", "schedule-outlook-v3")}
+    entry = {m: [] for m in VARIANTS}
     entry_by_cut = {}
-    games = {"v1": [], "v2": []}
+    games = {m: [] for m in VARIANTS}
     for season in seasons:
         try:
             inputs = src.load_season_inputs(ROOT, args.league, season)
@@ -54,7 +56,7 @@ def main() -> int:
             final = src.snapshot(inputs, end, "playoff-odds-v2", model_id="schedule-outlook-v2")["PlayoffOdds"]
             final_field = {t["CanonicalLeagueRosterID"]: t["PlayoffProbability"] for t in final["Teams"]}
         for week in range(0, min(inputs.scored, end - 1) + 1):
-            snaps = {m: src.snapshot(inputs, week, f"playoff-odds-{m}", model_id="schedule-outlook-v2")["PlayoffOdds"] for m in ("v1", "v2")}
+            snaps = {m: src.snapshot(inputs, week, o, model_id=k)["PlayoffOdds"] for m, (o, k) in VARIANTS.items()}
             for m, block in snaps.items():
                 if final_field is not None and block["Available"]:
                     for t in block["Teams"]:
@@ -63,16 +65,18 @@ def main() -> int:
                         entry_by_cut.setdefault((m, week), []).append(pair)
             if week + 1 <= inputs.scored:
                 actual = inputs.results(week + 1)
-                for t in snaps["v2"]["Teams"]:
-                    for g in t["Upcoming"]:
-                        if g["Week"] != week + 1:
-                            continue
-                        own, opp = actual[t["CanonicalLeagueRosterID"]][1], actual[g["OpponentCanonicalLeagueRosterID"]][1]
-                        y = 1.0 if own > opp else 0.0 if own < opp else 0.5
-                        games["v2"].append((g["WinProbability"], y))
-                        games["v1"].append((0.5, y))
+                for m in ("v2", "v2-fade"):
+                    for t in snaps[m]["Teams"]:
+                        for g in t["Upcoming"]:
+                            if g["Week"] != week + 1:
+                                continue
+                            own, opp = actual[t["CanonicalLeagueRosterID"]][1], actual[g["OpponentCanonicalLeagueRosterID"]][1]
+                            y = 1.0 if own > opp else 0.0 if own < opp else 0.5
+                            games[m].append((g["WinProbability"], y))
+                            if m == "v2":
+                                games["v1"].append((0.5, y))
     result = {"Seasons": seasons, "PlayoffEntry": {m: score(v) for m, v in entry.items()},
-              "PlayoffEntryByCutoffWeek": {str(w): {m: score(entry_by_cut.get((m, w), [])) for m in ("v1", "v2")}
+              "PlayoffEntryByCutoffWeek": {str(w): {m: score(entry_by_cut.get((m, w), [])) for m in VARIANTS}
                                            for w in sorted({k[1] for k in entry_by_cut})},
               "SingleGames": {m: score(v) for m, v in games.items()}}
     text = json.dumps(result, indent=2)

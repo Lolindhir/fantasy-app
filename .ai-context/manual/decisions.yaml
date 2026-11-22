@@ -3285,3 +3285,26 @@ decisions:
         - A team that is mathematically alive can show 0.0 percent; consumers must not round it to a hard zero.
         - Documents of all seasons are rewritten once by the next full run (model switch and fingerprint bump).
 
+  - id: ADR-094
+    title: The previous season fades out linearly at half of the regular season (schedule-outlook-v3)
+    status: accepted
+    amends: [ADR-091]
+    context: >-
+      schedule-outlook-v2 blends the previous season with weight 1 - g/(g+3), which never reaches zero, so last season keeps
+      shaping strength (and with it the playoff odds of ADR-093) late in the season (Issue #1607, discussion 2026-11-22).
+    decision: >-
+      Robert decided on 2026-11-22 (Issue #1607): a new immutable model schedule-outlook-v3 weights the current season with
+      min(1, g / (R / 2)), R = number of regular-season weeks read from the canonical week structure. Before game 1 only the
+      previous season counts, then the share falls evenly and from half of the regular season on only the current season counts
+      (12 weeks: after week 6, 14 weeks: after week 7). Chosen for all seasons in data-meta; everything else equals v2. Playoff odds
+      and the schedule view take the new strength automatically (Strength.Value). No new writer, prefix, workflow or permission.
+    rationale: >-
+      A clear point in time after which only this season's data counts is easier to explain than an asymptotic blend. The walk-forward
+      backtest (research/playoff-odds/2026) shows no measurable gain on the small sample (playoff-field Brier 0.0143 against 0.0129,
+      single games 0.2353 against 0.2345; better in weeks 1 to 3, slightly worse in weeks 7 to 9), so the choice rests on explainability.
+    consequences:
+      positive:
+        - Late in the season strength and playoff odds reflect only the current season.
+      negative:
+        - On two completed seasons the backtest is marginally worse than k=3; a later data point may justify another version.
+        - Documents of all seasons are rewritten once by the next full run (model switch).
