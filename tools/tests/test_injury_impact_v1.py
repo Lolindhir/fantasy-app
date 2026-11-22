@@ -83,6 +83,17 @@ class RuleTests(unittest.TestCase):
         self.assertEqual((1, 1, 1), (result["Counts"]["Bye"], result["Counts"]["NoRecord"], result["Counts"]["NotOnActiveRoster"]))
         self.assertEqual(0.0, result["ProjectedBest"])
 
+    def test_bye_week_with_available_bye_is_neutral_not_unknown_not_lower_bound(self) -> None:
+        # since the availability product writes Available "bye" (Issue #1616), classification still follows State only
+        result = self.compute(
+            player("bye", "QB", 25.0, avail("bye", "bye", None)),
+            player("ok", "RB", 10.0, HEALTHY))
+        self.assertEqual(0.0, result["Impact"])
+        self.assertEqual(1, result["Counts"]["Bye"])
+        self.assertEqual(0, result["Counts"]["Unknown"])
+        self.assertFalse(result["HasUnknownEvidence"])
+        self.assertFalse(result["IsLowerBound"])
+
     def test_taxi_and_ir_players_count_like_anyone_on_the_roster(self) -> None:
         # the roster passed in contains starters, bench, taxi and IR alike; the model has no slot-status input
         result = self.compute(player("starter", "RB", 12.0, OUT), player("ir_or_taxi", "RB", 11.0, HEALTHY))
