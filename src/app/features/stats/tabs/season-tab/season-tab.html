@@ -18,7 +18,7 @@
         <span class="stats-cell stats-desktop" role="columnheader" title="Expected wins from all-play">Exp. W</span>
         <button type="button" class="stats-sort stats-cell stats-desktop" role="columnheader" [attr.aria-sort]="ariaSort('luck')" (click)="sortBy('luck')" title="Wins above expectation">Luck</button>
         <span class="stats-cell stats-desktop" role="columnheader">All-Play</span>
-        <button *ngIf="vm.hasInjuryImpact" type="button" class="stats-sort stats-cell stats-impact" role="columnheader" [attr.aria-sort]="ariaSort('impact')" (click)="sortBy('impact')" title="Projected points lost to injured players">Injury Impact</button>
+        <button *ngIf="vm.hasInjuryImpact" type="button" class="stats-sort stats-cell stats-impact" role="columnheader" [attr.aria-sort]="ariaSort('impact')" (click)="sortBy('impact')" title="Average players per week whose absence cost points">Hurt</button>
         <span class="stats-chevron-col" aria-hidden="true"></span>
       </div>
 
@@ -32,8 +32,8 @@
           <span class="stats-cell stats-desktop" role="cell">{{ expectedWins(row.stats) }}</span>
           <span class="stats-cell stats-desktop stats-luck" role="cell" [ngClass]="'stats-luck--' + signClass(row.stats?.Luck)">{{ formatSigned(row.stats?.Luck) }}</span>
           <span class="stats-cell stats-desktop" role="cell">{{ row.stats ? formatAllPlay(row.stats) : '–' }}</span>
-          <span *ngIf="vm.hasInjuryImpact" class="stats-cell stats-impact" role="cell" [attr.title]="row.injury?.isLowerBound ? 'Lower bound: some injured players have no projection' : null">
-            {{ row.injury ? row.injury.totalDisplay : '–' }}
+          <span *ngIf="vm.hasInjuryImpact" class="stats-cell stats-impact" role="cell" [attr.title]="row.injury?.isLowerBound ? 'Some injured players have no projection' : null">
+            {{ row.injury ? row.injury.hurtDisplay : '–' }}
           </span>
           <button
             type="button"
@@ -55,9 +55,9 @@
             <ng-container *ngIf="row.injury as injury; else noInjury">
               <h3 class="injury-heading">Injury Impact</h3>
               <p class="injury-summary">
-                <strong>{{ injury.totalDisplay }} pts</strong> in total
+                <strong>{{ injury.hurtDisplay }} players</strong> per week
                 <span class="injury-dot" aria-hidden="true">·</span>
-                {{ injury.perWeekDisplay }} per week
+                {{ injury.totalDisplay }} pts lost in total
                 <span class="injury-dot" aria-hidden="true">·</span>
                 {{ injury.weeksWithImpact }} of {{ injury.weeksComputed }} weeks affected
                 <ng-container *ngIf="injury.peakDisplay"><span class="injury-dot" aria-hidden="true">·</span>Peak {{ injury.peakDisplay }}</ng-container>
@@ -81,11 +81,7 @@
                 </button>
               </div>
               <p class="injury-caption" aria-live="polite">{{ activeBar ? activeBar.label : 'Select a week for its value.' }}</p>
-              <ul class="injury-legend">
-                <li><span class="injury-key injury-key--lower"></span>Lower bound (≥)</li>
-                <li><span class="injury-key injury-key--unknown"></span>Some availability unknown</li>
-                <li><span class="injury-key injury-key--na"></span>Not available</li>
-              </ul>
+              <p class="injury-note">Bars show points lost per week. Striped: at least that much. Dashed: some availability unknown. Hatched: not available.</p>
 
               <ng-container *ngIf="injury.topPlayers.length > 0">
                 <h4 class="injury-subheading">Players who cost the most</h4>
@@ -108,8 +104,7 @@
     </div>
 
     <p class="season-stats__note" *ngIf="vm.hasInjuryImpact">
-      <strong>Injury Impact</strong> is the projected points a team lost because of injured players in league-scored weeks.
-      <strong>≥</strong> marks a lower bound.
+      <strong>Hurt</strong> is the average number of injured players per week whose absence cost the team points.
       <a routerLink="/handbook" [queryParams]="{ section: 'Injury_Impact' }">How is this calculated?</a>
     </p>
   </section>

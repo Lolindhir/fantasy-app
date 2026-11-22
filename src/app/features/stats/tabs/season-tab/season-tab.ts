@@ -126,7 +126,7 @@ export class SeasonTabComponent {
     if (!season) return [];
     const value = (row: SeasonStatsRow): number | null => {
       if (this.sortKey === 'luck') return row.stats?.Luck ?? null;
-      if (this.sortKey === 'impact') return row.injury?.total ?? null;
+      if (this.sortKey === 'impact') return row.injury?.hurt ?? null;
       return row.place;
     };
     const direction = this.sortDescending ? -1 : 1;

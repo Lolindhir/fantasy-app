@@ -88,7 +88,7 @@ class RenderTests(unittest.TestCase):
             out = pub.render(self.root, LEAGUE)
         self.assertEqual([2025, 2026], [s["Season"] for s in out["Seasons"]])
         self.assertEqual([{"CanonicalLeagueRosterID": "r1", "TeamID": 7, "Owner": "Owner", "TeamName": "Team"}], out["Seasons"][0]["Teams"])
-        self.assertEqual(DOC["SeasonTotals"], out["Seasons"][0]["SeasonTotals"])
+        self.assertEqual([{**DOC["SeasonTotals"][0], "CostlyPlayersPerWeek": None}], out["Seasons"][0]["SeasonTotals"])
 
     def test_missing_history_season_warns_but_missing_current_season_fails(self):
         self._put(2026, {**DOC, "Season": 2026})
