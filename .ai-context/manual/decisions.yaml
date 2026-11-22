@@ -3268,6 +3268,8 @@ decisions:
       position cut becomes a record (State not-on-active-roster, Available no). Players without any NFL roster row stay without a record and are documented as
       their own case. Size about +21 percent (71 to 86 MB, measured). The App file PlayerInjuryHistory.json keeps its content (the generator still filters to
       report or reserve weeks). Rollback: restore the previous function and rematerialize.
+    amendment20261122c: >-
+      Issue #1616 follow-up (Robert 2026-11-22): every record with State bye carries Available bye (explicit not-applicable value, never null or unknown); Played stays null. Same product, writer and permissions; content change only, same size. Rollback: restore the previous function and rematerialize.
 
   - id: ADR-093
     title: Playoff odds use the outlook strength and the points tiebreak (playoff-odds-v2, seeded simulation)
