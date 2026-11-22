@@ -14,6 +14,7 @@ sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib import common as common_mod
 import nfl_pbp_source_archive as pbp_archive
 import nfl_pbp_source_auto as pbp_auto
+import nfl_pbp_source_history as pbp_history
 from nfl_source_data_lib.pbp_original import audit_original_pbp
 import nfl_pbp_2025_quality_report as pbp_quality
 from nfl_source_data_lib.draft import classify_draft_status
@@ -664,6 +665,185 @@ class NflPbpOriginalResearchReportTests(unittest.TestCase):
                     }
                 )
 
+
+
+class NflPbpHistoricalReconciliationTests(unittest.TestCase):
+    """Source-only dynamic discovery, pinned batches and frozen history."""
+
+    @staticmethod
+    def _asset(year, payload=b"original", *, official_digest=True):
+        sha = hashlib.sha256(payload).hexdigest()
+        return {
+            "id": year, "name": f"play_by_play_{year}.csv.gz",
+            "size": len(payload),
+            "digest": "sha256:" + sha if official_digest else None,
+            "state": "uploaded", "updated_at": "2026-11-20T00:00:00Z",
+            "browser_download_url": (
+                f"https://github.com/nflverse/nflverse-data/releases/download/"
+                f"pbp/play_by_play_{year}.csv.gz"
+            ),
+        }
+
+    @staticmethod
+    def _root(root, years):
+        base = root / "data-source/nfl/schedules"
+        base.mkdir(parents=True)
+        for year in years:
+            (base / f"{year}.json").write_text("{}")
+
+    def test_dynamic_inventory_accepts_digestless_1999_but_rejects_bad_metadata(self):
+        first = self._asset(1999, b"legacy", official_digest=False)
+        second = self._asset(2000)
+        with patch.object(pbp_history, "api_json",
+                          side_effect=[{"id": 123}, [first, second]]) as api:
+            result = pbp_history.official_inventory("token")
+        self.assertEqual(sorted(result), [1999, 2000])
+        self.assertIsNone(result[1999]["digest"])
+        self.assertEqual(api.call_count, 2)
+        with patch.object(pbp_history, "api_json",
+                          side_effect=[{"id": 123}, [first, first]]):
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                pbp_history.official_inventory("token")
+        with patch.object(pbp_history, "api_json",
+                          side_effect=[{"id": 123}, [dict(first, size=0)]]):
+            with self.assertRaisesRegex(ValueError, "Invalid"):
+                pbp_history.official_inventory("token")
+
+    def test_bounded_pinned_ingestion_is_idempotent_and_stages_only_source(self):
+        years = (2000, 2001, 2002, 2003)
+        bytes_by_year = {year: (f"source-{year}".encode()) for year in years}
+        official = {year: self._asset(year, data)
+                    for year, data in bytes_by_year.items()}
+        archived = {}
+        def release(_token, year, sha):
+            return {"assets": [archived[(year, sha)]]} if (year, sha) in archived else None
+        def upload(_token, _release, source, year, sha, size):
+            self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), sha)
+            asset = {
+                "id": year * 2, "name": f"play_by_play_{year}.csv.gz",
+                "size": size, "digest": f"sha256:{sha}", "state": "uploaded",
+                "browser_download_url": pbp_auto._archive_url(year, sha),
+            }
+            archived[(year, sha)] = asset
+            return asset
+        def download(url, target):
+            year = int(url.rsplit("_", 1)[-1].split(".")[0])
+            target.write_bytes(bytes_by_year[year])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._root(root, years)
+            pin = root / "selection.json"
+            with patch.object(pbp_history, "current_source_season", return_value=2026), \
+                 patch.object(pbp_history, "official_inventory", return_value=official), \
+                 patch.object(pbp_history, "_get_release", side_effect=release), \
+                 patch.object(pbp_history, "_create_release", return_value={"id": 30}), \
+                 patch.object(pbp_history, "_upload", side_effect=upload), \
+                 patch.object(pbp_history, "download", side_effect=download), \
+                 patch.object(pbp_history, "_audit", return_value={
+                     "SourceRowCount": 2, "ObservedGameIDs": 1,
+                 }):
+                result = pbp_history.run(root, "Lolindhir/fantasy-app", "token",
+                                         pin_path=pin, write=True)
+                self.assertEqual(result["NewlyAccepted"], [2000, 2001, 2002])
+                self.assertEqual(json.loads(pin.read_text())["Seasons"],
+                                 [2000, 2001, 2002])
+                again = pbp_history.run(root, "Lolindhir/fantasy-app", "token",
+                                        pin_path=pin, write=True)
+                self.assertFalse(again["Changed"])
+                self.assertEqual(again["NewlyAccepted"], [])
+                next_batch = pbp_history.run(root, "Lolindhir/fantasy-app",
+                                             "token", write=True)
+                self.assertEqual(next_batch["NewlyAccepted"], [2003])
+                manifests = sorted(root.glob(
+                    "data-source/providers/nflverse/play-by-play-original/*.json"
+                ))
+                self.assertEqual(len(manifests), 4)
+                self.assertFalse(list(root.rglob("*.gz")))
+                self.assertEqual(len(archived), 4)
+
+    def test_batch_digest_failure_blocks_release_and_partial_manifest(self):
+        years = (2000, 2001)
+        official = {year: self._asset(year, b"expected") for year in years}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._root(root, years)
+            with patch.object(pbp_history, "current_source_season", return_value=2026), \
+                 patch.object(pbp_history, "official_inventory", return_value=official), \
+                 patch.object(pbp_history, "download",
+                              side_effect=lambda _url, path: path.write_bytes(b"tampered!")), \
+                 patch.object(pbp_history, "_create_release") as release, \
+                 patch.object(pbp_history, "_upload") as upload:
+                with self.assertRaisesRegex(ValueError, "digest changed"):
+                    pbp_history.run(root, "Lolindhir/fantasy-app", "token", write=True)
+                release.assert_not_called()
+                upload.assert_not_called()
+                self.assertFalse(list(root.rglob("metadata-*.json")))
+
+    def test_digestless_original_keeps_source_and_hash_provenance_distinct(self):
+        year, data = 1999, b"1999-source-bytes"
+        official = {year: self._asset(year, data, official_digest=False)}
+        sha = hashlib.sha256(data).hexdigest()
+        archived = {
+            "id": 11, "name": "play_by_play_1999.csv.gz", "size": len(data),
+            "digest": f"sha256:{sha}", "state": "uploaded",
+            "browser_download_url": pbp_auto._archive_url(year, sha),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._root(root, [year])
+            with patch.object(pbp_history, "current_source_season", return_value=2026), \
+                 patch.object(pbp_history, "official_inventory", return_value=official), \
+                 patch.object(pbp_history, "download",
+                              side_effect=lambda _url, path: path.write_bytes(data)), \
+                 patch.object(pbp_history, "_audit", return_value={"SourceRowCount": 1}), \
+                 patch.object(pbp_history, "_get_release", return_value={
+                     "assets": [archived],
+                 }):
+                result = pbp_history.run(root, "Lolindhir/fantasy-app", "token", write=True)
+                self.assertEqual(result["NewlyAccepted"], [year])
+                meta = json.loads((root /
+                    "data-source/providers/nflverse/play-by-play-original/metadata-1999.json"
+                ).read_text())
+                self.assertIsNone(meta["UpstreamSHA256"])
+                self.assertEqual(meta["OriginalSHA256"], sha)
+                self.assertEqual(meta["SourceDigestAuthority"],
+                                 "self-sha256-official-asset-no-digest")
+
+    def test_history_and_weekly_derived_use_existing_workflow_only(self):
+        workflow = (TOOLS.parent / ".github/workflows/sync-nfl-source-data.yml").read_text()
+        self.assertIn("tools/nfl_pbp_source_history.py", workflow)
+        self.assertIn("--pin-path", workflow)
+        self.assertIn("--limit 3", workflow)
+        self.assertIn("historical_pbp_due", workflow)
+        self.assertIn("original-PBP archive cache", workflow.lower().replace("original-pbp", "original-PBP"))
+        self.assertIn("python3 tools/nfl_game_details_materialize.py --historical-seasons --write", workflow)
+
+
+class NflPbpDerivedCacheTests(unittest.TestCase):
+    def test_verified_file_cache_survives_eviction_without_second_download(self):
+        import os
+        from derived_data_lib import nfl_pbp_accepted_season as reader
+        def manifest(_root, year):
+            sha = hashlib.sha256(f"{year}".encode()).hexdigest()
+            return {"Season": year, "UpstreamSHA256": sha,
+                    "CompressedBytes": 4,
+                    "ArchiveURL": "https://example.invalid/original"}
+        calls = []
+        def download(_url, path):
+            calls.append(path)
+            path.write_bytes(b"dummy")
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.dict(os.environ, {"NFL_PBP_ARCHIVE_CACHE_DIR": tmp}), \
+             patch.object(reader, "_manifest", side_effect=manifest), \
+             patch.object(reader, "download", side_effect=download), \
+             patch.object(reader, "_verified_rows", return_value={}):
+            store = reader.AcceptedPBPSeasons(Path(tmp))
+            store.get(1999, {})
+            store.get(2000, {})
+            self.assertEqual(len(store._cache), 1)
+            store.get(1999, {})
+            self.assertEqual(len(calls), 2)
+            self.assertIn(1999, store._cache)
 
 if __name__ == "__main__":
     unittest.main()
