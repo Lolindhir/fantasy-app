@@ -67,6 +67,12 @@ function selfTest(){
   const g={};observe(g,'OUT',false);observe(g,'ACTIVE',true);
   assert.equal(summarize(g).ruleErrors,0);
   assert(SAMPLES.every(s=>Date.parse(s[2])<Date.parse(s[1]+'T00:00:00Z')));
+  const fixture=[['QB',10],['QB',9],['RB',8],['RB',7],['RB',6],['RB',5],
+    ['WR',8],['WR',7],['WR',6],['WR',5],['TE',8],['TE',7],['TE',6],['TE',5],['K',4]]
+    .map(([position,points])=>({position,points,status:position==='WR'&&points===8?'OUT':'ACTIVE'}));
+  assert.deepEqual(bestBall(fixture,false),{complete:true,points:91});
+  assert.deepEqual(bestBall(fixture,true),{complete:true,points:88});
+  assert.deepEqual(bestBall(fixture.filter(p=>p.position!=='K'),false),{complete:false,missing:'K'});
   console.log('CP3f self-test OK');
 }
 
