@@ -102,8 +102,14 @@ def derive_nfl_player_availability(
     player_stats: Mapping[int, Mapping[str, Any]],
     schedule: Mapping[str, Any],
     finality: Mapping[str, Any],
+    player_pfr_tokens: Mapping[str, Iterable[str]] | None = None,
 ) -> dict[str, Any]:
-    """Return the season document. ``injuries`` may be None when no report product exists for the season."""
+    """Return the season document. ``injuries`` may be None when no report product exists for the season.
+
+    ``player_pfr_tokens`` maps CanonicalPlayerID to the PFR tokens known for that player (IDs plus aliases). It is a declared
+    input: a snap row without identity only blocks players whose own token is unknown or equal to that row's token.
+    """
+    pfr_tokens = {pid: frozenset(t for t in tokens if t) for pid, tokens in (player_pfr_tokens or {}).items()}
     if schedule.get("Season") != season or finality.get("Season") != season:
         raise AvailabilityError(f"schedule/finality season mismatch for {season}")
     if injuries is not None and (injuries.get("Season") != season or injuries.get("ProductVersion") != "nfl-injuries-v1"):
@@ -126,6 +132,8 @@ def derive_nfl_player_availability(
     stat_rows = _partitions(player_stats)
     snap_played: dict[str, set[str]] = defaultdict(set)
     snap_unresolved: dict[str, set[str]] = defaultdict(set)  # GameID -> teams with a row without identity
+    # (GameID, team) -> PFR tokens of identity-less rows; None marks a row without any token (could be anyone).
+    snap_unresolved_tokens: dict[tuple[str, str], set[str | None]] = defaultdict(set)
     snap_games: set[str] = set()
     for document in snap_rows.values():
         for row in document.get("Records", []):
@@ -138,6 +146,8 @@ def derive_nfl_player_availability(
                 team = _team(row.get("Team"), schedule_teams, season)
                 if team:
                     snap_unresolved[game_id].add(team)
+                    token = (row.get("SourceIDs") or {}).get("PFR")
+                    snap_unresolved_tokens[(game_id, team)].add(token if isinstance(token, str) and token else None)
                 continue
             total = sum(int(row.get(k) or 0) for k in ("OffenseSnaps", "DefenseSnaps", "SpecialTeamsSnaps"))
             if total > 0:
@@ -155,6 +165,11 @@ def derive_nfl_player_availability(
             return "played", "snap-counts" if player in snap_played.get(game_id, ()) else "player-stats"
         if game_id in snap_games:
             if team in snap_unresolved.get(game_id, ()):
+                own = pfr_tokens.get(player)
+                blocked = snap_unresolved_tokens.get((game_id, team), set())
+                if own and None not in blocked and not (own & blocked):
+                    # The identity-less row(s) carry other people's tokens, so this player's missing row means not played.
+                    return "not-played", "snap-counts-token-excluded"
                 return "unknown", "snap-counts-identity-gap"
             return "not-played", "snap-counts"
         return "unknown", None
@@ -266,6 +281,7 @@ def derive_nfl_player_availability(
             "RosterStatusAvailable": roster_status_available,
             "SnapCountsAvailable": bool(snap_games),
             "PlayerStatsAvailable": bool(stats_played),
+            "PfrTokenIndexAvailable": bool(pfr_tokens),
         },
         "Quality": {
             "RecordCount": len(records),
