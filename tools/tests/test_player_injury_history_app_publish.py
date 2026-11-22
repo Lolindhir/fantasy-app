@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import player_injury_history_app_publish as publisher  # noqa: E402
 
-PRODUCT = "nfl-player-availability-v2"
+PRODUCT = "nfl-player-availability-v3"
 
 
 def record(pid, week, state="played", team="AAA"):

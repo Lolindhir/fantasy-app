@@ -1,10 +1,10 @@
 schemaVersion: 1
-status: active-product-v2
+status: active-product-v3
 trackingIssue: 1590
 v2TrackingIssue: 1610
 architectureDecision: ADR-092
 purpose: >
-  Global, league-independent Shared Derived product NFL Player Availability (nfl-player-availability-v2, v1 until the first regeneration): per player and week the
+  Global, league-independent Shared Derived product NFL Player Availability (nfl-player-availability-v3, v2 or v1 until the next regeneration): per player and week the
   separate evidence for an observed injury report, the NFL roster status, participation and the game/bye situation, plus a documented
   derived State. It is the availability layer for the player-detail injury history and for Fantasy Injury Impact (Issue #1584).
   It makes no medical, onset, return-date, games-missed, probability or pre-kickoff claim.
@@ -69,6 +69,9 @@ evidenceFields:
   Participation: >
     {State: played | not-played | unknown | no-game, Evidence}. Evidence is snap-counts, player-stats, snap-counts-token-excluded, snap-counts-identity-gap,
     game-not-final, cancelled-game, team-unresolved or bye; null when no evidence source covers the game.
+    v3 (Issue #1612): Evidence may also be participation (nflverse pbp_participation, GSIS on-field plays) or participation-conflict, and
+    Plays is the distinct play count of the player in that game from data-source/nfl/participation (null without a row or without the
+    dataset; absence is never evidence).
   Team: roster team, else the first report source team; normalized to the schedule abbreviation of that season (franchise aliases).
   GameID: canonical schedule game of the team in that week, null for bye, cancelled or unresolved team.
 
@@ -80,6 +83,14 @@ participationRules:
     team and game (evidence snap-counts-token-excluded). The token index is a declared input handed in by the materializer
     (Inputs.PfrTokenIndexAvailable); a changed identity mapping changes the output on the next regeneration. An identity-less row without
     any PFR token, or a player without own PFR token, keeps the gap.
+  v3Participation: >
+    Declared input data-source/nfl/participation/<season>.json (compact positive-only projection, Inputs.ParticipationAvailable). Versioned model
+    parameters (Inputs.ParticipationParameters): a player whose participation would be unknown (no snap/stat evidence, or a snap identity gap that is
+    not excluded) with at least MinPlaysUnknownToPlayed = 1 plays is played (evidence participation). A player whose snap rows say not played
+    (snap-counts or snap-counts-token-excluded) but who has at least MinPlaysConflict = 5 plays becomes unknown (evidence participation-conflict, Played null),
+    never played: two independent sources disagree and neither is overwritten. Fewer plays keep not-played (a single play is usually a no_play entry).
+    Snap or stat evidence of played always wins and only gains Plays. The first regeneration changed 48 of about 215,000 records over 2016 to 2025
+    (42 unknown to played, 6 not-played to unknown).
   unknown: game not final; no snap coverage and no stats row (always the case for a missing stats row before 2013); snap-counts identity gap of the team when the player's own PFR token cannot be excluded.
   cancelled: the 2022 week 17 BUF@CIN game is absent from the canonical schedule and never counts as played (state unknown, evidence cancelled-game).
 
@@ -161,7 +172,7 @@ quality:
 dependencyInvalidation:
   dependsOn: nfl-injuries-v1 product, weekly rosters, snap counts, player stats, schedule, game finality, the product version.
   recompute: every run rebuilds all seasons from persisted inputs and writes a season file only on a byte difference (semantic no-op, no timestamps).
-  versioning: ProductVersion nfl-player-availability-v2 (SchemaVersion 2; v1 files stay readable until the writer regenerates them, Monday full run or the next injury run). A rule change is a new ProductVersion and a regenerated product.
+  versioning: ProductVersion nfl-player-availability-v3 (SchemaVersion 3; v2 and v1 files stay readable until the writer regenerates them, Monday full run or the next injury run). A rule change is a new ProductVersion and a regenerated product.
 
 publication:
   writer: >
