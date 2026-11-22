@@ -809,6 +809,34 @@ class NflPbpHistoricalReconciliationTests(unittest.TestCase):
                 self.assertEqual(meta["SourceDigestAuthority"],
                                  "self-sha256-official-asset-no-digest")
 
+    def test_pinned_provider_asset_drift_blocks_before_source_admission(self):
+        year = 2024
+        original = self._asset(year, b"2024-original")
+        revised = self._asset(year, b"2024-revised")
+        pinned = {
+            "Seasons": [year],
+            "Assets": {str(year): {
+                key: original.get(key) for key in (
+                    "id", "size", "digest", "updated_at", "browser_download_url"
+                )
+            }},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._root(root, [year])
+            path = root / "pin.json"
+            path.write_text(json.dumps(pinned))
+            with patch.object(pbp_history, "current_source_season", return_value=2026), \
+                 patch.object(pbp_history, "official_inventory", return_value={
+                     year: revised,
+                 }), \
+                 patch.object(pbp_history, "download") as download:
+                with self.assertRaisesRegex(ValueError, "Pinned historical PBP official asset identity changed"):
+                    pbp_history.run(root, "Lolindhir/fantasy-app", "token",
+                                    write=True, pin_path=path)
+                download.assert_not_called()
+                self.assertFalse(list(root.rglob("metadata-*.json")))
+
     def test_frozen_2025_upstream_revision_is_review_not_overwrite(self):
         year = 2025
         old = hashlib.sha256(b"accepted").hexdigest()
