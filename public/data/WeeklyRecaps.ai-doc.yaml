@@ -58,17 +58,17 @@ contract:
     - Points
 
 sourceOfTruth:
-  finality: public/data/Matchups.json and historical Matchups archives; only Week CompletionState=final is eligible
+  finality: LeagueScoredWeek of the shared week-finality function (ADR-071, ADR-063 amendment); no published Matchups file is an input
   leagueScoring: data-source/leagues/nfl-reise/seasons/<season>/matchups/week-<week>.json StarterPoints/PlayerPoints
   nflWeeklyIdentity: data-source/nfl/weekly-rosters/<season>/<week>.json
   nflScores: data-source/nfl/schedules/<season>.json
-  appGameIdentity: current/historical Schedule resources provide stable app GameID, kickoff and NFL team IDs
+  appGameIdentity: derived_data_lib/nfl_schedule_games.py builds the stable app GameID, kickoff and NFL team IDs from canonical schedule and finality (no Schedule.json input)
   fantasyTeamOrdering: '#503 neutral All-Time Overall order; historical runs use cutoff-aware order'
   teamAwards: data-derived/team-week-performance/<CanonicalLeagueID>/<season>/<week:02d>.json
   teamAwardIdentity: >
     Match CanonicalLeagueRosterID to the SAME season/week canonical league
     matchup partition and its unique Sleeper ProviderRosterID; verify against
-    that final public/data/Matchups Week's FantasyTeamIDs. Never join via the
+    the final Matchups of the persisted matchup-context product (same week). Never join via the
     current roster or current owner display name.
   forbiddenDependency: >
     WeeklyRecaps generation must not parse published FantasyGameContext.json as its
@@ -76,7 +76,7 @@ sourceOfTruth:
     be used over canonical facts.
 
 eligibilityAndRanking:
-  week: Matchups Week CompletionState must equal final; there is no second recap finality model
+  week: every league week up to LeagueScoredWeek (ADR-071); there is no second recap finality model
   keyGames:
     density: exactly 2 for a successfully materialized final week
     ranking:

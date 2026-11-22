@@ -831,8 +831,8 @@ sharedDerivedData:
         output: public/data/MatchupProjections.json
         implementation: tools/matchup_projection.py
         inputs:
-          - public/data/FantasyGameContext.json
-          - public/data/PlayerWeekFantasy.json
+          - computed matchup context (tools/derived_data_lib/matchup_context.py, ADR-075)
+          - persisted PlayerWeekFantasy product through the Sleeper-keyed view tools/derived_data_lib/player_week_fantasy_view.py (no App file is an input, Issue #1263 F2)
         semantics: >
           Team ProjectedFinalScore plus 50/80/90 percent team ranges (normal approximation,
           starters independent) per FantasyMatchupID and team; DisplayLevel and Axis are data.

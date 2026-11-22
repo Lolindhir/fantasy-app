@@ -20,7 +20,7 @@ from typing import Any
 from data_roots import DATA_SOURCE_ROOT
 from league_metadata import LeagueMetadataError, data_meta_root, load_league_metadata, model_for
 from nfl_source_data_lib.teams import NflTeamRegistry, NflTeamRegistryError
-from schedule_archive import ScheduleArchiveError, build_schedule
+from derived_data_lib.nfl_schedule_games import ScheduleArchiveError, build_schedule
 
 from .league_lifecycle import LifecycleError, parse_instant, resolve_lifecycle
 from .models.registry import UnknownModelError, get_model

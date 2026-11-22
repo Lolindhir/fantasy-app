@@ -1000,7 +1000,7 @@ def resolve_historical_season(
     Raises MatchupContextError when the canonical evidence (league source, matchups, schedule, weekly rosters) is incomplete.
     """
     from nfl_source_data_lib.teams import NflTeamRegistry
-    from schedule_archive import ScheduleArchiveError, build_schedule
+    from derived_data_lib.nfl_schedule_games import ScheduleArchiveError, build_schedule
 
     from .decision_windows import make_team_key
 
@@ -1059,7 +1059,7 @@ def resolve_current_context(repo_root: Path, league_id: str, season: int, at_utc
     None keeps the previously published file (PowerShell kept it on a failed matchup load or a lineup/matchup week mismatch).
     """
     from nfl_source_data_lib.teams import NflTeamRegistry
-    from schedule_archive import build_schedule
+    from derived_data_lib.nfl_schedule_games import build_schedule
 
     from .decision_windows import DecisionWindowsError, make_team_key, resolve as resolve_decision_windows
     from .league_lifecycle import LifecycleError, resolve_lifecycle
