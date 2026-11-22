@@ -129,7 +129,7 @@ def plan(
                 raise ValueError(f"Accepted historical PBP archive missing: {year}")
             _verify_archive(archived, year, sha, record["CompressedBytes"])
             existing[year] = record
-    missing = sorted(x for x in canonical if x not in existing and x in official)
+    missing = sorted((x for x in canonical if x not in existing and x in official), reverse=True)
     unavailable = sorted(x for x in canonical if x not in existing and x not in official)
     revisions = []
     for year, record in sorted(existing.items()):
