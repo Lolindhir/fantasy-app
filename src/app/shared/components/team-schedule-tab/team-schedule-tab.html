@@ -9,7 +9,7 @@
         @if (remainingLabel(); as remaining) {
           <span class="schedule-summary-item">
             <span class="schedule-summary-label">Remaining schedule</span>
-            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}</strong>
+            <strong class="schedule-summary-text" title="Based on the points the remaining opponents have scored, early in the season mixed with last season">{{ remaining }}@if (remainingStrengthLabel()) { <span class="schedule-summary-sub"> · opponents {{ remainingStrengthLabel() }} league avg</span> }</strong>
           </span>
         }
         @if (playoffRecordLabel(); as playoffs) {
@@ -58,6 +58,32 @@
       </ul>
     }
 
+    @if (explainRows().length) {
+      <button type="button" class="schedule-explain-toggle" [attr.aria-expanded]="explainOpen()" (click)="toggleExplain()">
+        How are opponents rated?
+        <mat-icon aria-hidden="true">{{ explainOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </button>
+      @if (explainOpen()) {
+        <div class="schedule-explain">
+          <p>
+            Strength compares a team's points per game with the league average@if (leagueMeanLabel()) { ({{ leagueMeanLabel() }} points per team and game)}.
+            Early in the season it is mixed with last season; each played game shifts the mix towards this season.
+            "Opp" is the points the opponent is expected to score, "Win" is your chance to win that game.
+          </p>
+          <ul class="schedule-explain-list">
+            @for (item of explainRows(); track item.week) {
+              <li>
+                <strong>W{{ item.week }} {{ item.name }}</strong>
+                @if (item.strength) { <span>{{ item.strength }} league avg</span> }
+                @if (item.current) {
+                  <span class="schedule-muted">{{ item.current }} this season@if (item.currentStrength) { ({{ item.currentStrength }}) }, {{ item.previous }} last season@if (item.previousStrength) { ({{ item.previousStrength }}) }</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
     @if (playedRows().length) {
       <h4 class="schedule-section">Played</h4>
       <ul class="schedule-list" aria-label="Played games">
@@ -121,7 +147,14 @@
           <span aria-hidden="true">{{ chip.symbol }}</span> {{ chip.label }}
         </span>
       }
-      <span class="schedule-record" aria-label="Opponent record">{{ recordLabel(row.opponentRecord) }}</span>
+      <span class="schedule-resultline">
+        <span class="schedule-record" aria-label="Opponent record">{{ recordLabel(row.opponentRecord) }}</span>
+        @if (gameOutlook(row); as game) {
+          @if (game.points || game.win) {
+            <span class="schedule-oddsline">@if (game.points) { Opp {{ game.points }} pts }@if (game.points && game.win) { · }@if (game.win) { Win {{ game.win }} }</span>
+          }
+        }
+      </span>
     }
   </span>
 </ng-template>

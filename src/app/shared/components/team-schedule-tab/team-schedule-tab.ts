@@ -16,8 +16,12 @@ import {
   type TeamScheduleRow
 } from '../../utils/team-schedule.util';
 import {
+  formatPoints,
+  formatShare,
+  formatStrength,
   OPPONENT_CLASS_VIEW,
   REMAINING_CLASS_LABEL,
+  formatPlayoffPercent,
   resolveTeamScheduleOutlook
 } from '../../utils/schedule-outlook-view.util';
 import type { ScheduleOutlookReadModel } from '../../../core/models/schedule-outlook.models';
@@ -137,6 +141,55 @@ export class TeamScheduleTabComponent {
   readonly remainingLabel = computed(() => {
     const remaining = this.outlook()?.remaining;
     return remaining ? REMAINING_CLASS_LABEL[remaining] : '';
+  });
+
+  /** Remaining opponents' average strength relative to the league, e.g. "0.95×"; empty while unknown. */
+  readonly remainingStrengthLabel = computed(() => {
+    const value = this.outlook()?.remainingStrength;
+    return typeof value === 'number' ? formatStrength(value) : '';
+  });
+
+  readonly explainOpen = signal(false);
+
+  toggleExplain(): void {
+    this.explainOpen.update(open => !open);
+  }
+
+  /** Generated numbers of one upcoming game: opponent scoring, own win chance; null for played or playoff games. */
+  gameOutlook(row: TeamScheduleRow) {
+    if (row.outcome || row.isPlayoff) return null;
+    const game = this.outlook()?.gameByWeek.get(row.week);
+    if (!game) return null;
+    return {
+      points: game.opponentPoints === null ? '' : formatPoints(game.opponentPoints),
+      win: game.winProbability === null ? '' : formatPlayoffPercent(game.winProbability)
+    };
+  }
+
+  /** Strength breakdown per upcoming opponent for the explanation panel. */
+  readonly explainRows = computed(() => {
+    const view = this.outlook();
+    if (!view) return [];
+    return this.upcomingRows().flatMap(row => {
+      const game = view.gameByWeek.get(row.week);
+      if (!game || row.isPlayoff) return [];
+      const mix = game.opponentMix;
+      return [{
+        week: row.week,
+        name: this.opponentShort(row),
+        strength: game.opponentStrength === null ? '' : formatStrength(game.opponentStrength),
+        points: game.opponentPoints === null ? '' : formatPoints(game.opponentPoints),
+        current: mix ? formatShare(mix.currentWeight) : '',
+        currentStrength: mix?.currentRelative == null ? '' : formatStrength(mix.currentRelative),
+        previous: mix ? formatShare(1 - mix.currentWeight) : '',
+        previousStrength: mix?.previousRelative == null ? '' : formatStrength(mix.previousRelative)
+      }];
+    });
+  });
+
+  readonly leagueMeanLabel = computed(() => {
+    const mean = this.outlook()?.leagueMeanPoints;
+    return typeof mean === 'number' ? formatPoints(mean) : '';
   });
 
   opponentChip(row: TeamScheduleRow) {

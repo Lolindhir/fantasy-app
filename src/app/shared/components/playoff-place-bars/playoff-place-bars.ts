@@ -39,6 +39,6 @@ export class PlayoffPlaceBarsComponent {
   get description(): string {
     const parts = this.bars.filter(bar => bar.probability > 0)
       .map(bar => `place ${bar.place} ${formatPlayoffPercent(bar.probability)}`);
-    return `${this.teamName}: chance of each final place if every remaining game were a coin flip: ${parts.join(', ') || 'none'}`;
+    return `${this.teamName}: chance of each final place based on team strength: ${parts.join(', ') || 'none'}`;
   }
 }

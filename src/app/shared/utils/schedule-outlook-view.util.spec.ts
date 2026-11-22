@@ -7,6 +7,9 @@ import {
   playoffMarker,
   playoffPillText,
   resolvePlayoffOdds,
+  formatPoints,
+  formatShare,
+  formatStrength,
   resolveTeamScheduleOutlook
 } from './schedule-outlook-view.util';
 
@@ -57,6 +60,8 @@ describe('schedule outlook view', () => {
     expect(playoffPillText(odds.teams.get(1)!)).toBe('Clinched 1st');
     expect(playoffPillText(odds.teams.get(2)!)).toBe('<1%');
     expect(playoffPillText(odds.teams.get(3)!)).toBe('Eliminated');
+    expect(playoffPillText({ teamId: 9, status: 'alive', probability: 0, places: [] })).toBe('<1%');
+    expect(playoffPillText({ teamId: 9, status: 'alive', probability: 1, places: [] })).toBe('>99%');
     expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [1, 0, 0, 0] })).toBe('Clinched 1st');
     expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [0, 0, 1, 0] })).toBe('Clinched 3rd');
     expect(playoffPillText({ teamId: 9, status: 'clinched', probability: 1, places: [0, 0.5, 0.5, 0] })).toBe('Clinched');
@@ -86,5 +91,46 @@ describe('schedule outlook view', () => {
     expect(view.opponentByWeek.has(6)).toBeFalse();
     expect(resolveTeamScheduleOutlook(outlook(), 2025, 1)).toBeNull();
     expect(resolveTeamScheduleOutlook(outlook(), 2026, 9)).toBeNull();
+  });
+
+  it('exposes generated opponent points, win chance and strength mix without calculating anything', () => {
+    const base = outlook();
+    const model: ScheduleOutlookReadModel = {
+      ...base,
+      RegularSeason: {
+        Teams: [
+          {
+            ...base.RegularSeason!.Teams[0],
+            RemainingSoS: 1.1,
+            Upcoming: [{ Week: 5, OpponentTeamID: 2, OpponentClass: 'weaker', OpponentStrength: 0.9 }]
+          },
+          {
+            TeamID: 2, RemainingGames: 1, RemainingSoSClass: null, Upcoming: [],
+            Strength: { Value: 0.9, CurrentRelative: 0.88, PreviousRelative: 0.95, CurrentWeight: 0.25, GamesPlayed: 1 }
+          }
+        ]
+      },
+      PlayoffOdds: {
+        ...base.PlayoffOdds!,
+        Scoring: { LeagueMeanPoints: 190.4, PointsStdDev: 30, MeanSource: 'current-season' },
+        Teams: base.PlayoffOdds!.Teams.map(team => team.TeamID === 1
+          ? { ...team, Upcoming: [{ Week: 5, OpponentTeamID: 2, WinProbability: 0.62, OpponentExpectedPoints: 171.4 }] }
+          : team)
+      }
+    };
+    const view = resolveTeamScheduleOutlook(model, 2026, 1)!;
+    const game = view.gameByWeek.get(5)!;
+    expect(game.winProbability).toBe(0.62);
+    expect(game.opponentPoints).toBe(171.4);
+    expect(game.opponentStrength).toBe(0.9);
+    expect(game.opponentMix).toEqual({ currentWeight: 0.25, currentRelative: 0.88, previousRelative: 0.95, gamesPlayed: 1 });
+    expect(view.remainingStrength).toBe(1.1);
+    expect(view.leagueMeanPoints).toBe(190.4);
+  });
+
+  it('formats published numbers for display only', () => {
+    expect(formatPoints(171.4)).toBe('171');
+    expect(formatStrength(0.9)).toBe('0.90×');
+    expect(formatShare(0.77)).toBe('77%');
   });
 });
