@@ -781,7 +781,7 @@ jobs:
               # Only scheduled/manual full runs; code pushes and called/scoped
               # runs never silently admit historical Original Source.
               # A runner-temp selection pins up to three seasons over Raw retries.
-              if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+              if [[ ( "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ) && "${FORCE:-false}" != "true" ]]; then
                 history_log="$(mktemp)"
                 set +e
                 python3 tools/nfl_pbp_source_history.py \
