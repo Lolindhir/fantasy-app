@@ -12,7 +12,7 @@ import injury_impact_app_publish as publisher  # noqa: E402
 
 def document():
     team = {"CanonicalLeagueRosterID": "r1", "ProjectedBest": 10.0, "ProjectedBestHealthy": 8.0, "Impact": 2.0, "IsLowerBound": True,
-            "HasUnknownEvidence": False, "Counts": {"Usable": 1}, "Injured": [{"CanonicalPlayerID": "P1"}]}
+            "HasUnknownEvidence": False, "Counts": {"Usable": 1}, "Injured": [{"CanonicalPlayerID": "P1", "SingleReturnImpact": 2.0}, {"CanonicalPlayerID": "P3", "SingleReturnImpact": 0.0}]}
     return {
         "Season": 2026, "Models": {"InjuryImpact": "injury-impact-v1"}, "AsOf": {"LeagueScoredWeek": 1},
         "Inputs": {"ScoringSettingsHash": "x"},
@@ -27,16 +27,16 @@ def document():
 class SlimSeasonTests(unittest.TestCase):
     def test_week_rows_keep_only_display_fields(self):
         slim = publisher.slim_season(document(), [{"CanonicalLeagueRosterID": "r1", "TeamID": 1}], {})
-        self.assertEqual(slim["Weeks"], [{"Week": 1, "Teams": [{"CanonicalLeagueRosterID": "r1", "Impact": 2.0, "IsLowerBound": True, "HasUnknownEvidence": False}]}])
+        self.assertEqual(slim["Weeks"], [{"Week": 1, "Teams": [{"CanonicalLeagueRosterID": "r1", "Impact": 2.0, "IsLowerBound": True, "HasUnknownEvidence": False, "CostlyPlayers": 1}]}])
         self.assertNotIn("Inputs", slim)
         self.assertEqual(slim["UnavailableWeeks"], [{"Week": 2, "Reason": "no partition"}])
-        self.assertEqual(slim["SeasonTotals"], document()["SeasonTotals"])
+        self.assertEqual(slim["SeasonTotals"], [{**document()["SeasonTotals"][0], "CostlyPlayersPerWeek": 1.0}])
 
     def test_player_refs_cover_every_top_player_and_never_drop_unknown_ones(self):
-        profiles = {"P1": {"DisplayName": "A Player", "Position": "WR", "Headshot": None}}
+        profiles = {"P1": {"DisplayName": "A Player", "Position": "WR", "Headshot": None, "LatestTeam": "BUF"}}
         refs = publisher.slim_season(document(), [], profiles)["PlayerRefs"]
-        self.assertEqual(refs["P1"], {"Name": "A Player", "Position": "WR", "Picture": None})
-        self.assertEqual(refs["P2"], {"Name": None, "Position": None, "Picture": None})
+        self.assertEqual(refs["P1"], {"Name": "A Player", "Position": "WR", "Picture": None, "Team": "BUF"})
+        self.assertEqual(refs["P2"], {"Name": None, "Position": None, "Picture": None, "Team": None})
 
 
 if __name__ == "__main__":

@@ -12,6 +12,8 @@ export interface InjuryImpactWeekTeam {
   Impact: number;
   IsLowerBound: boolean;
   HasUnknownEvidence: boolean;
+  /** Injured players whose return would have gained points that week; absent in older files. */
+  CostlyPlayers?: number;
 }
 
 export interface InjuryImpactWeek {
@@ -29,6 +31,8 @@ export interface InjuryImpactSeasonTotal {
   CanonicalLeagueRosterID: string;
   Impact: number;
   ImpactPerWeek: number | null;
+  /** Average number of injured players per week whose return would have gained points; absent in older files. */
+  CostlyPlayersPerWeek?: number | null;
   WeeksComputed: number;
   WeeksWithImpact: number;
   IsLowerBound: boolean;
@@ -41,6 +45,8 @@ export interface InjuryImpactPlayerRef {
   Name: string | null;
   Position: string | null;
   Picture: string | null;
+  /** Latest NFL team abbreviation; absent in older files. */
+  Team?: string | null;
 }
 
 export interface InjuryImpactSeason {

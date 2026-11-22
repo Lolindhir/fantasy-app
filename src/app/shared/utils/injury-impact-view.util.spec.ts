@@ -48,6 +48,13 @@ describe('injury impact view utility', () => {
     expect(view.peakDisplay).toBe('Week 1 (10.0)');
   });
 
+  it('shows the average of players who cost points as the main figure', () => {
+    const withHurt = season();
+    withHurt.SeasonTotals[0].CostlyPlayersPerWeek = 2.5;
+    expect(buildInjuryImpactByTeam(withHurt).get('1')!.hurtDisplay).toBe('2.5');
+    expect(buildInjuryImpactByTeam(season()).get('1')!.hurtDisplay).toBe('–');
+  });
+
   it('gives a team without any impact an empty baseline and no peak', () => {
     const noImpact = season({
       Weeks: [{ Week: 1, Teams: [{ CanonicalLeagueRosterID: 'r2', Impact: 0, IsLowerBound: false, HasUnknownEvidence: false }, { CanonicalLeagueRosterID: 'r1', Impact: 0, IsLowerBound: false, HasUnknownEvidence: false }] }],
@@ -61,9 +68,9 @@ describe('injury impact view utility', () => {
   });
 
   it('resolves top players through the generator references and tolerates files without references', () => {
-    const withRefs = season({ PlayerRefs: { P1: { Name: 'A Player', Position: 'WR', Picture: 'x.png' } } });
+    const withRefs = season({ PlayerRefs: { P1: { Name: 'A Player', Position: 'WR', Picture: 'x.png', Team: 'BUF' } } });
     expect(buildInjuryImpactByTeam(withRefs).get('1')!.topPlayers[0]).toEqual({
-      id: 'P1', name: 'A Player', position: 'WR', picture: 'x.png', impactDisplay: '9.0', weeks: 2
+      id: 'P1', name: 'A Player', position: 'WR', picture: 'x.png', team: 'BUF', impactDisplay: '9.0', weeks: 2
     });
     expect(buildInjuryImpactByTeam(season()).get('1')!.topPlayers[0].name).toBe('Unknown player');
   });

@@ -20,11 +20,15 @@ export interface InjuryImpactTopPlayerView {
   name: string;
   position: string | null;
   picture: string | null;
+  team: string | null;
   impactDisplay: string;
   weeks: number;
 }
 
 export interface TeamInjuryImpactView {
+  /** Average players per week who cost points; the main figure of the table. */
+  hurt: number | null;
+  hurtDisplay: string;
   total: number;
   totalDisplay: string;
   isLowerBound: boolean;
@@ -56,7 +60,10 @@ export function buildInjuryImpactByTeam(season: InjuryImpactSeason | null | unde
     if (teamId === undefined) continue;
     const entries = new Map(season.Weeks.map(week => [week.Week, week.Teams.find(team => team.CanonicalLeagueRosterID === total.CanonicalLeagueRosterID)]));
     const bars = weekNumbers.map(week => weekBar(week, entries.get(week), unavailable.includes(week), maxWeekly));
+    const hurt = total.CostlyPlayersPerWeek ?? null;
     result.set(teamId, {
+      hurt,
+      hurtDisplay: hurt === null ? '–' : formatDecimal(hurt, 1),
       total: total.Impact,
       totalDisplay: formatImpact(total.Impact, total.IsLowerBound),
       isLowerBound: total.IsLowerBound,
@@ -74,6 +81,7 @@ export function buildInjuryImpactByTeam(season: InjuryImpactSeason | null | unde
           name: ref?.Name ?? 'Unknown player',
           position: ref?.Position ?? null,
           picture: ref?.Picture ?? null,
+          team: ref?.Team ?? null,
           impactDisplay: formatDecimal(player.SingleReturnImpact, 1),
           weeks: player.Weeks
         };
@@ -89,7 +97,7 @@ function peak(total: InjuryImpactSeasonTotal): string | null {
 
 function weekBar(
   week: number,
-  entry: { Impact: number; IsLowerBound: boolean; HasUnknownEvidence: boolean } | undefined,
+  entry: { Impact: number; IsLowerBound: boolean; HasUnknownEvidence: boolean; CostlyPlayers?: number } | undefined,
   isUnavailable: boolean,
   maxWeekly: number
 ): InjuryImpactWeekBar {
@@ -105,6 +113,6 @@ function weekBar(
     lowerBound: entry.IsLowerBound,
     unknownEvidence: entry.HasUnknownEvidence,
     unavailable: false,
-    label: `Week ${week}: ${formatImpact(entry.Impact, entry.IsLowerBound)} pts${markers ? ` (${markers})` : ''}`
+    label: `Week ${week}: ${formatImpact(entry.Impact, entry.IsLowerBound)} pts${entry.CostlyPlayers !== undefined ? `, ${entry.CostlyPlayers} ${entry.CostlyPlayers === 1 ? 'player' : 'players'}` : ''}${markers ? ` (${markers})` : ''}`
   };
 }

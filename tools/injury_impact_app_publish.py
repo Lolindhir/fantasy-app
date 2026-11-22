@@ -37,7 +37,7 @@ from matchup_context_app_publish import Writer, _warn  # noqa: E402
 from players_population import sized_headshot  # noqa: E402
 
 EXPECTED_ERRORS = (TeamInjuryImpactError, StandingsSourceError, LeagueMetadataError)
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 WEEK_TEAM_FIELDS = ("CanonicalLeagueRosterID", "Impact", "IsLowerBound", "HasUnknownEvidence")
 
 
@@ -68,14 +68,28 @@ def player_refs(document: dict[str, Any], profiles: dict[str, dict[str, Any]]) -
                 "Name": profile.get("DisplayName") or None,
                 "Position": profile.get("Position") or None,
                 "Picture": sized_headshot(headshot) if headshot else None,
+                "Team": profile.get("LatestTeam") or None,
             }
     return dict(sorted(refs.items()))
 
 
+def costly_players(team: dict[str, Any]) -> int:
+    """Injured players whose return would have gained points (the same selection the top-player list uses)."""
+    return sum(1 for player in team.get("Injured", []) if (player.get("SingleReturnImpact") or 0) > 0)
+
+
 def slim_season(document: dict[str, Any], teams: list[dict[str, Any]], profiles: dict[str, dict[str, Any]]) -> dict[str, Any]:
     weeks = [
-        {"Week": week["Week"], "Teams": [{key: team[key] for key in WEEK_TEAM_FIELDS} for team in week["Teams"]]}
+        {"Week": week["Week"], "Teams": [{**{key: team[key] for key in WEEK_TEAM_FIELDS}, "CostlyPlayers": costly_players(team)} for team in week["Teams"]]}
         for week in document["Weeks"]
+    ]
+    per_roster: dict[str, list[int]] = {}
+    for week in document["Weeks"]:
+        for team in week["Teams"]:
+            per_roster.setdefault(team["CanonicalLeagueRosterID"], []).append(costly_players(team))
+    totals = [
+        {**item, "CostlyPlayersPerWeek": round(sum(counts) / len(counts), 1) if (counts := per_roster.get(item["CanonicalLeagueRosterID"])) else None}
+        for item in document["SeasonTotals"]
     ]
     return {
         "Season": document["Season"],
@@ -84,7 +98,7 @@ def slim_season(document: dict[str, Any], teams: list[dict[str, Any]], profiles:
         "Teams": teams,
         "Weeks": weeks,
         "UnavailableWeeks": document["UnavailableWeeks"],
-        "SeasonTotals": document["SeasonTotals"],
+        "SeasonTotals": totals,
         "PlayerRefs": player_refs(document, profiles),
     }
 
