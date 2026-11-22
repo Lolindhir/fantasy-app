@@ -17,7 +17,7 @@ import team_injury_impact_materialize as mat  # noqa: E402
 from derived_data_lib.team_injury_impact import TeamInjuryImpactError  # noqa: E402
 
 LEAGUE = "test-league"
-DOC = {"Season": 2025, "SeasonTotals": [{"CanonicalLeagueRosterID": "r1", "Impact": 1.5}], "Weeks": []}
+DOC = {"Season": 2025, "Models": {"InjuryImpact": "m"}, "AsOf": {}, "UnavailableWeeks": [], "SeasonTotals": [{"CanonicalLeagueRosterID": "r1", "Impact": 1.5}], "Weeks": []}
 
 
 class MaterializeTests(unittest.TestCase):
@@ -62,6 +62,9 @@ class RenderTests(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.root = Path(self._tmp.name)
+        profiles = self.root / "data-source" / "nfl" / "player-profiles" / "nflverse.json"
+        profiles.parent.mkdir(parents=True, exist_ok=True)
+        profiles.write_text(json.dumps({"SourceDataset": "nflverse.players", "Records": []}), encoding="utf-8")
 
     def _put(self, season: int, document: dict) -> None:
         path = self.root / "data-derived" / "team-injury-impact" / LEAGUE / f"{season}.json"
