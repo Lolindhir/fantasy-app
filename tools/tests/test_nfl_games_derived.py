@@ -852,6 +852,75 @@ def _write_original_pbp_gzip(path: Path, rows: list[dict], fields=None) -> None:
 
 
 class NflOriginalPbpGamePreviewTests(unittest.TestCase):
+    def test_historical_franchise_aliases_canonicalize_metrics_not_raw_rows(self):
+        # Accepted Source PBP can use the modern franchise spelling while
+        # canonical historical GameIDs must remain unchanged (Issue #1077).
+        examples = (
+            (2014, "MIN", "STL", "MIN", "LA"),
+            (2016, "SD", "KC", "LAC", "KC"),
+            (2018, "KC", "OAK", "KC", "LV"),
+        )
+        for season, away, home, source_away, source_home in examples:
+            with self.subTest(season=season):
+                game_id = f"{season}_01_{away}_{home}"
+                index = {
+                    "SchemaVersion": 1, "Season": season, "Games": [{
+                        "GameID": game_id, "Week": 1, "GameType": "REG",
+                        "AwayTeam": away, "HomeTeam": home, "Final": True,
+                    }],
+                }
+                source_row = _pbp_row(
+                    game_id=game_id, season=str(season), week="1",
+                    play_id="1", away_team=source_away, home_team=source_home,
+                    posteam=source_home, defteam=source_away,
+                )
+                doc = build_nfl_game_detail(index, game_id, pbp_rows=[source_row])
+                original = doc["PlayByPlay"]["OriginalPlays"]
+                play = original["Plays"][0]
+                self.assertEqual((play["PossessionTeam"], play["DefenseTeam"]), (home, away))
+                self.assertEqual(
+                    (play["SourceRow"]["posteam"], play["SourceRow"]["home_team"]),
+                    (source_home, source_home),
+                )
+                offensive = original["Analytics"]["ByOffenseTeam"]
+                self.assertEqual(offensive[1]["Team"], home)
+                self.assertEqual(offensive[1]["All"]["PlayCount"], 1)
+                self.assertEqual(offensive[0]["All"]["PlayCount"], 0)
+
+    def test_historical_franchise_aliases_fail_closed_on_invalid_teams(self):
+        game_id = "2014_01_MIN_STL"
+        index = {"SchemaVersion": 1, "Season": 2014, "Games": [{
+            "GameID": game_id, "Week": 1, "GameType": "REG",
+            "AwayTeam": "MIN", "HomeTeam": "STL", "Final": True,
+        }]}
+        valid = _pbp_row(
+            game_id=game_id, season="2014", week="1", play_id="1",
+            away_team="MIN", home_team="LA", posteam="LA", defteam="MIN",
+        )
+        cases = (
+            ({"home_team": "NE"}, "game/season/week/type/team mismatch"),
+            ({"posteam": "DEN"}, "invalid possession/defense team"),
+            ({"defteam": "STL"}, "same possession/defense team"),
+            ({"game_id": "2014_02_MIN_STL"}, "game/season/week/type/team mismatch"),
+        )
+        for changed, message in cases:
+            with self.subTest(changed=changed):
+                with self.assertRaisesRegex(ValueError, message):
+                    build_nfl_game_detail(index, game_id, pbp_rows=[{**valid, **changed}])
+
+        # 2015 is the last STL/LA alias season; never use this as a
+        # global modern-franchise substitution for a later year.
+        later_game = "2017_01_MIN_STL"
+        later_index = {"SchemaVersion": 1, "Season": 2017, "Games": [{
+            "GameID": later_game, "Week": 1, "GameType": "REG",
+            "AwayTeam": "MIN", "HomeTeam": "STL", "Final": True,
+        }]}
+        with self.assertRaisesRegex(ValueError, "game/season/week/type/team mismatch"):
+            build_nfl_game_detail(
+                later_index, later_game,
+                pbp_rows=[{**valid, "game_id": later_game, "season": "2017"}],
+            )
+
     def test_original_game_plays_selected_sorted_and_all_source_columns_retained(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
