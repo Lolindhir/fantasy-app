@@ -21,7 +21,7 @@ class NflGamesPublisherContractTests(unittest.TestCase):
         self.assertIn("inputs.materialization_scope != 'game-finality'", condition)
         self.assertIn("!inputs.dataset", condition)
         self.assertIn("inputs.dataset == 'nflverse.schedule-odds'", condition)
-        self.assertEqual(job["timeout-minutes"], 20)
+        self.assertEqual(job["timeout-minutes"], 90)
 
         odds = yaml.safe_load(
             (ROOT / ".github/workflows/odds-refresh.yml").read_text(encoding="utf-8")
@@ -77,7 +77,11 @@ class NflGamesPublisherContractTests(unittest.TestCase):
         current = next(step for step in steps
                        if step["name"] == "Rebuild and publish current-season NFL GameDetails")
         historical = next(step for step in steps
-                          if step["name"] == "Reconcile and publish historical NFL GameDetails weekly")
+                          if step["name"] == "Reconcile and publish historical NFL GameDetails")
+        decision = next(step for step in steps
+                        if step["name"] == "Decide historical NFL GameDetail replay")
+        cache = next(step for step in steps
+                     if step["name"] == "Restore reusable historical original-PBP archive cache")
         for step in (current, historical):
             self.assertIn("tools/rebuild_and_publish.py", step["run"])
             self.assertIn("--scope nfl-games", step["run"])
@@ -88,15 +92,17 @@ class NflGamesPublisherContractTests(unittest.TestCase):
         self.assertIn("tools/nfl_game_details_materialize.py --current-season --write",
                       current["run"])
         self.assertIn("--historical-seasons --write", historical["run"])
-        self.assertIn("!inputs.dataset", historical["if"])
-        self.assertIn("inputs.materialization_scope == 'full'", historical["if"])
-        self.assertIn("TZ=Europe/Berlin date +%u", historical["run"])
-        self.assertIn('!= "1"', historical["run"])
-        self.assertIn("--historical-v2-upgrade-needed", historical["run"])
-        self.assertIn('reason="one-time-schema-v2-upgrade"', historical["run"])
+        self.assertIn("steps.historical_pbp_due.outputs.run", historical["if"])
+        self.assertIn("!inputs.dataset", decision["if"])
+        self.assertIn("inputs.materialization_scope == 'full'", decision["if"])
+        self.assertIn("TZ=Europe/Berlin date +%u", decision["run"])
+        self.assertIn("--historical-rebuild-needed", decision["run"])
+        self.assertIn("weekly-Monday", decision["run"])
+        self.assertIn("actions/cache@v4", cache["uses"])
+        self.assertIn("nfl-pbp-history-original-v1-", cache["with"]["key"])
         self.assertIn("tools/nfl_game_details_materialize.py",
                       workflow[True]["push"]["paths"])
-        self.assertEqual(workflow["jobs"]["nfl_games_derived"]["timeout-minutes"], 20)
+        self.assertEqual(workflow["jobs"]["nfl_games_derived"]["timeout-minutes"], 90)
         contract = yaml.safe_load(
             (ROOT / ".ai-context/manual/nfl-games.yaml").read_text(encoding="utf-8")
         )
