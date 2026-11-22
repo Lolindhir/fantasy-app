@@ -175,6 +175,36 @@ class SeasonInputs:
         return [{"CanonicalLeagueRosterID": t["CanonicalLeagueRosterID"], "TeamID": t["TeamID"], **state[t["CanonicalLeagueRosterID"]]}
                 for t in sorted(self.teams, key=lambda x: x["TeamID"])]
 
+    def points_history(self, after_week: int) -> dict[str, list[float]]:
+        """Scored regular-season points per roster, week by week, up to the cutoff (input of the strength-based playoff odds)."""
+        history: dict[str, list[float]] = {rid: [] for rid in self.roster_ids}
+        for week in range(1, min(after_week, self.regular_end) + 1):
+            for rid, (_, points) in self.results(week).items():
+                history[rid].append(points)
+        return history
+
+    def previous_points(self) -> list[float]:
+        """Every team-game score of the previous regular season (flat; spread estimate of the strength-based playoff odds).
+
+        No previous season in the league means no scores; an existing but incomplete or malformed one fails closed.
+        """
+        previous_dir = self.season_dir.parent / str(self.season - 1)
+        if not (previous_dir / "league.json").is_file():
+            return []
+        league = _document(previous_dir / "league.json")
+        start = (league.get("WeekStructure") or {}).get("PlayoffStartWeek") if isinstance(league, dict) else None
+        if type(start) is not int or start <= 1:
+            raise ScheduleOutlookSourceError("Invalid previous-season PlayoffStartWeek")
+        found: list[float] = []
+        for week in range(1, start):
+            rows = _document(previous_dir / "matchups" / f"week-{week}.json")
+            for row in rows if isinstance(rows, list) else []:
+                points = row.get("Points") if isinstance(row, dict) else None
+                if isinstance(points, bool) or not isinstance(points, (int, float)):
+                    raise ScheduleOutlookSourceError(f"Previous season week {week}: missing points")
+                found.append(float(points))
+        return found
+
     def stats(self) -> dict[str, Any]:
         if self._stats is None:
             stats = _document(data_derived_dir(self.repo_root) / "season-statistics" / self.league_id / f"{self.season}.json")
@@ -304,9 +334,19 @@ def snapshot(inputs: SeasonInputs, after_week: int, playoff_odds_model_id: str |
         records = inputs.records(after_week)
         open_games = [(g["Team1CanonicalLeagueRosterID"], g["Team2CanonicalLeagueRosterID"])
                       for g in value["UpcomingMatchups"]]
+        extra_odds: dict[str, Any] = {}
+        if getattr(odds_model, "USES_STRENGTH", False):
+            # The strength is exactly what the selected outlook model computed in this same run (no second formula).
+            extra_odds = {
+                "strength_by_roster": {t["CanonicalLeagueRosterID"]: (t.get("Strength") or {}).get("Value")
+                                       for t in value["Teams"]},
+                "points_by_roster": inputs.points_history(after_week),
+                "previous_points": inputs.previous_points(),
+                "upcoming_matchups": value["UpcomingMatchups"],
+            }
         odds = odds_model.compute(teams=records, open_games=open_games,
                                   playoff_teams=inputs.week_structure.get("PlayoffTeams"),
-                                  regular_season_complete=complete)
+                                  regular_season_complete=complete, **extra_odds)
     # Preview-only shape: no production model choice, publishing or contract yet.
     result = {
         "PreviewOnly": True,

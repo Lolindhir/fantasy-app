@@ -3261,3 +3261,58 @@ decisions:
       State healthy-scratch. Size measured about 1.6 times v1 (about 71 MB); all positions would be 2.7 times and was not chosen. The App file
       PlayerInjuryHistory.json keeps its content (generator still publishes only signal weeks; only its Product string follows the version).
       Rollback: restore the v1 function and rematerialize. Contract: .ai-context/manual/nfl-player-availability.yaml.
+
+  - id: ADR-093
+    title: Playoff odds use the outlook strength and the points tiebreak (playoff-odds-v2, seeded simulation)
+    status: accepted
+    amends: [ADR-090]
+    context: >-
+      playoff-odds-v1 (ADR-090) counts every open game 50/50 and shares the places of equal-record teams. Both distort: the points tiebreak of
+      standings-v1 decides ties in the real table, and the strength of schedule (ADR-091) was decoupled from the odds (Issue #1607, analysis
+      2026-11-22: a 4-6 team with the second-best points was 46 percent in v1 and about 59 percent with the tiebreak).
+    decision: >-
+      Robert decided on 2026-11-22 (Issue #1607): the immutable model playoff-odds-v2 replaces v1 for all seasons (data-meta Models.PlayoffOdds); the
+      50/50 view is no longer shown. The team strength is not computed in the odds model: it is the RegularSeason.Teams[].Strength.Value that the selected
+      schedule-outlook model computed in the same run (relative to the league average), so a new outlook version flows in without changing the odds.
+      Nothing is hard-coded: the league mean points per team-game and the pooled scoring spread come from the league's own scores up to the cutoff
+      (plus the previous regular season for the spread and before the first game); method parameters (seed 1607, 20000 simulations, digits) are
+      versioned PARAMS. Open games are simulated deterministically with a fixed seed (normal scores around mean times strength); the points count for
+      the standings-v1 tiebreak (win percentage, points for, points against). Single-game win probabilities are the exact normal result. clinched and
+      eliminated stay strictly mathematical (exact win/loss enumeration, every tiebreak lost respectively won). Unknown strength treats every team as equally
+      strong and is marked (StrengthBasis equal-unknown with a reason). The materializer fingerprint becomes version 3 (scored points per week and the
+      previous-season scores are inputs). No new writer, prefix, workflow or permission. Contract: .ai-context/manual/league-schedule-outlook.yaml (playoffOddsV2).
+    rationale: >-
+      Walk-forward backtest over all cutoffs 2024 to 2026 (research/playoff-odds/2026): the Brier score of the playoff field falls from 0.038 (v1) to 0.013
+      (v2) and the single-game Brier from 0.250 to 0.235; the sample is small (two completed seasons), so the result is a tendency, not a calibration.
+    consequences:
+      positive:
+        - Playoff chances follow the same strength as the remaining schedule and the real tiebreak; a strength change updates them automatically.
+        - No fixed spread or league mean; works for any team count and playoff size (no state limit for the probabilities).
+      negative:
+        - Probabilities are Monte Carlo values with about 0.3 percentage points of simulation error (deterministic, not exact).
+        - A team that is mathematically alive can show 0.0 percent; consumers must not round it to a hard zero.
+        - Documents of all seasons are rewritten once by the next full run (model switch and fingerprint bump).
+
+  - id: ADR-094
+    title: The previous season fades out linearly at half of the regular season (schedule-outlook-v3)
+    status: accepted
+    amends: [ADR-091]
+    context: >-
+      schedule-outlook-v2 blends the previous season with weight 1 - g/(g+3), which never reaches zero, so last season keeps
+      shaping strength (and with it the playoff odds of ADR-093) late in the season (Issue #1607, discussion 2026-11-22).
+    decision: >-
+      Robert decided on 2026-11-22 (Issue #1607): a new immutable model schedule-outlook-v3 weights the current season with
+      min(1, g / (R / 2)), R = number of regular-season weeks read from the canonical week structure. Before game 1 only the
+      previous season counts, then the share falls evenly and from half of the regular season on only the current season counts
+      (12 weeks: after week 6, 14 weeks: after week 7). Chosen for all seasons in data-meta; everything else equals v2. Playoff odds
+      and the schedule view take the new strength automatically (Strength.Value). No new writer, prefix, workflow or permission.
+    rationale: >-
+      A clear point in time after which only this season's data counts is easier to explain than an asymptotic blend. The walk-forward
+      backtest (research/playoff-odds/2026) shows no measurable gain on the small sample (playoff-field Brier 0.0143 against 0.0129,
+      single games 0.2353 against 0.2345; better in weeks 1 to 3, slightly worse in weeks 7 to 9), so the choice rests on explainability.
+    consequences:
+      positive:
+        - Late in the season strength and playoff odds reflect only the current season.
+      negative:
+        - On two completed seasons the backtest is marginally worse than k=3; a later data point may justify another version.
+        - Documents of all seasons are rewritten once by the next full run (model switch).

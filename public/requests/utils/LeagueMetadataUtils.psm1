@@ -20,8 +20,8 @@ $script:KnownModelIds = @{
     SeasonStats = @('season-stats-v1')
     Rivalry = @('rivalry-v1', 'rivalry-v2')
     WeeklyRecap = @('weekly-recap-v1', 'weekly-recap-v2')
-    ScheduleOutlook = @('schedule-outlook-v1', 'schedule-outlook-v2')
-    PlayoffOdds = @('playoff-odds-v1')
+    ScheduleOutlook = @('schedule-outlook-v1', 'schedule-outlook-v2', 'schedule-outlook-v3')
+    PlayoffOdds = @('playoff-odds-v1', 'playoff-odds-v2')
 }
 $script:TopLevelKeys = @('SchemaVersion', 'CanonicalLeagueID', 'Provider', 'CurrentProviderLeagueID', 'LeagueTimeZone', 'Owners', 'Drafts', 'Seasons')
 $script:SeasonKeys = @('CapDeadline', 'CapDeadlineBufferDays', 'Models')

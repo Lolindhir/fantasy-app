@@ -154,6 +154,66 @@ class FactStrengthModelTests(Harness):
         self.assertIsNotNone(json.loads(self.read(1))["RegularSeason"]["Teams"][0]["Strength"]["Value"])
 
 
+class StrengthOddsTests(Harness):
+    """playoff-odds-v2 (#1607) inside the materializer: strength comes from the outlook, points and spread are inputs."""
+
+    def setUp(self):
+        super().setUp()
+        self.data["previous"] = {1: 1.2, 2: 1.0, 3: 0.9, 4: 0.9}
+        self.previous_points = [90.0 + (i * 7) % 30 for i in range(24)]
+        patcher = mock.patch.object(source.SeasonInputs, "previous_points", side_effect=lambda *_: list(self.previous_points))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def run_season(self, **kwargs):
+        return mat.materialize_season(self.root, self.out, LEAGUE, SEASON, "schedule-outlook-v2",
+                                      odds_model_id="playoff-odds-v2", **kwargs)
+
+    def test_document_carries_strength_basis_and_per_game_probabilities(self):
+        self.run_season()
+        doc = json.loads(self.read(1))
+        odds = doc["PlayoffOdds"]
+        self.assertEqual("playoff-odds-v2", doc["Models"]["PlayoffOdds"])
+        self.assertEqual("outlook-strength", odds["Provenance"]["StrengthBasis"])
+        outlook = {t["CanonicalLeagueRosterID"]: t["Strength"]["Value"] for t in doc["RegularSeason"]["Teams"]}
+        mean = odds["Scoring"]["LeagueMeanPoints"]
+        for team in odds["Teams"]:  # expected points are exactly league mean times the outlook strength
+            self.assertAlmostEqual(mean * outlook[team["CanonicalLeagueRosterID"]], team["ExpectedPoints"], places=2)
+        self.assertTrue(all(0 < g["WinProbability"] < 1 for t in odds["Teams"] for g in t["Upcoming"]))
+        again = self.run_season()
+        self.assertEqual((6, 0, 0), (again["Unchanged"], again["Recomputed"], again["Written"]))
+
+    def test_changed_strength_changes_the_odds_without_touching_the_odds_model(self):
+        self.run_season()
+        before = json.loads(self.read(1))["PlayoffOdds"]
+        self.data["previous"][1] = 0.5
+        self.run_season()
+        after = json.loads(self.read(1))["PlayoffOdds"]
+        self.assertNotEqual(before["Teams"][0]["PlaceProbabilities"], after["Teams"][0]["PlaceProbabilities"])
+
+    def test_points_and_previous_season_scores_dirty_the_cutoffs_that_use_them(self):
+        self.run_season()
+        before = [self.read(w) for w in range(6)]
+        self.previous_points[0] += 5.0
+        summary = self.run_season()
+        self.assertEqual(6, summary["Recomputed"])  # spread estimate of every cutoff reads the previous season
+        self.assertNotEqual(before[1], self.read(1))
+
+    def test_fingerprint_is_sound_for_points_perturbations(self):
+        changed = facts()
+        changed["previous"] = dict(self.data["previous"])
+        changed["results"][2]["r1"] = (changed["results"][2]["r1"][0], changed["results"][2]["r1"][1] + 3.0)
+        left, right = inputs_from(self.data), inputs_from(changed)
+        for week in range(6):
+            a = mat.build_document(left, week, "schedule-outlook-v2", "0" * 64, "playoff-odds-v2")
+            b = mat.build_document(right, week, "schedule-outlook-v2", "0" * 64, "playoff-odds-v2")
+            if stripped(a) != stripped(b):
+                self.assertNotEqual(mat.input_fingerprint(left, week, "schedule-outlook-v2", "playoff-odds-v2"),
+                                    mat.input_fingerprint(right, week, "schedule-outlook-v2", "playoff-odds-v2"), f"week {week}")
+        self.assertNotEqual(stripped(mat.build_document(left, 3, "schedule-outlook-v2", "0" * 64, "playoff-odds-v2")),
+                            stripped(mat.build_document(right, 3, "schedule-outlook-v2", "0" * 64, "playoff-odds-v2")))
+
+
 class IncrementalTests(Harness):
     def test_cold_then_incremental_is_a_true_noop(self):
         first = self.run_season()
@@ -326,7 +386,7 @@ class ConsistencyTests(Harness):
     def test_model_comes_from_data_meta_and_fails_closed(self):
         repo = TOOLS.parent
         league = "nfl-reise"
-        selected = "schedule-outlook-v2"
+        selected = "schedule-outlook-v3"
         self.assertEqual(selected, mat.selected_model_id(repo, league, 2025))
         self.assertEqual(selected, mat.selected_model_id(repo, league, 2025, asserted=selected))
         with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "not the asserted"):
