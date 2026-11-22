@@ -71,6 +71,15 @@ class StrengthTests(unittest.TestCase):
         mirror = next(g for g in result["Teams"][1]["Upcoming"] if g["OpponentCanonicalLeagueRosterID"] == "r0")
         self.assertGreater(game["WinProbability"], 0.5)
         self.assertAlmostEqual(1.0, game["WinProbability"] + mirror["WinProbability"], places=3)
+        self.assertGreater(game["ExpectedMargin"], 0)
+        self.assertAlmostEqual(0.0, game["ExpectedMargin"] + mirror["ExpectedMargin"], places=3)
+
+    def test_remaining_schedule_accumulates_the_game_win_chances(self):
+        result = run(strengths={"r0": 1.3, "r1": 0.7, **{f"r{i}": 1.0 for i in range(2, 6)}})
+        for team in result["Teams"]:
+            chances = [g["WinProbability"] for g in team["Upcoming"]]
+            self.assertAlmostEqual(sum(chances), team["RemainingExpectedWins"], places=3)
+            self.assertAlmostEqual(sum(chances) / len(chances), team["RemainingWinProbability"], places=3)
 
     def test_unknown_strength_treats_every_team_equal_and_says_so(self):
         result = run(strengths={"r0": 1.2})  # five teams unknown
@@ -78,6 +87,7 @@ class StrengthTests(unittest.TestCase):
         self.assertEqual("strength-unknown", result["Provenance"]["StrengthReason"])
         for team in result["Teams"]:
             self.assertEqual(0.5, team["Upcoming"][0]["WinProbability"])
+            self.assertEqual(0.0, team["Upcoming"][0]["ExpectedMargin"])
 
     def test_no_scores_anywhere_is_equal_unknown_without_invented_numbers(self):
         teams = make_teams(4)
