@@ -180,16 +180,27 @@ def run(
 ) -> dict[str, Any]:
     if repository != _DEST_REPOSITORY:
         raise ValueError("Unexpected PBP archive repository")
+    saved = None
     if pin_path is not None and pin_path.is_file():
         if selected is not None:
             raise ValueError("Cannot combine pinned PBP source batch with explicit seasons")
         saved = load_json(pin_path)
-        if not isinstance(saved, dict) or not isinstance(saved.get("Seasons"), list):
+        if (not isinstance(saved, dict) or not isinstance(saved.get("Seasons"), list)
+                or not isinstance(saved.get("Assets"), dict)):
             raise ValueError("Invalid pinned PBP source intake batch")
         selected = saved["Seasons"]
     state, official = plan(root, token, limit=limit, selected=selected)
+    asset_keys = ("id", "size", "digest", "updated_at", "browser_download_url")
+    pinned_assets = {
+        str(year): {key: official[year].get(key) for key in asset_keys}
+        for year in state["Seasons"]
+    }
+    if saved is not None and saved["Assets"] != pinned_assets:
+        raise ValueError("Pinned historical PBP official asset identity changed during Source retry")
     if pin_path is not None and not pin_path.exists():
-        pin_path.write_text(json.dumps({"Seasons": state["Seasons"]}) + "\n", encoding="utf-8")
+        pin_path.write_text(json.dumps({
+            "Seasons": state["Seasons"], "Assets": pinned_assets,
+        }, sort_keys=True) + "\n", encoding="utf-8")
     if not write or not state["Seasons"]:
         return {**state, "Status": "historical-pbp-preview" if not write else "historical-pbp-noop",
                 "Changed": False, "NewlyAccepted": []}
