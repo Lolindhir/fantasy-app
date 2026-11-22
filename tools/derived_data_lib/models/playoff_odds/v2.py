@@ -279,9 +279,13 @@ def compute(
                     "OpponentCanonicalLeagueRosterID": rosters[other], "OpponentTeamID": rows[other]["TeamID"],
                     "WinProbability": 0.5 if equal else _round(p) if p is not None else None,
                     "OpponentExpectedPoints": _round(basis["Expected"][rosters[other]]),
+                    "ExpectedMargin": 0.0 if equal else (_round(expected[own] - expected[other]) if p is not None else None),
                 })
     out = []
     for i, row in enumerate(rows):
+        games = per_team_upcoming[i]
+        known = [g["WinProbability"] for g in games if g["WinProbability"] is not None]
+        complete_games = bool(games) and len(known) == len(games)
         probabilities = [round(v / SIMULATIONS, DIGITS) + 0.0 for v in place_sums[i]]
         playoff = sum(place_sums[i][:cut])
         out.append({"TeamID": row["TeamID"], "CanonicalLeagueRosterID": row["CanonicalLeagueRosterID"], "Record": record(row),
@@ -290,6 +294,8 @@ def compute(
                     "EliminationProbability": round((SIMULATIONS - playoff) / SIMULATIONS, DIGITS) + 0.0,
                     "Status": status[i],
                     "ExpectedPoints": _round(basis["Expected"][row["CanonicalLeagueRosterID"]]),
+                    "RemainingExpectedWins": _round(sum(known)) if complete_games else None,
+                    "RemainingWinProbability": _round(sum(known) / len(known)) if complete_games else None,
                     "Upcoming": per_team_upcoming[i]})
     return {"Model": MODEL_ID, "Available": True, "Reason": None,
             "Provenance": _provenance(len(pairs), cut, False, basis, status_available=status[0] is not None),

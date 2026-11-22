@@ -103,7 +103,7 @@ playoffOddsV2:
                   StrengthSource, Seed, Simulations, StatusAvailable },
       Scoring { LeagueMeanPoints, PointsStdDev, MeanSource current-season | previous-season, ScoredTeamGames, PreviousSeasonTeamGames },
       Teams[] { TeamID, CanonicalLeagueRosterID, Record, PlaceProbabilities[], PlayoffProbability, EliminationProbability, Status, ExpectedPoints,
-                Upcoming[] { Week, CanonicalLeagueMatchupID, OpponentCanonicalLeagueRosterID, OpponentTeamID, WinProbability, OpponentExpectedPoints } } }
+                Upcoming[] { Week, CanonicalLeagueMatchupID, OpponentCanonicalLeagueRosterID, OpponentTeamID, WinProbability, OpponentExpectedPoints, ExpectedMargin (own minus opponent expected points) }, RemainingExpectedWins (sum of WinProbability), RemainingWinProbability (mean WinProbability; both null without an upcoming game or with an unknown one) } }
     The share of the current and previous season in a strength stays in RegularSeason.Teams[].Strength (CurrentWeight, CurrentRelative, PreviousRelative).
   inputs: >-
     the outlook strengths of the same run, the scored regular-season points per roster week by week up to the cutoff, every team-game score of the previous regular season (spread, mean before game 1), records, playoff size and open pairings.
