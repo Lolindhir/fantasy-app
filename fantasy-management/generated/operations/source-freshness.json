@@ -1,14 +1,14 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-11-21T21:55:33.044837Z",
-  "berlin_date": "2026-11-21",
+  "generated_at": "2026-11-22T04:23:31.272529Z",
+  "berlin_date": "2026-11-22",
   "timezone": "Europe/Berlin",
   "domain_context": {
     "schema_version": 1,
     "season": 2026,
     "phase": "regular_season",
-    "as_of_date": "2026-11-21",
+    "as_of_date": "2026-11-22",
     "current_week": 11,
     "regular_season": {
       "first_game_date": "2026-09-09",
@@ -32,7 +32,7 @@
         "relevance": "required",
         "active": true,
         "reason": "phase_policy:regular_season",
-        "runtime_status": "active_degraded",
+        "runtime_status": "active_ready",
         "execution_allowed": true,
         "no_event_conclusion_allowed": true
       },
@@ -41,7 +41,7 @@
         "relevance": "required",
         "active": true,
         "reason": "phase_policy:regular_season",
-        "runtime_status": "active_degraded",
+        "runtime_status": "active_ready",
         "execution_allowed": true,
         "no_event_conclusion_allowed": true
       }
@@ -60,25 +60,21 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 5,
-    "stale_count": 1,
+    "fresh_count": 6,
+    "stale_count": 0,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "degraded",
+  "overall_status": "ok",
   "monitoring": {
-    "decision": "proceed_degraded",
+    "decision": "proceed",
     "allowed": true,
     "no_event_conclusion_allowed": true,
-    "unfresh_source_ids": [
-      "fantasy-football-calculator"
-    ],
+    "unfresh_source_ids": [],
     "blocking_source_ids": [],
     "no_event_blocking_source_ids": [],
-    "affected_signal_families": [
-      "redraft_adp"
-    ]
+    "affected_signal_families": []
   },
   "sources": [
     {
@@ -94,8 +90,8 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-11-21T04:47:18.326984Z",
-      "age_minutes": 1028.25,
+      "checked_at": "2026-11-22T04:22:18.802737Z",
+      "age_minutes": 1.21,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -112,8 +108,8 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-11-21T04:47:13.084632Z",
-      "age_minutes": 1028.33,
+      "checked_at": "2026-11-22T04:22:11.326541Z",
+      "age_minutes": 1.33,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -127,10 +123,10 @@
       "affected_signal_families": [
         "redraft_adp"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-11-20T04:21:53.741590Z",
-      "age_minutes": 2493.66,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-11-22T04:22:23.389986Z",
+      "age_minutes": 1.13,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -146,8 +142,8 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-11-21T04:47:23.260543Z",
-      "age_minutes": 1028.16,
+      "checked_at": "2026-11-22T04:22:13.459011Z",
+      "age_minutes": 1.3,
       "content_changed": false,
       "trigger": "repository_dispatch"
     },
@@ -163,8 +159,8 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-11-21T04:47:22.770960Z",
-      "age_minutes": 1028.17,
+      "checked_at": "2026-11-22T04:22:21.330038Z",
+      "age_minutes": 1.17,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -180,14 +176,14 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-11-21T04:47:18.475313Z",
-      "age_minutes": 1028.24,
+      "checked_at": "2026-11-22T04:22:14.612713Z",
+      "age_minutes": 1.28,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
   ],
   "quality": {
-    "status": "degraded",
+    "status": "ok",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
