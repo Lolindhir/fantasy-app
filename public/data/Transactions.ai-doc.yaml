@@ -36,7 +36,7 @@ generation:
   product: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
   entryPoints:
     - public/requests/RequestLeague.ps1
-    - .github/workflows/update-transactions.yml
+    - .github/workflows/update-history.yml
 
 notes:
   - EffectiveAt is the authoritative timestamp of a completed move (Shared Derived LeagueTransactions v2). Source/Canonical preserve Sleeper created and status_updated; CreatedAt/CreatedDate remain submission provenance. Manual and legacy missing updated time use CreatedAt deterministically.

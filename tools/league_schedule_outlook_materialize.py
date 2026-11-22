@@ -2,7 +2,7 @@
 """Bounded, deterministic materializer of the league-schedule-outlook Shared Derived product (Issue #1519, I6).
 
 Productive since the approved activation of Issue #1519 (Robert, 2026-11-19): league-live (current season,
-incremental) and update-transactions (all seasons, full) call it inside their existing rebuild-and-retry
+incremental) and update-history (all seasons, full) call it inside their existing rebuild-and-retry
 publications. The model per season comes from data-meta ``Models.ScheduleOutlook`` (no default or fallback);
 ``--model-id`` is an optional assertion that must equal the selection.
 

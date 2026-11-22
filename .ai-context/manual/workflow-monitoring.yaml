@@ -398,12 +398,14 @@ workflows:
     category: non-paging
     relevantEvents: []
     rationale: Schedule.json publication is a reusable job of the NFL Live pipeline (nfl-live.yml, Issue #946); its failures surface through the calling nfl-live.yml run. Manual workflow_dispatch repair runs remain non-paging.
-  .github/workflows/update-transactions.yml:
+  .github/workflows/update-history.yml:
     category: important
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; the same rebuild-and-retry run now also publishes all canonical league seasons of Shared Derived LeagueTransactions and LeagueDrafts in one scoped commit with App data. Surface a missed weekly cycle without paging on a single transient run immediately.
+    firstDueAt: "2026-11-25T09:05:00Z"
+    firstDueGraceMinutes: 120
+    rationale: Renamed from update-transactions.yml (workflow name Weekly history rebuild); GitHub run history does not follow a rename, so the missing-success alarm starts only after the first due slot (Wednesday 04:05 America/New_York) plus grace. Scheduler target id transactions and event type scheduler-update-transactions are deliberately unchanged so runtime state and slot history stay valid. Weekly history rebuild dispatched by the central scheduler; the same rebuild-and-retry run now also publishes all canonical league seasons of Shared Derived LeagueTransactions and LeagueDrafts in one scoped commit with App data. Surface a missed weekly cycle without paging on a single transient run immediately.
   .github/workflows/update-standings.yml:
     category: routine
     relevantEvents:

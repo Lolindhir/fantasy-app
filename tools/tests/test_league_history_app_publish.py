@@ -322,7 +322,7 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
     """Keep both existing LeagueHistory products inside one classified weekly writer."""
 
     def test_existing_weekly_writer_publishes_both_derived_families_and_app(self):
-        workflow = (TOOLS.parent / ".github/workflows/update-transactions.yml").read_text(encoding="utf-8")
+        workflow = (TOOLS.parent / ".github/workflows/update-history.yml").read_text(encoding="utf-8")
         self.assertIn("--scope transactions", workflow)
         self.assertIn("--path public/data", workflow)
         self.assertIn("--path data-derived/league-transactions", workflow)
@@ -337,7 +337,7 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
         self.assertIn("RequestPastSeasonsIndex.ps1", workflow)
 
     def test_weekly_writer_covers_every_league_and_summarizes_each_product(self):
-        workflow = (TOOLS.parent / ".github/workflows/update-transactions.yml").read_text(encoding="utf-8")
+        workflow = (TOOLS.parent / ".github/workflows/update-history.yml").read_text(encoding="utf-8")
         self.assertNotIn("--league", workflow)
         self.assertIn("Summarize Derived products", workflow)
         for product in ("league-transactions", "league-drafts"):
@@ -348,7 +348,7 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
         """#1263 G5: keep manual Drafts restore isolated, without a second workflow file."""
         import yaml
 
-        workflow_path = TOOLS.parent / ".github/workflows/update-transactions.yml"
+        workflow_path = TOOLS.parent / ".github/workflows/update-history.yml"
         text = workflow_path.read_text(encoding="utf-8")
         definition = yaml.safe_load(text)
         events = definition.get("on", definition.get(True))
@@ -380,7 +380,7 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
 
         root = TOOLS.parent
         definition = yaml.safe_load(
-            (root / ".github/workflows/update-transactions.yml").read_text(encoding="utf-8")
+            (root / ".github/workflows/update-history.yml").read_text(encoding="utf-8")
         )
         events = definition.get("on", definition.get(True))
         manual = events["workflow_dispatch"]["inputs"]["mode"]
@@ -408,7 +408,7 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
         )
         targets = [item for item in schedules["targets"] if item["id"] == "transactions"]
         self.assertEqual(1, len(targets))
-        self.assertEqual("update-transactions.yml", targets[0]["workflow"])
+        self.assertEqual("update-history.yml", targets[0]["workflow"])
         self.assertEqual(["5 4 * * 3"], targets[0]["cron"])
         league_live = (TOOLS.parent / ".github/workflows/league-live.yml").read_text(encoding="utf-8")
         self.assertNotIn("derived_data.py materialize --product league-transactions", league_live)

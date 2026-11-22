@@ -5,7 +5,7 @@ For every league in data-meta this keeps the products that the App already shows
 
 * league-transactions of the current season and league-drafts of the current
   plus every configured open future draft season (no hard-coded year limit)
-  (same materializer as the weekly update-transactions run, tools/derived_data.py),
+  (same materializer as the weekly update-history run, tools/derived_data.py),
 * TeamWeekPerformance (Best Manager / Best Coach) of the newest league-scored week of the current
   season (same strict materializer as the weekly run, tools/team_week_performance_materialize.py,
   with an independent, non-blocking PWF parity diagnostic).
