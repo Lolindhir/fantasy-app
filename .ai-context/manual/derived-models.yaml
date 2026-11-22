@@ -63,6 +63,7 @@ identity:
       - schedule-outlook-v3
       - playoff-odds-v1
       - playoff-odds-v2
+      - injury-impact-v1
       - rivalry-v1
       - weekly-recap-v1
       - weekly-recap-v2
@@ -103,6 +104,10 @@ identity:
       module: tools/derived_data_lib/models/playoff_odds/v2.py
       produces: Seeded strength-based playoff chances with the standings-v1 points tiebreak; strength = outlook Strength.Value of the same run, league mean and scoring spread from the league's own scores (nothing hard-coded), exact single-game win probabilities, strict clinched/eliminated (Issue #1607, ADR-093)
       parameters: Seed, Simulations, Digits (versioned PARAMS)
+    injury-impact:
+      module: tools/derived_data_lib/models/injury_impact/v1.py
+      produces: Fantasy Injury Impact per team and league-scored week - best lineup of the full roster minus best lineup of the roster without injured and unknown-evidence players, both from participation-conditional PlayerWeekFantasy projections; single-return value per injured player (Issue #1584 CP5, ADR-096)
+      parameters: Digits (versioned PARAMS)
     team-range:
       module: tools/derived_data_lib/models/team_range/v1.py
       produces: Team projection (ProjectedFinalScore, StandardDeviation, 50/80/90 percent Ranges) from the starters' PlayerWeekFantasy projections (computed, not persisted, ADR-075)
@@ -139,7 +144,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats, Rivalry, WeeklyRecap, ScheduleOutlook, PlayoffOdds } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats, Rivalry, WeeklyRecap, ScheduleOutlook, PlayoffOdds, InjuryImpact } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their

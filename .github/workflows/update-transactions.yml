@@ -42,6 +42,7 @@ jobs:
           --path data-derived/league-schedule-outlook
           --path data-derived/matchup-context
           --path data-derived/weekly-recaps
+          --path data-derived/team-injury-impact
           --
           bash -euo pipefail -c
           'mkdir -p "$RUNNER_TEMP/derived-summary" &&
@@ -54,6 +55,9 @@ jobs:
            python3 tools/matchup_context_app_publish.py write --scope history &&
            python3 tools/weekly_recaps_materialize.py --scope history &&
            python3 tools/weekly_recaps_app_publish.py write --scope history &&
+           { python3 tools/team_injury_impact_materialize.py --scope history ||
+             echo "::warning title=team-injury-impact not materialized::kept the last product"; } &&
+           python3 tools/injury_impact_app_publish.py write &&
            { python3 tools/derived_data.py materialize --product season-statistics --scope all > /dev/null ||
              echo "::warning title=season-statistics not materialized::kept the last product"; } &&
            python3 tools/season_statistics_app_publish.py write --scope all &&
