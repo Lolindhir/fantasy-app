@@ -64,7 +64,8 @@ function samplesForSeason(document, year) {
   const history = new Map();
   const rows = [];
   const coverage = { candidate: 0, known: 0, missing: 0, unknown: 0, byeOrNonRegular: 0, previousActiveKnown: 0 };
-  for (let week = 1; week <= 18; ++week) {
+  const lastRegularWeek = Math.max(...weeks.keys());
+  for (let week = 1; week <= lastRegularWeek; ++week) {
     const current = weeks.get(week) || new Map();
     const previous = weeks.get(week - 1) || new Map();
     // A target-week record may determine its retrospective LABEL/eligibility.
