@@ -798,6 +798,16 @@ jobs:
                 else
                   history_result="$(tail -n 1 "$history_log")"
                   echo "- Historical original PBP: $history_result" >> "$GITHUB_STEP_SUMMARY"
+                  if python3 - "$history_log" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()[-1])
+          sys.exit(0 if report.get("BlockedSeasons") else 1)
+          PY
+                  then
+                    echo "::warning::One or more historical original PBP years failed Source preflight; other verified years may have been accepted. See Source summary."
+                  fi
                 fi
               fi
             fi
