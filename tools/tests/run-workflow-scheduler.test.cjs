@@ -14,7 +14,7 @@ const EXPECTED = {
   'league-live.yml': { timezone: 'Etc/UTC', cron: ['*/10 * * * *'] },
   'update-players.yml': { timezone: 'America/New_York', cron: ['15 1 * * *', '0 8 * * *', '30 13 * * *'] },
   'update-standings.yml': { timezone: 'America/New_York', cron: ['35 3 * * 3'] },
-  'update-transactions.yml': { timezone: 'America/New_York', cron: ['5 4 * * 3'] },
+  'update-history.yml': { timezone: 'America/New_York', cron: ['5 4 * * 3'] },
   'update-teams.yml': { timezone: 'America/New_York', cron: ['35 4 * * 3'] },
   'sync-nfl-source-data.yml': { timezone: 'Europe/Berlin', cron: ['0 4 * * *'] },
   'sync-nfl-injuries.yml': { timezone: 'Europe/Berlin', cron: ['30 9 * 9-12,1-2 *'] },
