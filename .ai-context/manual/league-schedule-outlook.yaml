@@ -8,12 +8,12 @@ implementationState: >
   I6 added the bounded, fingerprinted, recoverable materializer tools/league_schedule_outlook_materialize.py.
   Activated by Robert's approval of 2026-11-19 (ADR-088): data-meta Models.ScheduleOutlook selects
   schedule-outlook-v1 for every season, and the existing writers league-live.yml (current season, incremental,
-  fail-soft) and update-transactions.yml (all seasons, full) publish data-derived/league-schedule-outlook.
-  The initial fill came from a normal update-transactions run (2026-11-19, 47 snapshots 2024-2026).
+  fail-soft) and update-history.yml (all seasons, full) publish data-derived/league-schedule-outlook.
+  The initial fill came from a normal update-history run (2026-11-19, 47 snapshots 2024-2026).
   App delivery (Robert 2026-11-20, "Freigabe für alles"): tools/league_schedule_outlook_app_publish.py renders
   public/data/ScheduleOutlook.json = the newest snapshot of the current season, unchanged, read through the completeness
   index and verified against the recorded SHA-256 (missing/inconsistent product = unavailable, the last App file stays).
-  It runs in league-live (after the incremental materializer) and update-transactions (after the full materializer) inside
+  It runs in league-live (after the incremental materializer) and update-history (after the full materializer) inside
   the existing public/data publication scope; Timestamps.json[ScheduleOutlook] is stamped only on a semantic change.
   The Angular view is a separate change.
 
@@ -84,7 +84,7 @@ playoffOdds:
     The input fingerprint (FINGERPRINT_VERSION 2) additionally covers the played records (points only after the regular
     season is complete) and the playoff-odds model ID; a played result dirties only the cutoffs that count it.
   performance: Measured 2026-11-20 for nfl-reise (6 teams, 3 games per week) - all 47 cutoffs 2024-2026 in about 20 s; the full 14-week season alone in about 3 s. Larger leagues hit MAX_STATES and report unavailable until a better algorithm is approved.
-  noNewWriter: Runs inside the existing league-live (incremental) and update-transactions (full) outlook writers; same prefix data-derived/league-schedule-outlook, same App file ScheduleOutlook.json (unchanged transfer).
+  noNewWriter: Runs inside the existing league-live (incremental) and update-history (full) outlook writers; same prefix data-derived/league-schedule-outlook, same App file ScheduleOutlook.json (unchanged transfer).
 
 playoffOddsV2:
   issue: 1607
@@ -298,11 +298,11 @@ plannedMaterialization:
     League Live: --scope current --mode incremental after the season-statistics refresh of the same
     publication (fail-soft like season-statistics).
   historicalScope: >
-    update-transactions (weekly): --scope all --mode full after season-statistics --scope all and before
+    update-history (weekly): --scope all --mode full after season-statistics --scope all and before
     the Past Seasons index.
   writerOwners:
     - .github/workflows/league-live.yml (existing rebuild-and-retry, new --path data-derived/league-schedule-outlook)
-    - .github/workflows/update-transactions.yml (existing rebuild-and-retry, same new --path)
+    - .github/workflows/update-history.yml (existing rebuild-and-retry, same new --path)
   activationChangeSet: >
     One reviewed change after approval: (1) data-meta Models.ScheduleOutlook per season together with the
     league_metadata KNOWN_MODEL_IDS entry (Models must name exactly the catalogue, so the catalogue entry

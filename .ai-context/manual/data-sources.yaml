@@ -481,7 +481,7 @@ dataSources:
       Files are written only on a semantic difference; no generated archive is an input. The former
       PowerShell rebuild (RequestTransactions.ps1 and its modules) was removed in Issue #999 step 7.
     updateMode:
-      scheduled: weekly update-transactions workflow (write, then PastSeasonsIndex refresh)
+      scheduled: weekly update-history workflow (write, then PastSeasonsIndex refresh)
       leagueLive: league-live runs write before RequestLeagueRefresh
     timestamped: true
     backup: true
@@ -516,8 +516,8 @@ dataSources:
       sorted PickKey lists across both App projections.
     updateMode:
       restricted: League Live rederives current LeagueTransactions and current plus all configured future-year LeagueDrafts, then publishes Drafts.json and Transactions.json from verified persisted Derived records and references (Issue #1319). RequestLeague.ps1 reads the same Shared Derived league-drafts, never Drafts.json (#1263 C7).
-      scheduledFull: weekly update-transactions workflow writes the files from the league history product (tools/league_history_app_publish.py write, Issue #999 step 5b)
-      manualFull: workflow_dispatch mode=drafts of update-transactions workflow, same writer
+      scheduledFull: weekly update-history workflow writes the files from the league history product (tools/league_history_app_publish.py write, Issue #999 step 5b)
+      manualFull: workflow_dispatch mode=drafts of update-history workflow, same writer
     timestamped: true
     backup: true
 
@@ -525,14 +525,14 @@ dataSources:
     path: public/data/past_seasons/Drafts/Drafts_<season>.json
     generator: tools/league_history_app_publish.py
     product: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
-    scheduledWorkflow: .github/workflows/update-transactions.yml
-    manualWorkflow: .github/workflows/update-transactions.yml # workflow_dispatch mode=drafts
+    scheduledWorkflow: .github/workflows/update-history.yml
+    manualWorkflow: .github/workflows/update-history.yml # workflow_dispatch mode=drafts
     category: generated-output
     role: Completed draft history read model
     description: >
       Generated completed draft history by season. Historical draft files are
       disposable consumer outputs of the league-drafts product (ADR-057), refreshed
-      by the weekly update-transactions run or a manually dispatched Drafts-only
+      by the weekly update-history run or a manually dispatched Drafts-only
       mode in the same workflow through tools/league_history_app_publish.py write. The product is
       materialized in one run in ADR-026 order, so a previous Drafts_<season>.json
       schema can never leak back into freshly generated history.
@@ -552,8 +552,8 @@ dataSources:
       draft history and must not overwrite the final completed-draft owner. Both
       workflows refresh PastSeasonsIndex.json after the write.
     updateMode:
-      scheduled: weekly update-transactions workflow
-      manual: workflow_dispatch mode=drafts on update-transactions workflow
+      scheduled: weekly update-history workflow
+      manual: workflow_dispatch mode=drafts on update-history workflow
     timestamped: false
     backup: false
 
@@ -561,7 +561,7 @@ dataSources:
     path: public/data/PastSeasonsIndex.json
     generator: public/requests/utils/league/PastSeasonsIndexUtils.psm1
     entryPoint: public/requests/RequestPastSeasonsIndex.ps1
-    workflow: .github/workflows/update-transactions.yml # workflow_dispatch mode=index for isolated repair
+    workflow: .github/workflows/update-history.yml # workflow_dispatch mode=index for isolated repair
     category: generated-output
     role: Central navigational manifest for historical season resource files
     description: >
@@ -592,12 +592,12 @@ dataSources:
   historicalMatchupsAndContext:
     path: public/data/past_seasons/Matchups/Matchups_<season>.json and public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json
     generator: tools/matchup_context_app_publish.py write --scope history (ADR-075, Issue #1199 section 3 step 7; replaced RequestHistoricalAppReadModels.ps1)
-    workflow: .github/workflows/update-transactions.yml
+    workflow: .github/workflows/update-history.yml
     category: generated-output
     role: Historical Matchups and FantasyGameContext read models
     issue: 1189
     description: >
-      Disposable consumer outputs regenerated in the weekly update-transactions run (pattern of ADR-058), after the
+      Disposable consumer outputs regenerated in the weekly update-history run (pattern of ADR-058), after the
       Schedule archives and before the Past Seasons index. Matchups come from data-source/leagues (complete seasons);
       FantasyGameContext comes from data-source/leagues, the canonical NFL schedule with finality and canonical weekly
       rosters (previous season from 2022 plus every season that already has a file). The Schedule archive is no input.
@@ -616,7 +616,7 @@ dataSources:
     role: Weekly recap read model (KeyPlayers, KeyGames, TeamAwards, lineup efficiency, win probability marks and, with weekly-recap-v2, PlayerAwards)
     description: >
       Consumer delivery of the computed recap function; additive PlayerAwards per recap week since Issue #499 (ADR-086). Written only on a semantic difference by League Live (current
-      season) and the weekly update-transactions run (completed seasons).
+      season) and the weekly update-history run (completed seasons).
 
   playerAwardHistory:
     path: public/data/PlayerAwardHistory.json
@@ -772,7 +772,7 @@ notesForAIAgents:
   - Current-season virtual drafts display as Upcoming; later virtual season drafts display as Future.
   - Angular Current Drafts is defined by Season equal to League.Season, Future Drafts by Season greater than League.Season, and Past Drafts by archived seasons lower than League.Season.
   - Angular display issues should not be fixed by changing generated data contracts unless the domain shape is wrong.
-  - Completed **past-season** draft history is written by the weekly update-transactions run or its manual Drafts-only mode and does not refresh in League Live. All current-season and configured open future draft partitions rederive on League Live, since a current transaction may change future pick owners (Issue #1319).
+  - Completed **past-season** draft history is written by the weekly update-history run or its manual Drafts-only mode and does not refresh in League Live. All current-season and configured open future draft partitions rederive on League Live, since a current transaction may change future pick owners (Issue #1319).
   - Completed draft history uses Sleeper draft picks as source for completed pick results and final current pick ownership; draft-specific Sleeper traded picks confirm completed trade assets before matching historical Transactions into TradeHistory. Do not reintroduce transaction-based ownership repair for completed draft history.
   - PastSeasonsIndex.json is a generated navigation manifest for historical files and should be regenerated through RequestPastSeasonsIndex.ps1, not edited manually.
 
@@ -868,7 +868,7 @@ sharedDerivedLeagueHistory:
   note: >
     Since the cutover (Issue #999 step 5b) Transactions.json, Drafts.json and past_seasons/Transactions and
     Drafts are consumer deliveries written from these products by tools/league_history_app_publish.py write
-    (update-transactions, including its isolated manual Drafts mode, and League Live); no generated archive is an input. The PowerShell
+    (update-history, including its isolated manual Drafts mode, and League Live); no generated archive is an input. The PowerShell
     rebuild modules described above remain in the repository until step 7 but are no longer called by the
     productive workflows.
     Since Issue #471 step 3 the League Live league job also rematerializes the current season of both products

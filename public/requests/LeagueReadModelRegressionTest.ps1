@@ -333,9 +333,9 @@ $publishedCoreTeams = @(
 Assert-Equal -Actual $canonicalCoreTeams.Count -Expected $publishedCoreTeams.Count -Message "Canonical League Core team count differs from published League.json."
 Assert-StandingsJsonEqual -Actual $canonicalCoreTeams -Expected $publishedCoreTeams -Message "Canonical League Core team-source parity failed."
 
-$weeklyWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-transactions.yml" -Raw
-Assert-True -Condition ($weeklyWorkflow.Contains('tools/matchup_context_app_publish.py write --scope history')) -Message "The weekly update-transactions run does not regenerate the historical App read models (Issue 1189, ADR-075)."
-Assert-True -Condition ($weeklyWorkflow.Contains('tools/weekly_recaps_app_publish.py write --scope history')) -Message "The weekly update-transactions run does not regenerate the historical WeeklyRecaps (Issue 1199 section 4)."
+$weeklyWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-history.yml" -Raw
+Assert-True -Condition ($weeklyWorkflow.Contains('tools/matchup_context_app_publish.py write --scope history')) -Message "The weekly update-history run does not regenerate the historical App read models (Issue 1189, ADR-075)."
+Assert-True -Condition ($weeklyWorkflow.Contains('tools/weekly_recaps_app_publish.py write --scope history')) -Message "The weekly update-history run does not regenerate the historical WeeklyRecaps (Issue 1199 section 4)."
 Assert-True -Condition $leagueLiveWorkflow.Contains('tools/weekly_recaps_app_publish.py write') -Message "League Live does not publish WeeklyRecaps from the computed recap function (Issue 1199 section 4)."
 $requestLeaguePublicationText = Get-Content (Join-Path $PSScriptRoot "RequestLeaguePublication.ps1") -Raw
 Assert-True -Condition (-not $requestLeaguePublicationText.Contains("RequestWeeklyRecaps.ps1")) -Message "RequestLeaguePublication still calls the PowerShell WeeklyRecaps generator (Issue 1199 section 4)."

@@ -12,7 +12,7 @@ product:
     model: tools/derived_data_lib/models/injury_impact/v1.py
     materializer: tools/team_injury_impact_materialize.py (--scope current|history|all)
     appRenderer: tools/injury_impact_app_publish.py (public/data/InjuryImpact.json, Timestamps key InjuryImpact)
-  writers: [league-live.yml (current season, fail-soft), update-transactions.yml (history)]
+  writers: [league-live.yml (current season, fail-soft), update-history.yml (history)]
   noClock: the document holds no timestamp; unchanged inputs write nothing (byte comparison)
 
 inputs:

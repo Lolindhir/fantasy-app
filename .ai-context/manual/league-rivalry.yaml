@@ -84,7 +84,7 @@ contract:
 writers:
   - workflow: .github/workflows/league-live.yml
     scope: fail-soft (no --fail-on-error), prefix data-derived/league-rivalry added to the existing rebuild-and-retry publication; runs after the matchup context of the same run
-  - workflow: .github/workflows/update-transactions.yml
+  - workflow: .github/workflows/update-history.yml
     scope: weekly, prefix data-derived/league-rivalry added to the existing rebuild-and-retry publication, before the Past Seasons index
 rollback: remove the prefix and the generator call from both workflows, delete data-derived/league-rivalry and public/data/Rivalry.json, revert the Angular cutover commit
 

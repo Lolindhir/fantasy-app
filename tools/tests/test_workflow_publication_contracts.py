@@ -18,7 +18,7 @@ REBUILD_WRITERS = {
     "league-live.yml",
     "update-players.yml",
     "update-games.yml",
-    "update-transactions.yml",
+    "update-history.yml",
     "update-standings.yml",
     "update-teams.yml",
     "sync-nfl-player-availability.yml",

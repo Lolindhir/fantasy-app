@@ -8,7 +8,7 @@ Usage:
   rivalry_app_publish.py write [--league ID] [--fail-on-error]
 
 The product covers all seasons at once, so there is no scope switch: League Live (fail-soft, a failure keeps the last product and App file and
-warns) and the weekly update-transactions run call the same command. Files are written only on a semantic difference and
+warns) and the weekly update-history run call the same command. Files are written only on a semantic difference and
 Timestamps.json[Rivalry] is stamped only then. Without --league more than one league fails closed (the App file carries no league dimension).
 """
 from __future__ import annotations

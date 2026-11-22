@@ -25,16 +25,16 @@ the read-only restore probe `tools/derived_clean_root_audit.py`.
 | `player-week-fantasy` | `.ai-context/manual/player-week-fantasy.yaml` | `tools/player_week_fantasy_materialize.py` | `league-live.yml`, `update-standings.yml` |
 | `team-week-performance` | `.ai-context/manual/team-week-performance.yaml` | `tools/team_week_performance_materialize.py` | `league-live.yml`, `update-standings.yml` |
 | `player-valuation` | `.ai-context/manual/player-valuation.yaml` | `tools/derived_data.py` | `update-players.yml` |
-| `league-transactions` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
-| `league-drafts` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
+| `league-transactions` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
+| `league-drafts` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
 | `league-standings` | `.ai-context/manual/league-standings.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-standings.yml` |
-| `season-statistics` | `.ai-context/manual/season-statistics.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
-| `league-rivalry` | `.ai-context/manual/league-rivalry.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
-| `league-schedule-outlook` | `.ai-context/manual/league-schedule-outlook.yaml` | `tools/league_schedule_outlook_materialize.py` | `league-live.yml`, `update-transactions.yml` |
-| `matchup-context` | `.ai-context/manual/matchup-context.yaml` | `tools/matchup_context_materialize.py` | `league-live.yml`, `update-transactions.yml` |
-| `weekly-recaps` | `.ai-context/manual/weekly-recaps.yaml` | `tools/weekly_recaps_materialize.py` | `league-live.yml`, `update-transactions.yml` |
+| `season-statistics` | `.ai-context/manual/season-statistics.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
+| `league-rivalry` | `.ai-context/manual/league-rivalry.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
+| `league-schedule-outlook` | `.ai-context/manual/league-schedule-outlook.yaml` | `tools/league_schedule_outlook_materialize.py` | `league-live.yml`, `update-history.yml` |
+| `matchup-context` | `.ai-context/manual/matchup-context.yaml` | `tools/matchup_context_materialize.py` | `league-live.yml`, `update-history.yml` |
+| `weekly-recaps` | `.ai-context/manual/weekly-recaps.yaml` | `tools/weekly_recaps_materialize.py` | `league-live.yml`, `update-history.yml` |
 | `team-cap-outlook` | `.ai-context/manual/derived-models.yaml` | `tools/team_cap_outlook_materialize.py` | `league-live.yml` |
-| `team-injury-impact` | `.ai-context/manual/team-injury-impact.yaml` | `tools/team_injury_impact_materialize.py` | `league-live.yml`, `update-transactions.yml` |
+| `team-injury-impact` | `.ai-context/manual/team-injury-impact.yaml` | `tools/team_injury_impact_materialize.py` | `league-live.yml`, `update-history.yml` |
 <!-- derived-products:end -->
 
 ## NFL Injury report trajectories

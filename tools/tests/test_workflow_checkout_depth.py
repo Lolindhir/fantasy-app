@@ -104,7 +104,7 @@ class LeagueJobHasNoNodeDependencyTest(unittest.TestCase):
 class AppDataWorkflowsHaveNoNodeSetupTest(unittest.TestCase):
     """G5 (Issue #1263): the App data workflows run only Python and pwsh; Node.js setup cost 10-15 s per run."""
 
-    WORKFLOWS = ("update-players.yml", "update-games.yml", "update-standings.yml", "update-teams.yml", "update-transactions.yml")
+    WORKFLOWS = ("update-players.yml", "update-games.yml", "update-standings.yml", "update-teams.yml", "update-history.yml")
 
     def test_no_setup_node_in_any_job(self) -> None:
         for name in self.WORKFLOWS:

@@ -5,7 +5,7 @@ trackingIssue: 1199
 architectureDecision: ADR-063
 implementationState: >-
   Issue #1199 section 4 is complete: contract and ADR-063 amendment (step 1), function, CLI and Fast tests (step 2), the App cutover (step 4;
-  tools/weekly_recaps_app_publish.py write in League Live for the current season and in the weekly update-transactions run for the history) and
+  tools/weekly_recaps_app_publish.py write in League Live for the current season and in the weekly update-history run for the history) and
   the removal of RequestWeeklyRecaps.ps1, WeeklyRecapUtils.psm1, WeeklyRecapMatchupFacts.psm1 and WeeklyRecapRegressionTest.ps1 (steps 5 and 6).
   RequestLeaguePublication.ps1 keeps only the PastSeasonsIndex refresh. The App files carry no league dimension, so the publisher fails closed for
   more than one league until the App delivery gains one.
@@ -28,7 +28,7 @@ winProbability:
     WinProbabilityModel and UpsetCounts per team (Upsets, Weeks with a known chance); the frontend only displays them. Issue #1446 adds per matchup UpsetLevel (upset below 35 percent, underdog from 35 to below 50 percent, otherwise null; the thresholds belong to win-prob-v1) and
     UnderdogWinnerFantasyTeamID (winner of a marked matchup); the Weeks page recap shows one wide row "Biggest Underdog Win" (the marked matchup with the lowest winner chance, team names, upset tag below 35 percent) below the team awards, or "All Favorites Won" when chances are known and no underdog won.
     The season UpsetCounts keep counting only real upsets (below 35 percent). The additive fields leave
-    SchemaVersion 1 unchanged. Historical seasons are written by the weekly update-transactions run, the current season by League Live.
+    SchemaVersion 1 unchanged. Historical seasons are written by the weekly update-history run, the current season by League Live.
   backtest: tools/historical_win_prob_backtest.py, research/win-probability/2026/
 
 architecture:
@@ -39,7 +39,7 @@ architecture:
     tools/weekly_recaps_materialize.py only on a byte difference (no clock inside). Identity: CanonicalLeagueID + Season + the selected weekly-recap model
     (data-meta). Invalidation: canonical league matchups and weekly rosters, the products league-standings, team-week-performance and player-week-fantasy,
     nfl-games, model versions. Every season is a pure function of those inputs and covered by the restore probe. Writers: league-live.yml (current) and
-    update-transactions.yml (all completed seasons). The App files WeeklyRecaps.json, past_seasons archives and PlayerAwardHistory.json are rendered from the
+    update-history.yml (all completed seasons). The App files WeeklyRecaps.json, past_seasons archives and PlayerAwardHistory.json are rendered from the
     product by tools/weekly_recaps_app_publish.py; no published archive is an input (L3).
   owner:
     function: tools/derived_data_lib/weekly_recaps.py
@@ -66,7 +66,7 @@ decisions:
     weekly-recap (data-meta key Models.WeeklyRecap): weekly-recap-v1 is the baseline without player awards, weekly-recap-v2 adds PlayerAwards (section playerAwards). The
     KeyPlayers, KeyGames and TeamAwards rules stay outside the model, so a league that wants other editorial rules still needs a new version.
   R4: All leagues of the league manifests are processed; the league is never hard-coded.
-  R5: League Live writes only the current season; completed seasons are written by the weekly update-transactions run together with the matchup-context history.
+  R5: League Live writes only the current season; completed seasons are written by the weekly update-history run together with the matchup-context history.
   R6: After section 3, the remaining FantasyGameContext/Matchup PowerShell (WeeklyRecapMatchupFacts.psm1) is deleted together with the recap PowerShell.
 
 lineupEfficiency:
@@ -80,7 +80,7 @@ lineupEfficiency:
   seasonFields: >-
     The season model gets SeasonEfficiency: per team sum(ActualStarterPoints), sum(PotentialPoints), MissedPoints and EfficiencyPercent = Actual / Potential * 100
     (4 decimals) over the recap weeks that have a partition, plus Weeks (the number of weeks counted). Computed in the generator; the frontend only displays it.
-  compatibility: Files without the fields stay valid (all fields optional for the frontend); older archives gain them with the next weekly update-transactions run.
+  compatibility: Files without the fields stay valid (all fields optional for the frontend); older archives gain them with the next weekly update-history run.
   consumers: Weeks page season grid (Efficiency view), team detail Franchise Snapshot, matchup dialog optimal lineup of final weeks.
 
 selectionRules:
@@ -116,7 +116,7 @@ inputs:
 
 consumers:
   app: public/data/WeeklyRecaps.json and public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json via tools/weekly_recaps_app_publish.py (Angular reads them; no Fantasy Management reader)
-  cadence: League Live (current season, every ten minutes, products before consumers) and the weekly update-transactions run (completed seasons)
+  cadence: League Live (current season, every ten minutes, products before consumers) and the weekly update-history run (completed seasons)
 
 playerAwards:
   issue: 499
@@ -148,7 +148,7 @@ playerAwards:
     ReplacedPlayerID (Unsung Hero; null for an empty slot). The field is only present with weekly-recap-v2. Additive; SchemaVersion 1 stays.
   historyFile:
     path: public/data/PlayerAwardHistory.json
-    generator: tools/weekly_recaps_app_publish.py (League Live recomputes the current season; the weekly update-transactions run recomputes completed seasons)
+    generator: tools/weekly_recaps_app_publish.py (League Live recomputes the current season; the weekly update-history run recomputes completed seasons)
     shape: >-
       SchemaVersion, Awards (award keys), Seasons[{Season, Weeks}] (weeks with available awards only), Leaders{Award: [{PlayerID, Name, Position, Count}]} (all-time leader(s) per award, ties shared, Hall of Fame), Players[{PlayerID, CanonicalPlayerID, Name, Position, Picture, Counts{MVP,
       MatchupHero, Heartbreaker, UnsungHero}, Total, Entries[{Season, Week, Award, FantasyTeamID, FantasyMatchupID, Points, figures}]}] sorted by Total descending, then PlayerID.
@@ -158,7 +158,7 @@ playerAwards:
       Since ADR-089 the file is rendered from the persisted weekly-recaps product of every season (no published archive is an input); League Live materializes only the
       current season, the weekly history scope all completed seasons. The file is written only on a semantic difference and updates Timestamps.json PlayerAwardHistory.
   history: >-
-    Seasons 2024, 2025 and the current season are produced by the existing writers: the weekly update-transactions run (completed seasons) and League Live (current season).
+    Seasons 2024, 2025 and the current season are produced by the existing writers: the weekly update-history run (completed seasons) and League Live (current season).
     A week without complete evidence gets no awards. Part B (NFL-wide honors of pre-league seasons) is Issue #1484 and not part of this contract.
 
 nonGoals:
@@ -171,7 +171,7 @@ migration:
     1: 'Contract and ADR-063 amendment (this change).'
     2: 'Function with Fast tests ported from WeeklyRecapRegressionTest.ps1.'
     3: 'Shadow compare against the published files, exact except R2, classified validation-shadow.'
-    4: 'App cutover in League Live and update-transactions; RequestLeaguePublication.ps1 stops calling RequestWeeklyRecaps.ps1; League Live runtime measured.'
+    4: 'App cutover in League Live and update-history; RequestLeaguePublication.ps1 stops calling RequestWeeklyRecaps.ps1; League Live runtime measured.'
     5: 'Delete RequestWeeklyRecaps.ps1, WeeklyRecapUtils.psm1 and the PowerShell test; update inventory, data-sources.yaml and the consumer-read register.'
     6: 'Delete WeeklyRecapMatchupFacts.psm1 once no caller remains (may coincide with step 5).'
 
