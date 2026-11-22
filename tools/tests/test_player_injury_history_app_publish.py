@@ -12,12 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import player_injury_history_app_publish as publisher  # noqa: E402
 
-PRODUCT = "nfl-player-availability-v1"
+PRODUCT = "nfl-player-availability-v2"
 
 
 def record(pid, week, state="played", team="AAA"):
     return {"Week": week, "CanonicalPlayerID": pid, "Team": team, "GameType": "REG", "GameID": None, "State": state,
-            "Participation": {"State": "played", "Evidence": "snap-counts"}, "Report": None, "Roster": None}
+            "Available": "no", "Played": False,
+            "Participation": {"State": "played", "Evidence": "snap-counts"}, "Report": None, "Roster": {"Status": "RES", "Code": "R01"}}
 
 
 def season_doc(season, records, reports=True):
@@ -47,6 +48,14 @@ class PublisherTests(unittest.TestCase):
         doc = publisher.build_document(seasons, [{"ID": "S1"}], {"S1": "NFLP-a"}, {2024: 17})
         by_season = {s["Season"]: [w["Week"] for w in s["Weeks"]] for s in doc["Players"][0]["Seasons"]}
         self.assertEqual(by_season, {2024: [17]})
+
+    def test_healthy_roster_weeks_of_v2_are_not_published(self):
+        healthy = dict(record("NFLP-a", 5, "played"), Roster={"Status": "ACT", "Code": "A01"}, Available="yes", Played=True)
+        scratch = dict(record("NFLP-a", 6, "healthy-scratch"), Roster={"Status": "INA", "Code": "I01"}, Available="yes", Played=False)
+        reported = dict(healthy, Week=7, Report=[{"Game": "Questionable", "Practice": None, "Reasons": []}])
+        doc = publisher.build_document({2024: season_doc(2024, [healthy, scratch, reported, record("NFLP-a", 8)])}, [{"ID": "S1"}], {"S1": "NFLP-a"})
+        self.assertEqual([w["Week"] for w in doc["Players"][0]["Seasons"][0]["Weeks"]], [7, 8])
+        self.assertNotIn("Available", doc["Players"][0]["Seasons"][0]["Weeks"][0])
 
     def test_league_week_caps_and_fallback(self):
         with tempfile.TemporaryDirectory() as tmp:
