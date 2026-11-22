@@ -3261,6 +3261,13 @@ decisions:
       State healthy-scratch. Size measured about 1.6 times v1 (about 71 MB); all positions would be 2.7 times and was not chosen. The App file
       PlayerInjuryHistory.json keeps its content (generator still publishes only signal weeks; only its Product string follows the version).
       Rollback: restore the v1 function and rematerialize. Contract: .ai-context/manual/nfl-player-availability.yaml.
+    amendment20261122b: >-
+      Issue #1616 (Robert 2026-11-22): small addendum inside nfl-player-availability-v2 (same product, path, writer and permissions; risk standard, no new
+      workflow). Bye weeks without a roster row become records (State bye, Available unknown, Played null; team from the last roster week before the bye;
+      only a regular-season week of a player attached to a team) and every other non-null NFL roster status (DEV, CUT, RET, SUS, EXE and so on) of the
+      position cut becomes a record (State not-on-active-roster, Available no). Players without any NFL roster row stay without a record and are documented as
+      their own case. Size about +21 percent (71 to 86 MB, measured). The App file PlayerInjuryHistory.json keeps its content (the generator still filters to
+      report or reserve weeks). Rollback: restore the previous function and rematerialize.
 
   - id: ADR-093
     title: Playoff odds use the outlook strength and the points tiebreak (playoff-odds-v2, seeded simulation)
