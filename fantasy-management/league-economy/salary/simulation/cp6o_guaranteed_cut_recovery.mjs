@@ -487,9 +487,9 @@ function makeFreePool(team,teams,world,season,contracts,retiredOrCut){
  const options=[];
  for(const pos of POS){
   const a=free.filter(p=>p.pos===pos);
-  const cheap=[...a].sort((x,y)=>x.price-y.price||x.id.localeCompare(y.id)).slice(0,10);
-  const value=[...a].sort((x,y)=>(y.known/(2+y.price/1e6))-(x.known/(2+x.price/1e6))||x.id.localeCompare(y.id)).slice(0,8);
-  const high=[...a].sort((x,y)=>y.known-x.known||x.id.localeCompare(y.id)).slice(0,4);
+  const cheap=[...a].sort((x,y)=>x.price-y.price||x.id.localeCompare(y.id)).slice(0,6);
+  const value=[...a].sort((x,y)=>(y.known/(2+y.price/1e6))-(x.known/(2+x.price/1e6))||x.id.localeCompare(y.id)).slice(0,4);
+  const high=[...a].sort((x,y)=>y.known-x.known||x.id.localeCompare(y.id)).slice(0,2);
   options.push(...cheap,...value,...high);
  }
  const unique=new Map(options.map(p=>[p.id,p]));
@@ -499,6 +499,9 @@ function runSettlement(team,teams,world,cap,year,slope,guarantee,contracts,dead,
  const before=dueFor(team,year,slope,contracts,dead);
  const startIndex=lineIndex(team.players,world);
  const events=[];
+ // Market and ownership remain unchanged within a team's settlement except for
+ // that same team's own cuts/adds. Pre-rank FA alternatives once per team.
+ const stableFreePool=makeFreePool(team,teams,world,year,contracts,cutPool);
  let step=0;
  const maxMoves=90;
  function isLegal(){
@@ -511,7 +514,8 @@ function runSettlement(team,teams,world,cap,year,slope,guarantee,contracts,dead,
   const cost=dueFor(team,year,slope,contracts,dead);
   const beforeIdx=lineIndex(team.players,world);
   const priorShort=coverageShort(team.players,world);
-  const freePool=makeFreePool(team,teams,world,year,contracts,cutPool);
+  const currentOwned=allOwned(teams);
+  const freePool=stableFreePool.filter(p=>!currentOwned.has(p.id)&&!cutPool.has(p.id));
   const choices=[];
   for(let i=0;i<team.players.length;i++){
    const out=team.players[i],existing=contracts.get(out),op=world.get(out);
@@ -550,7 +554,10 @@ function runSettlement(team,teams,world,cap,year,slope,guarantee,contracts,dead,
       oldAnnual,newAnnual,currentShort:short});
    };
    allowed(null);
-   if(freePool.length){
+   const removalAlreadyLegal=remain.length>=20&&coverage(remain,world);
+   // First test high-salary, immediately free cuts. A simultaneous FA replacement
+   // matters chiefly at the positional/20-slot boundary; reduce combinatorial cost.
+   if(freePool.length && (!removalAlreadyLegal || priorShort>0 || team.players.length<=22)){
     for(const p of freePool){
      if(p.id===out)continue;
      allowed(p);
