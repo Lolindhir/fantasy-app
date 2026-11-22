@@ -33,6 +33,7 @@ Hier findest du unsere **Sonderregeln und eigenen Berechnungen** auf einen Blick
 ## 📊 Rankings & Auswertungen
 - Fantasy-Leistung bildet die Grundlage unserer Spieler- und Positionsrankings.
 - Standings, Wochenrückblicke und weitere Statistiken machen die Entwicklung unserer Liga nachvollziehbar.
+- Der **Injury Impact** in den Stats zeigt, wie viele erwartete Punkte ein Team durch verletzte Spieler verloren hat. Er ist eine Auswertung im Nachhinein, keine Regel; unsichere Werte sind als Untergrenze gekennzeichnet.
 
 ## 🤝 Unsere Idee dahinter
 Wir wollen **gutes Management belohnen**: Salary und Cap erzeugen wirtschaftliche Entscheidungen und Trade-Anreize, Draft und Waiver unterstützen Wettbewerb und unterschiedliche Teamstrategien. Unsere Prognosen helfen dabei, Risiken und Chancen transparenter einzuschätzen.

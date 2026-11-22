@@ -22,7 +22,8 @@ describe('Handbook navigation', () => {
       'Offseason_Schedule',
       'Draft_Waiver_Order',
       'Playoff_Odds_Schedule',
-      'Projections_Explanation'
+      'Projections_Explanation',
+      'Injury_Impact'
     ]);
     expect(new Set(component.tabs.map(tab => tab.id)).size).toBe(component.tabs.length);
     expect(component.mobileSelectionLabel).toBe('Themen wählen');

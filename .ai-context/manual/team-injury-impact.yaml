@@ -48,5 +48,5 @@ invalidation:
 restoreProbe: outside (depends on the current PlayerWeekFantasy partition); own tests tools/tests/test_injury_impact_v1.py and test_team_injury_impact_materialize.py
 
 consumers:
-  - App file public/data/InjuryImpact.json (display later in Stats > Season, Issue #1621; no UI yet)
+  - App file public/data/InjuryImpact.json (SchemaVersion 2, reduced to display fields by tools/injury_impact_app_publish.py: per week only Impact and markers, season totals, top players with PlayerRefs; shown in Stats > Season, Issue #1621). Digests, counts and per-week injured lists stay in the product only.
   - Fantasy Management and chat analyses read the product

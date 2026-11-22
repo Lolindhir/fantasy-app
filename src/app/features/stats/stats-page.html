@@ -1,0 +1,14 @@
+<div class="stats-page">
+  <div class="activity-tabs" aria-label="Stats sections" *ngIf="tabs.length > 1">
+    <button
+      *ngFor="let tab of tabs"
+      class="activity-tab"
+      type="button"
+      [class.active]="selectedTab === tab.id"
+      (click)="selectTab(tab.id)">
+      {{ tab.label }}
+    </button>
+  </div>
+
+  <app-stats-season-tab *ngIf="selectedTab === 'season'"></app-stats-season-tab>
+</div>

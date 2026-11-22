@@ -8,9 +8,12 @@
 Usage:
   injury_impact_app_publish.py write [--league ID] [--fail-on-error]
 
-Each season document is carried unchanged; the only addition is ``Teams`` (CanonicalLeagueRosterID -> TeamID, Owner, TeamName of that
-season, joined from the canonical league source) because the product itself holds no display identity. The file is written only on a
-semantic difference and Timestamps.json[InjuryImpact] is stamped then. A season whose product is missing keeps out of the file with a
+Each season document is reduced to what the display needs (SchemaVersion 2): per week only the Impact per team with its two markers
+(lower bound, unknown evidence), the season totals with their top players, the weeks without a verified projection and the model
+provenance. Digests, per-week counts and the per-week injured lists stay in the product (chat analyses and Fantasy Management read it).
+Additions are ``Teams`` (CanonicalLeagueRosterID -> TeamID, Owner, TeamName of that season, joined from the canonical league source)
+and ``PlayerRefs`` (CanonicalPlayerID -> Name, Position, Picture of the top players, from the canonical NFL profiles) because the
+product itself holds no display identity. The file is written only on a semantic difference and Timestamps.json[InjuryImpact] is stamped then. A season whose product is missing keeps out of the file with a
 warning; the current season fails the run with --fail-on-error. Without --league more than one league fails closed (the App file carries
 no league dimension).
 """
@@ -25,14 +28,17 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from data_roots import data_derived_dir  # noqa: E402
+from data_roots import DATA_SOURCE_ROOT, data_derived_dir  # noqa: E402
+from historical_fantasy_scoring import read_json  # noqa: E402
 from derived_data_lib.team_injury_impact import PRODUCT, TeamInjuryImpactError  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, load_season_inputs, manifest, manifest_seasons  # noqa: E402
 from matchup_context_app_publish import Writer, _warn  # noqa: E402
+from players_population import sized_headshot  # noqa: E402
 
 EXPECTED_ERRORS = (TeamInjuryImpactError, StandingsSourceError, LeagueMetadataError)
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+WEEK_TEAM_FIELDS = ("CanonicalLeagueRosterID", "Impact", "IsLowerBound", "HasUnknownEvidence")
 
 
 def leagues(requested: str | None) -> list[str]:
@@ -44,10 +50,50 @@ def leagues(requested: str | None) -> list[str]:
     return ids
 
 
+def load_profiles(repo_root: Path) -> dict[str, dict[str, Any]]:
+    document = read_json(repo_root / DATA_SOURCE_ROOT / "nfl/player-profiles/nflverse.json")
+    if document.get("SourceDataset") != "nflverse.players" or not isinstance(document.get("Records"), list):
+        raise TeamInjuryImpactError("unexpected canonical NFL player profiles layout")
+    return {row["CanonicalPlayerID"]: row for row in document["Records"]}
+
+
+def player_refs(document: dict[str, Any], profiles: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Display reference of every top player; unknown players keep null display values instead of being dropped."""
+    refs: dict[str, dict[str, Any]] = {}
+    for item in document["SeasonTotals"]:
+        for player in item.get("TopPlayers", []):
+            profile = profiles.get(player["CanonicalPlayerID"]) or {}
+            headshot = profile.get("Headshot")
+            refs[player["CanonicalPlayerID"]] = {
+                "Name": profile.get("DisplayName") or None,
+                "Position": profile.get("Position") or None,
+                "Picture": sized_headshot(headshot) if headshot else None,
+            }
+    return dict(sorted(refs.items()))
+
+
+def slim_season(document: dict[str, Any], teams: list[dict[str, Any]], profiles: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    weeks = [
+        {"Week": week["Week"], "Teams": [{key: team[key] for key in WEEK_TEAM_FIELDS} for team in week["Teams"]]}
+        for week in document["Weeks"]
+    ]
+    return {
+        "Season": document["Season"],
+        "Models": document["Models"],
+        "AsOf": document["AsOf"],
+        "Teams": teams,
+        "Weeks": weeks,
+        "UnavailableWeeks": document["UnavailableWeeks"],
+        "SeasonTotals": document["SeasonTotals"],
+        "PlayerRefs": player_refs(document, profiles),
+    }
+
+
 def render(repo_root: Path, league_id: str) -> dict[str, Any]:
     out_root = data_derived_dir(repo_root)
     current = current_season(manifest(repo_root, league_id))
     seasons: list[dict[str, Any]] = []
+    profiles = load_profiles(repo_root)
     for season in manifest_seasons(manifest(repo_root, league_id)):
         path = out_root / PRODUCT / league_id / f"{season}.json"
         if not path.is_file():
@@ -63,7 +109,7 @@ def render(repo_root: Path, league_id: str) -> dict[str, Any]:
             if team is None:
                 raise TeamInjuryImpactError(f"{league_id}/{season}: roster {item['CanonicalLeagueRosterID']} is not a team of that season")
             teams.append({"CanonicalLeagueRosterID": item["CanonicalLeagueRosterID"], "TeamID": team["TeamID"], "Owner": team["Owner"], "TeamName": team["Team"]})
-        seasons.append({**document, "Teams": teams})
+        seasons.append(slim_season(document, teams, profiles))
     return {"SchemaVersion": SCHEMA_VERSION, "Product": PRODUCT, "CanonicalLeagueID": league_id, "Seasons": seasons}
 
 
