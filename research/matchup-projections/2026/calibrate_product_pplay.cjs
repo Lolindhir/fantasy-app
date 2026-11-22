@@ -49,7 +49,8 @@ function strictRecords(document, year) {
   const ids = new Set();
   for (const rec of document.Records) {
     assert.ok(typeof rec.CanonicalPlayerID === "string" && rec.CanonicalPlayerID, "Missing canonical player ID");
-    assert.ok(Number.isInteger(rec.Week) && rec.Week >= 1 && rec.Week <= 18, "Unexpected NFL week");
+    assert.ok(Number.isInteger(rec.Week) && rec.Week >= 1, "Unexpected NFL week");
+    if (rec.Week > 18) continue; // NFL postseason is not a REG prediction target.
     assert.ok(rec.Played === true || rec.Played === false || rec.Played === null, "Played is not tri-state");
     const key = rec.Week + ":" + rec.CanonicalPlayerID;
     assert.ok(!ids.has(key), "Duplicate player-week " + year + ":" + key);
@@ -64,7 +65,9 @@ function samplesForSeason(document, year) {
   const history = new Map();
   const rows = [];
   const coverage = { candidate: 0, known: 0, missing: 0, unknown: 0, byeOrNonRegular: 0, previousActiveKnown: 0 };
-  const lastRegularWeek = Math.max(...weeks.keys());
+  const lastRegularWeek = Math.max(...[...weeks].filter(([, records]) =>
+    [...records.values()].some(rec => rec.GameType === "REG")).map(([week]) => week));
+  assert.ok(Number.isInteger(lastRegularWeek), "No regular-season weeks in product");
   for (let week = 1; week <= lastRegularWeek; ++week) {
     const current = weeks.get(week) || new Map();
     const previous = weeks.get(week - 1) || new Map();
