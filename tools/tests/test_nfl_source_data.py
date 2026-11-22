@@ -744,16 +744,16 @@ class NflPbpHistoricalReconciliationTests(unittest.TestCase):
                  }):
                 result = pbp_history.run(root, "Lolindhir/fantasy-app", "token",
                                          pin_path=pin, write=True)
-                self.assertEqual(result["NewlyAccepted"], [2000, 2001, 2002])
+                self.assertEqual(result["NewlyAccepted"], [2003, 2002, 2001])
                 self.assertEqual(json.loads(pin.read_text())["Seasons"],
-                                 [2000, 2001, 2002])
+                                 [2003, 2002, 2001])
                 again = pbp_history.run(root, "Lolindhir/fantasy-app", "token",
                                         pin_path=pin, write=True)
                 self.assertFalse(again["Changed"])
                 self.assertEqual(again["NewlyAccepted"], [])
                 next_batch = pbp_history.run(root, "Lolindhir/fantasy-app",
                                              "token", write=True)
-                self.assertEqual(next_batch["NewlyAccepted"], [2003])
+                self.assertEqual(next_batch["NewlyAccepted"], [2000])
                 manifests = sorted(root.glob(
                     "data-source/providers/nflverse/play-by-play-original/*.json"
                 ))
@@ -770,7 +770,7 @@ class NflPbpHistoricalReconciliationTests(unittest.TestCase):
             with patch.object(pbp_history, "current_source_season", return_value=2026), \
                  patch.object(pbp_history, "official_inventory", return_value=official), \
                  patch.object(pbp_history, "download",
-                              side_effect=lambda _url, path: path.write_bytes(b"tampered!")), \
+                              side_effect=lambda _url, path: path.write_bytes(b"forged!!")), \
                  patch.object(pbp_history, "_create_release") as release, \
                  patch.object(pbp_history, "_upload") as upload:
                 with self.assertRaisesRegex(ValueError, "digest changed"):
