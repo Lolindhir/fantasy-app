@@ -174,10 +174,20 @@ def plan(
 def run(
     root: Path, repository: str, token: str, *,
     limit: int = 3, selected: list[int] | None = None, write: bool = False,
+    pin_path: Path | None = None,
 ) -> dict[str, Any]:
     if repository != _DEST_REPOSITORY:
         raise ValueError("Unexpected PBP archive repository")
+    if pin_path is not None and pin_path.is_file():
+        if selected is not None:
+            raise ValueError("Cannot combine pinned PBP source batch with explicit seasons")
+        saved = load_json(pin_path)
+        if not isinstance(saved, dict) or not isinstance(saved.get("Seasons"), list):
+            raise ValueError("Invalid pinned PBP source intake batch")
+        selected = saved["Seasons"]
     state, official = plan(root, token, limit=limit, selected=selected)
+    if pin_path is not None and not pin_path.exists():
+        pin_path.write_text(json.dumps({"Seasons": state["Seasons"]}) + "\n", encoding="utf-8")
     if not write or not state["Seasons"]:
         return {**state, "Status": "historical-pbp-preview" if not write else "historical-pbp-noop",
                 "Changed": False, "NewlyAccepted": []}
@@ -261,6 +271,7 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=3)
     parser.add_argument("--seasons", help="Pinned comma-separated batch; none means empty")
     parser.add_argument("--write", action="store_true", help="Stage only approved Source manifests")
+    parser.add_argument("--pin-path", type=Path, help="Runner-temp batch file, stable across Source writer retries")
     args = parser.parse_args()
     try:
         selected = None if args.seasons is None else (
@@ -268,7 +279,8 @@ def main() -> int:
         )
         report = run(args.repo_root.resolve(), args.repository,
                      os.environ.get("PBP_ARCHIVE_TOKEN", ""),
-                     limit=args.limit, selected=selected, write=args.write)
+                     limit=args.limit, selected=selected, write=args.write,
+                     pin_path=args.pin_path)
     except (OSError, ValueError, TypeError, KeyError, urllib.error.URLError,
             EOFError, json.JSONDecodeError) as error:
         print(f"nfl_pbp_source_history failed: {error}", file=sys.stderr)
