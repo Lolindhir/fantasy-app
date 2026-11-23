@@ -65,14 +65,15 @@ def sleeper_to_canonical(identity_payload: dict[str, Any]) -> dict[str, str]:
     return bridge
 
 
-def league_week_caps(repo_root: Path) -> dict[int, int]:
-    """Last fantasy-relevant NFL week per season from the canonical league WeekStructure (FinalLeagueWeek, else ExpectedLastLeagueWeek).
+def league_week_caps(repo_root: Path, league_id: str) -> dict[int, int]:
+    """Last fantasy-relevant NFL week per season from the WeekStructure of ONE league (FinalLeagueWeek, else ExpectedLastLeagueWeek).
 
-    The maximum over all leagues is used. Seasons without league data take the value of the earliest known league season;
-    without any league data no cap applies (all regular-season weeks stay).
+    The league is the one whose population selects the players (same scope as population_players), so the week cap and the
+    player set always belong to the same league (Issue #1590 follow-up). Seasons beyond the last known league season take
+    its value; without league data no cap applies (all regular-season weeks stay).
     """
     caps: dict[int, int] = {}
-    for path in sorted((repo_root / DATA_SOURCE_ROOT / "leagues").glob("*/seasons/*/league.json")):
+    for path in sorted((repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons").glob("*/league.json")):
         if not path.parent.name.isdigit():
             continue
         structure = _load(path).get("WeekStructure") or {}
@@ -181,9 +182,10 @@ def publish(repo_root: Path, writer: Writer) -> None:
     seasons = {int(p.stem): _load(p) for p in sorted(root.glob("*.json")) if p.stem.isdigit()} if root.is_dir() else {}
     if not seasons:
         raise InjuryHistoryError(f"{PRODUCT} product is not materialized")
+    league_id = default_league_id(data_meta_root(repo_root))
     players = population_players(repo_root)
     bridge = sleeper_to_canonical(_load(repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"))
-    writer.put(APP_FILE, build_document(seasons, players, bridge, league_week_caps(repo_root)), TIMESTAMP_KEY)
+    writer.put(APP_FILE, build_document(seasons, players, bridge, league_week_caps(repo_root, league_id)), TIMESTAMP_KEY)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
