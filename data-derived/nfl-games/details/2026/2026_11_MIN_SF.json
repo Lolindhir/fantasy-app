@@ -1,0 +1,465 @@
+{
+  "SchemaVersion": 2,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 2,
+  "Season": 2026,
+  "GameID": "2026_11_MIN_SF",
+  "Game": {
+    "GameID": "2026_11_MIN_SF",
+    "GameType": "REG",
+    "Week": 11,
+    "GameDay": "2026-11-22",
+    "GameTime": "20:20",
+    "KickoffUtc": "2026-11-23T01:20:00Z",
+    "AwayTeam": "MIN",
+    "HomeTeam": "SF",
+    "AwayScore": 10,
+    "HomeScore": 35,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 4.5,
+      "TotalLine": 44.5,
+      "ImpliedAwayPoints": 20.0,
+      "ImpliedHomePoints": 24.5
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": false,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "MIN",
+        "Status": "available",
+        "PlayerRecordCount": 34,
+        "Stats": {
+          "attempts": 43,
+          "completions": 29,
+          "passing_yards": 264,
+          "passing_tds": 0,
+          "passing_interceptions": 1,
+          "carries": 21,
+          "rushing_yards": 69,
+          "rushing_tds": 1,
+          "targets": 43,
+          "receptions": 29,
+          "receiving_yards": 264,
+          "receiving_tds": 0,
+          "def_tackles_solo": 29,
+          "def_interceptions": 0,
+          "fg_att": 3,
+          "fg_made": 1,
+          "pat_att": 1,
+          "pat_made": 1
+        }
+      },
+      {
+        "Team": "SF",
+        "Status": "available",
+        "PlayerRecordCount": 38,
+        "Stats": {
+          "attempts": 27,
+          "completions": 22,
+          "passing_yards": 260,
+          "passing_tds": 3,
+          "passing_interceptions": 0,
+          "carries": 25,
+          "rushing_yards": 90,
+          "rushing_tds": 1,
+          "targets": 26,
+          "receptions": 22,
+          "receiving_yards": 260,
+          "receiving_tds": 3,
+          "def_tackles_solo": 42,
+          "def_interceptions": 1,
+          "fg_att": 0,
+          "fg_made": 0,
+          "pat_att": 5,
+          "pat_made": 5
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": false,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "MIN",
+        "PlayerRows": 48,
+        "Offense": {
+          "TotalSnaps": 67,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 737,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 54,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 23,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 594,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 30,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "SF",
+        "PlayerRows": 48,
+        "Offense": {
+          "TotalSnaps": 54,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 22,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 594,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 67,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 21,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 737,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 31,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "source-rows-observed-upstream-completeness-unverified",
+    "FullPlayByPlayAvailable": false,
+    "PlayByPlayMetrics": "candidate-observed-unverified-completeness"
+  },
+  "Derivation": {
+    "DefinitionVersion": 2,
+    "InputFingerprintSHA256": "503c6edc96a525f94295248069155c72ae22f635be2cabd949674cd722cecee4",
+    "CoreV1InputFingerprintSHA256": "c675723595f97198d46e676ff4da238d509e39ca6d3065ee95e1163d58cf0d6e",
+    "PBPMetricDefinitionVersion": 1
+  },
+  "PlayByPlayMetrics": {
+    "Status": "candidate-observed-unverified-completeness",
+    "SourceDataset": "nflverse.play-by-play",
+    "OriginalAssetSHA256": "7bdca6fd7e893c22c7131e8f1cf2e8157a64a45d49201b01a9f2df17f148e838",
+    "Population": "competitive-opportunities-not-official-attempts",
+    "MetricCatalogVersion": 1,
+    "MetricDefinitionVersion": 1,
+    "GameSourceRowsObserved": 159,
+    "CompetitiveScrimmageRowsObserved": 115,
+    "ExcludedGamePlayRows": {
+      "NonScrimmage": 41,
+      "QBKneel": 3,
+      "QBSpike": 0,
+      "UnknownQBSpike": 0,
+      "TwoPoint": 0,
+      "UnknownTwoPoint": 0,
+      "UnassignedTeams": 0
+    },
+    "GameSourceCompletenessCertified": false,
+    "OffensePerspectives": [
+      {
+        "OffenseTeam": "MIN",
+        "DefenseTeam": "SF",
+        "Perspective": "offense-plays-also-defense-allowed",
+        "Opportunities": {
+          "offensive_dropbacks_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 44,
+            "Numerator": 44,
+            "Denominator": null,
+            "Eligible": 65,
+            "Observed": 65,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 44,
+            "DenominatorNotApplicable": true
+          },
+          "pass_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 43,
+            "Numerator": 43,
+            "Denominator": null,
+            "Eligible": 65,
+            "Observed": 65,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 43,
+            "DenominatorNotApplicable": true
+          },
+          "rush_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 21,
+            "Numerator": 21,
+            "Denominator": null,
+            "Eligible": 65,
+            "Observed": 65,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 21,
+            "DenominatorNotApplicable": true
+          }
+        },
+        "Efficiency": {
+          "dropback_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": -0.1956,
+            "Numerator": -8.607222260418398,
+            "Denominator": 44,
+            "Eligible": 44,
+            "Observed": 44,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "pass_epa_per_attempt_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": -0.1831,
+            "Numerator": -7.872494737819471,
+            "Denominator": 43,
+            "Eligible": 43,
+            "Observed": 43,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.0526,
+            "Numerator": 1.104320671896229,
+            "Denominator": 21,
+            "Eligible": 21,
+            "Observed": 21,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "Success": {
+          "dropback_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.4318,
+            "Numerator": 19.0,
+            "Denominator": 44,
+            "Eligible": 44,
+            "Observed": 44,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.4286,
+            "Numerator": 9.0,
+            "Denominator": 21,
+            "Eligible": 21,
+            "Observed": 21,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "ExplosivePlays": {
+          "pass_explosive_20_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.093,
+            "Numerator": 4.0,
+            "Denominator": 43,
+            "Eligible": 43,
+            "Observed": 43,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_explosive_10_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.0952,
+            "Numerator": 2.0,
+            "Denominator": 21,
+            "Eligible": 21,
+            "Observed": 21,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        }
+      },
+      {
+        "OffenseTeam": "SF",
+        "DefenseTeam": "MIN",
+        "Perspective": "offense-plays-also-defense-allowed",
+        "Opportunities": {
+          "offensive_dropbacks_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 28,
+            "Numerator": 28,
+            "Denominator": null,
+            "Eligible": 50,
+            "Observed": 50,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 28,
+            "DenominatorNotApplicable": true
+          },
+          "pass_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 27,
+            "Numerator": 27,
+            "Denominator": null,
+            "Eligible": 50,
+            "Observed": 50,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 27,
+            "DenominatorNotApplicable": true
+          },
+          "rush_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 22,
+            "Numerator": 22,
+            "Denominator": null,
+            "Eligible": 50,
+            "Observed": 50,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 22,
+            "DenominatorNotApplicable": true
+          }
+        },
+        "Efficiency": {
+          "dropback_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.6096,
+            "Numerator": 17.068559697680847,
+            "Denominator": 28,
+            "Eligible": 28,
+            "Observed": 28,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "pass_epa_per_attempt_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.6808,
+            "Numerator": 18.382384428985258,
+            "Denominator": 27,
+            "Eligible": 27,
+            "Observed": 27,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": -0.0222,
+            "Numerator": -0.4879937716972873,
+            "Denominator": 22,
+            "Eligible": 22,
+            "Observed": 22,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "Success": {
+          "dropback_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.6786,
+            "Numerator": 19.0,
+            "Denominator": 28,
+            "Eligible": 28,
+            "Observed": 28,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.3636,
+            "Numerator": 8.0,
+            "Denominator": 22,
+            "Eligible": 22,
+            "Observed": 22,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "ExplosivePlays": {
+          "pass_explosive_20_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.0741,
+            "Numerator": 2.0,
+            "Denominator": 27,
+            "Eligible": 27,
+            "Observed": 27,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_explosive_10_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.0909,
+            "Numerator": 2.0,
+            "Denominator": 22,
+            "Eligible": 22,
+            "Observed": 22,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        }
+      }
+    ],
+    "UnverifiedPenaltySemantics": true,
+    "RatesAreObservedNumeratorOverObservedDenominator": true
+  }
+}
