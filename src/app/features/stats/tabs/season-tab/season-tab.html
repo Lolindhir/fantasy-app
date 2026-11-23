@@ -126,6 +126,10 @@
                   </li>
                 </ul>
               </ng-container>
+              <p class="stats-note stats-note--hint" *ngIf="activeGroup(vm) !== 'injury'">
+                Hurt: average injured players per week whose absence cost points.
+                <a routerLink="/handbook" [queryParams]="{ section: 'Injury_Impact' }">How is this calculated?</a>
+              </p>
             </ng-container>
             <ng-template #noInjury><p class="stats-note">No injury data for this team in this season.</p></ng-template>
           </section>
@@ -137,13 +141,16 @@
               <div><dt>Projected Efficiency</dt><dd>{{ formatPercent(s.LineupEfficiencyProjected) }}</dd></div>
               <div><dt>vs. Projection / Game</dt><dd [ngClass]="'stats-luck--' + signClass(s.ProjectionDelta)">{{ formatSigned(s.ProjectionDelta) }}</dd></div>
             </dl>
+            <p class="stats-note stats-note--hint" *ngIf="row.stats">
+              Projected Efficiency: how strong the starting lineup looked before kickoff, as a share of the best possible lineup by projection.
+            </p>
             <ng-template #noEfficiency><p class="stats-note">No efficiency statistics for this team in this season.</p></ng-template>
           </section>
         </div>
       </ng-container>
     </div>
 
-    <p class="season-stats__note" *ngIf="vm.hasInjuryImpact">
+    <p class="season-stats__note season-stats__note--mobile-only" *ngIf="vm.hasInjuryImpact && activeGroup(vm) === 'injury'">
       <strong>Hurt</strong> is the average number of injured players per week whose absence cost the team points.
       <a routerLink="/handbook" [queryParams]="{ section: 'Injury_Impact' }">How is this calculated?</a>
     </p>
