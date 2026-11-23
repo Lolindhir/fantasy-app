@@ -459,23 +459,14 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelector('.week-matchup-chevron')).not.toBeNull();
   });
 
-  it('shows the season grid with a playoff group and opens a week from its header', async () => {
-    const host = await create({ season: '2025' });
+  it('does not offer a Season tab or the season grid anymore', async () => {
+    const host = await create({ season: '2025' }, 'overview');
 
-    (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Season') as HTMLElement).click();
-    fixture.detectChanges();
-
-    // Teams are columns, weeks are rows: two weeks plus the playoff divider row.
-    expect(host.querySelectorAll('.season-grid tbody tr').length).toBe(3);
-    expect(host.querySelectorAll('.season-grid-team-head').length).toBe(2);
-    expect(host.querySelector('.season-grid-divider')?.textContent).toContain('Playoffs');
-    expect(host.querySelectorAll('.season-grid-cell--high').length).toBeGreaterThan(0);
-
-    (host.querySelectorAll('.season-grid-week-button')[1] as HTMLElement).click();
-    fixture.detectChanges();
-
-    expect(host.querySelector('.week-title')?.textContent).toContain('Week 2');
+    const labels = Array.from(host.querySelectorAll('.activity-tab')).map(tab => tab.textContent?.trim());
+    expect(labels).toEqual(['Overview', 'Week']);
+    expect(host.querySelector('.season-grid')).toBeNull();
   });
+
   it('shows the biggest underdog win in the recap when the generator marked an underdog win', async () => {
     const marked = recaps('2026', [1, 2]);
     marked.Weeks[1].WinProbabilities = [{
@@ -494,7 +485,7 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelector('.weekly-recap-underdog')?.textContent).toContain('28');
   });
 
-  it('does not show pregame chances or upsets in the week list and the season grid', async () => {
+  it('does not show pregame chances or upsets in the week list', async () => {
     const withChance = recaps('2026', [1, 2]);
     withChance.Weeks[1].WinProbabilities = [{
       FantasyMatchupID: '2026-2',
@@ -508,9 +499,5 @@ describe('WeeksPageComponent', () => {
 
     expect(host.querySelector('app-win-chance-bar')).toBeNull();
     expect(host.textContent).not.toContain('Upset');
-
-    (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Season') as HTMLElement).click();
-    fixture.detectChanges();
-    expect(host.querySelector('.season-grid tfoot')).toBeNull();
   });
 });

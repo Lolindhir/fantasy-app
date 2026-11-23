@@ -19,15 +19,8 @@ import {
 import { TeamIdentityComponent, type TeamIdentityElement } from '../../shared/components/team-identity/team-identity';
 import { WeekRecapContentComponent } from '../../shared/components/week-recap-content/week-recap-content';
 import {
-  buildLineupEfficiencyLookup,
-  formatEfficiency,
-  hasLineupEfficiency,
-  weeklyEfficiencyHighs
-} from '../../shared/utils/lineup-efficiency.util';
-import {
   buildPlayoffDisplayLabels,
   buildScheduleOverview,
-  buildSeasonGrid,
   buildWeekScoreboard,
   buildWeekTabs,
   buildWeeksSeasonOptions,
@@ -39,8 +32,7 @@ import {
   type WeeksSeasonOption
 } from '../../shared/utils/weeks-view.util';
 
-type WeeksTab = 'overview' | 'week' | 'season';
-type SeasonGridMode = 'points' | 'efficiency';
+type WeeksTab = 'overview' | 'week';
 
 interface SeasonData {
   season: string;
@@ -63,7 +55,6 @@ export class WeeksPageComponent {
 
   readonly activeTab = signal<WeeksTab>(parseWeekParam(this.route.snapshot.queryParamMap.get('week')) !== null ? 'week' : 'overview');
   readonly playedExpanded = signal(false);
-  readonly gridMode = signal<SeasonGridMode>('points');
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
   readonly logoOnlyElements: readonly TeamIdentityElement[] = ['logo'];
   readonly compactIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
@@ -171,31 +162,6 @@ export class WeeksPageComponent {
     return selectWeekRecap(this.data()?.recaps, season, this.selectedWeekModel());
   });
 
-  readonly seasonGrid = computed(() => buildSeasonGrid(this.data()?.matchups, this.teams()));
-
-  /** Lineup efficiency values of the generator for the active season (null entries stay unknown). */
-  readonly efficiency = computed(() => buildLineupEfficiencyLookup(this.data()?.recaps, this.activeSeason()?.season ?? ''));
-
-  readonly efficiencyAvailable = computed(() => {
-    const grid = this.seasonGrid();
-    return !!grid && hasLineupEfficiency(this.efficiency(), grid.rows.map(row => row.teamID), grid.weeks.map(week => week.week));
-  });
-
-  private readonly efficiencyHighs = computed(() => {
-    const grid = this.seasonGrid();
-    return grid
-      ? weeklyEfficiencyHighs(this.efficiency(), grid.rows.map(row => row.teamID), grid.weeks.map(week => week.week))
-      : new Set<string>();
-  });
-
-  isEfficiencyHigh(teamID: number, week: number): boolean {
-    return this.efficiencyHighs().has(`${week}:${teamID}`);
-  }
-
-  /** The efficiency view is only offered (and shown) when the season has generator values. */
-  readonly effectiveGridMode = computed<SeasonGridMode>(() =>
-    this.gridMode() === 'efficiency' && this.efficiencyAvailable() ? 'efficiency' : 'points');
-
   readonly firstPlayoffWeek = computed(() => this.weekTabs().find(tab => tab.isPlayoff)?.week ?? null);
 
   private readonly pointsFormatter = new Intl.NumberFormat('en-US', {
@@ -248,14 +214,6 @@ export class WeeksPageComponent {
     this.activeTab.set(tab);
   }
 
-  selectGridMode(mode: SeasonGridMode): void {
-    this.gridMode.set(mode);
-  }
-
-  formatEfficiency(value: number | null | undefined): string {
-    return formatEfficiency(value);
-  }
-
   selectSeason(season: string): void {
     this.pickedSeason.set(season);
     this.pickedWeek.set(null);
@@ -268,7 +226,7 @@ export class WeeksPageComponent {
     this.pickedWeek.set(week);
   }
 
-  /** Opens the existing Week details from either the schedule overview or season grid. */
+  /** Opens the Week details from the schedule overview. */
   openWeek(week: number): void {
     this.selectWeek(week);
     this.selectTab('week');

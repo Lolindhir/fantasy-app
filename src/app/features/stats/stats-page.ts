@@ -9,6 +9,7 @@ import { HallOfFameComponent } from '../../shared/components/hall-of-fame/hall-o
 import { buildHallOfFameHighlights } from '../../shared/utils/hall-of-fame-view.util';
 
 import { SeasonTabComponent } from './tabs/season-tab/season-tab';
+import { WeeklyTabComponent } from './tabs/weekly-tab/weekly-tab';
 
 interface StatsTab {
   id: string;
@@ -19,12 +20,15 @@ interface StatsTab {
  * Tabs in their decided order (Issue #1621: Hall of Fame, Season, Weekly, Head-to-Head, Player Awards).
  * A tab is listed only once it exists; the others follow in later steps of the same Issue.
  */
-export const STATS_TABS: readonly StatsTab[] = [{ id: 'season', label: 'Season' }];
+export const STATS_TABS: readonly StatsTab[] = [
+  { id: 'season', label: 'Season' },
+  { id: 'weekly', label: 'Weekly' }
+];
 
 @Component({
   selector: 'app-stats-page',
   standalone: true,
-  imports: [AsyncPipe, NgFor, NgIf, HallOfFameComponent, SeasonTabComponent],
+  imports: [AsyncPipe, NgFor, NgIf, HallOfFameComponent, SeasonTabComponent, WeeklyTabComponent],
   templateUrl: './stats-page.html',
   styleUrl: './stats-page.scss'
 })

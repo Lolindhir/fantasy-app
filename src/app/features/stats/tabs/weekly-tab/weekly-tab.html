@@ -1,0 +1,88 @@
+<ng-container *ngIf="ready() !== undefined; else loading">
+  <section class="weekly-stats" *ngIf="activeSeason() as season; else noData">
+    <div class="weekly-stats__head">
+      <h2 class="weekly-stats__title">Weekly Stats</h2>
+      <label class="weekly-stats__select">
+        <span class="weekly-stats__select-label">Season</span>
+        <select (change)="selectSeason($any($event.target).value)" aria-label="Season">
+          <option *ngFor="let option of seasonOptions()" [value]="option.season" [selected]="option.season === season.season">{{ option.season }}</option>
+        </select>
+      </label>
+    </div>
+
+    <ng-container *ngIf="data(); else loadingSeason">
+      <ng-container *ngIf="seasonGrid() as grid; else noData">
+        <div class="weekly-modes" role="group" aria-label="Season grid values" *ngIf="efficiencyAvailable()">
+          <button type="button" class="stats-chip" [class.stats-chip--active]="effectiveGridMode() === 'points'" [attr.aria-pressed]="effectiveGridMode() === 'points'" (click)="selectGridMode('points')">Points</button>
+          <button type="button" class="stats-chip" [class.stats-chip--active]="effectiveGridMode() === 'efficiency'" [attr.aria-pressed]="effectiveGridMode() === 'efficiency'" (click)="selectGridMode('efficiency')">Efficiency</button>
+        </div>
+
+        <div class="season-grid-scroll">
+          <table class="season-grid">
+            <thead>
+              <tr>
+                <th class="season-grid-week-col" scope="col">Week</th>
+                <th *ngFor="let row of grid.rows" scope="col" class="season-grid-team-head">
+                  <ng-container *ngIf="row.team; else headFallback">
+                    <app-team-identity class="season-grid-head-full" [team]="row.team!" [elements]="compactIdentityElements" size="small"></app-team-identity>
+                    <app-team-identity class="season-grid-head-logo" [team]="row.team!" [elements]="logoOnlyElements" size="small"></app-team-identity>
+                  </ng-container>
+                  <ng-template #headFallback><span>{{ teamLabel(row.teamID) }}</span></ng-template>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let week of grid.weeks; let index = index">
+                <tr class="season-grid-divider" *ngIf="week.week === firstPlayoffWeek()">
+                  <th [attr.colspan]="grid.rows.length + 1" scope="colgroup">Playoffs</th>
+                </tr>
+                <tr [class.season-grid-row--playoff]="week.isPlayoff">
+                  <th scope="row" class="season-grid-week-col">
+                    <a class="season-grid-week-button" [routerLink]="['/schedule']" [queryParams]="{ season: season.season, week: week.week }" [attr.aria-label]="'Open week ' + week.week">{{ week.week }}</a>
+                  </th>
+                  <td
+                    *ngFor="let row of grid.rows"
+                    class="season-grid-cell"
+                    [class.season-grid-cell--high]="effectiveGridMode() === 'points' ? row.cells[index].isWeekHigh : isEfficiencyHigh(row.teamID, week.week)"
+                    [class.season-grid-cell--win]="row.cells[index].outcome === 'win'"
+                    [class.season-grid-cell--loss]="row.cells[index].outcome === 'loss'">
+                    <ng-container *ngIf="effectiveGridMode() === 'efficiency'; else pointsCell">
+                      <ng-container *ngIf="efficiency().week(row.teamID, week.week) as performance">
+                        <span class="season-grid-points" [attr.title]="formatPoints(performance.MissedPoints) + ' pts left on the bench'">{{ formatEfficiency(performance.EfficiencyPercent) }}</span>
+                      </ng-container>
+                      <span *ngIf="!efficiency().week(row.teamID, week.week)" class="season-grid-points">{{ formatEfficiency(null) }}</span>
+                    </ng-container>
+                    <ng-template #pointsCell>
+                      <span class="season-grid-points">{{ formatPoints(row.cells[index].points) }}</span>
+                      <span class="season-grid-outcome" *ngIf="row.cells[index].outcome">{{ row.cells[index].outcome === 'win' ? 'W' : row.cells[index].outcome === 'loss' ? 'L' : 'T' }}</span>
+                    </ng-template>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+            <tfoot *ngIf="effectiveGridMode() === 'efficiency'">
+              <tr class="season-grid-total">
+                <th scope="row" class="season-grid-week-col">Season</th>
+                <td *ngFor="let row of grid.rows" class="season-grid-cell">
+                  <span class="season-grid-points">{{ formatEfficiency(efficiency().season(row.teamID)?.EfficiencyPercent) }}</span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <p class="season-grid-legend">
+          <ng-container *ngIf="effectiveGridMode() === 'efficiency'; else pointsLegend">
+            Lineup efficiency: the points a team started divided by the points of its best possible lineup. Hover a value to see the points left on the bench. The best value of a week is marked. The season row sums all weeks. Tap a week number to open it.
+          </ng-container>
+          <ng-template #pointsLegend>
+            Points per week with the result (W/L/T). The highest score of a week is marked. Tap a week number to open it. Regular season and playoffs are separated by a divider.
+          </ng-template>
+        </p>
+      </ng-container>
+    </ng-container>
+  </section>
+</ng-container>
+
+<ng-template #loading><p class="weekly-note">Loading weekly stats…</p></ng-template>
+<ng-template #loadingSeason><p class="weekly-note">Loading season…</p></ng-template>
+<ng-template #noData><p class="weekly-note">No weekly data is available.</p></ng-template>
