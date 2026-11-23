@@ -14,6 +14,8 @@ from derived_data_lib.models.season_stats import v1  # noqa: E402
 from derived_data_lib.models.team_range import v1 as team_range  # noqa: E402
 from derived_data_lib.models.win_prob import v1 as win_prob  # noqa: E402
 from derived_data_lib import season_statistics as ss  # noqa: E402
+from season_statistics_app_publish import with_team_abbreviations  # noqa: E402
+from team_abbreviation import team_abbreviation  # noqa: E402
 
 REPO = TOOLS.parent
 
@@ -217,6 +219,28 @@ class WeekGamesTests(unittest.TestCase):
         missing = ss.week_games(facts, None, {"c-p1": projection(120, 10)}, team_range, win_prob)
         self.assertIsNone(missing[0]["WinProbability"])
         self.assertIsNone(missing[0]["Teams"][1]["PregameProjection"])
+
+
+class TeamAbbreviationTests(unittest.TestCase):
+    """Issue #1621: the season-specific abbreviation follows the rule of League.json TeamAbbr (TeamUtils.psm1 ConvertTo-TeamAbbreviation)."""
+
+    def test_rule_by_word_count_and_stop_words(self) -> None:
+        self.assertEqual(team_abbreviation("Mighty Giants", 1), "MiG")
+        self.assertEqual(team_abbreviation("Ruhr Valley Packers", 2), "RVP")
+        self.assertEqual(team_abbreviation("Just Bill", 3), "JuB")
+        self.assertEqual(team_abbreviation("Team DennisLACards", 5), "DLC")
+        self.assertEqual(team_abbreviation("Team TimpaBay", 6), "TiB")
+        self.assertEqual(team_abbreviation("Cowboys", 7), "Cow")
+
+    def test_missing_name_falls_back_to_the_team_id(self) -> None:
+        self.assertEqual(team_abbreviation(None, 4), "T04")
+        self.assertEqual(team_abbreviation("  ", "x"), "TBD")
+        self.assertEqual(team_abbreviation("Team", 9), "T09")
+
+    def test_app_rows_get_the_abbreviation_of_their_season_name(self) -> None:
+        document = {"Season": 2024, "Teams": [{"TeamID": 2, "TeamName": "ND - Fighting Childish"}]}
+        self.assertEqual(with_team_abbreviations(document)["Teams"][0]["TeamAbbr"], "NFC")
+        self.assertNotIn("TeamAbbr", document["Teams"][0])
 
 
 class RegistryTests(unittest.TestCase):

@@ -10,31 +10,73 @@
       </label>
     </div>
 
-    <div class="stats-table" [class.stats-table--no-injury]="!vm.hasInjuryImpact" role="table" aria-label="Team statistics of the season">
+    <div class="stats-groups" role="group" aria-label="Column group" *ngIf="groupOptions(vm).length > 1">
+      <button
+        *ngFor="let option of groupOptions(vm)"
+        type="button"
+        class="stats-chip"
+        [class.stats-chip--active]="activeGroup(vm) === option.id"
+        [attr.aria-pressed]="activeGroup(vm) === option.id"
+        (click)="selectGroup(option.id)"
+      >{{ option.label }}</button>
+    </div>
+
+    <div
+      class="stats-table"
+      [attr.data-group]="activeGroup(vm)"
+      [style.--cols-desktop]="3 + (vm.hasInjuryImpact ? 2 : 0) + (vm.hasEfficiency ? 2 : 0)"
+      role="table"
+      aria-label="Team statistics of the season"
+    >
+      <div class="stats-row stats-row--groups" role="row" aria-hidden="true">
+        <span class="stats-lead"></span>
+        <span class="stats-groupname" style="grid-column: span 3">Record</span>
+        <span *ngIf="vm.hasInjuryImpact" class="stats-groupname" style="grid-column: span 2">Injuries</span>
+        <span *ngIf="vm.hasEfficiency" class="stats-groupname" style="grid-column: span 2">Efficiency</span>
+        <span></span>
+      </div>
+
       <div class="stats-row stats-row--head" role="row">
         <button type="button" class="stats-sort stats-place" role="columnheader" [attr.aria-sort]="ariaSort('place')" (click)="sortBy('place')" aria-label="Sort by regular-season place">#</button>
         <span class="stats-team" role="columnheader">Team</span>
-        <span class="stats-cell" role="columnheader">Record</span>
-        <span class="stats-cell stats-desktop" role="columnheader" title="Expected wins from all-play">Exp. W</span>
-        <button type="button" class="stats-sort stats-cell stats-desktop" role="columnheader" [attr.aria-sort]="ariaSort('luck')" (click)="sortBy('luck')" title="Wins above expectation">Luck</button>
-        <span class="stats-cell stats-desktop" role="columnheader">All-Play</span>
-        <button *ngIf="vm.hasInjuryImpact" type="button" class="stats-sort stats-cell stats-impact" role="columnheader" [attr.aria-sort]="ariaSort('impact')" (click)="sortBy('impact')" title="Average players per week whose absence cost points">Hurt</button>
+
+        <button type="button" class="stats-sort stats-cell g-record" role="columnheader" [attr.aria-sort]="ariaSort('record')" (click)="sortBy('record')" title="Regular-season record">Record</button>
+        <button type="button" class="stats-sort stats-cell g-record" role="columnheader" [attr.aria-sort]="ariaSort('expected')" (click)="sortBy('expected')" title="Expected wins from all-play">Exp. W</button>
+        <button type="button" class="stats-sort stats-cell g-record" role="columnheader" [attr.aria-sort]="ariaSort('luck')" (click)="sortBy('luck')" title="Wins above expectation">Luck</button>
+
+        <ng-container *ngIf="vm.hasInjuryImpact">
+          <button type="button" class="stats-sort stats-cell g-injury" role="columnheader" [attr.aria-sort]="ariaSort('hurt')" (click)="sortBy('hurt')" title="Average players per week whose absence cost points">Hurt</button>
+          <button type="button" class="stats-sort stats-cell g-injury" role="columnheader" [attr.aria-sort]="ariaSort('lost')" (click)="sortBy('lost')" title="Points the absences cost over the season">Pts Lost</button>
+        </ng-container>
+
+        <ng-container *ngIf="vm.hasEfficiency">
+          <button type="button" class="stats-sort stats-cell g-efficiency" role="columnheader" [attr.aria-sort]="ariaSort('lineup')" (click)="sortBy('lineup')" title="Share of the best possible lineup that was started">Lineup %</button>
+          <button type="button" class="stats-sort stats-cell g-efficiency" role="columnheader" [attr.aria-sort]="ariaSort('delta')" (click)="sortBy('delta')" title="Points per game above or below the pregame projection">vs. Proj</button>
+        </ng-container>
         <span class="stats-chevron-col" aria-hidden="true"></span>
       </div>
 
       <ng-container *ngFor="let row of sortedRows(vm); trackBy: trackRow">
         <div class="stats-row" role="row">
           <span class="stats-place" role="cell">{{ row.place }}</span>
-          <span class="stats-team" role="cell">
+          <span class="stats-team" role="cell" [attr.title]="row.identity.Team || row.identity.Owner">
             <app-team-identity [team]="row.identity" [elements]="identityElements" [interactive]="false" size="small"></app-team-identity>
           </span>
-          <span class="stats-cell stats-record" role="cell">{{ row.record ?? '–' }}</span>
-          <span class="stats-cell stats-desktop" role="cell">{{ expectedWins(row.stats) }}</span>
-          <span class="stats-cell stats-desktop stats-luck" role="cell" [ngClass]="'stats-luck--' + signClass(row.stats?.Luck)">{{ formatSigned(row.stats?.Luck) }}</span>
-          <span class="stats-cell stats-desktop" role="cell">{{ row.stats ? formatAllPlay(row.stats) : '–' }}</span>
-          <span *ngIf="vm.hasInjuryImpact" class="stats-cell stats-impact" role="cell" [attr.title]="row.injury?.isLowerBound ? 'Some injured players have no projection' : null">
-            {{ row.injury ? row.injury.hurtDisplay : '–' }}
-          </span>
+
+          <span class="stats-cell stats-record g-record" role="cell">{{ row.record ?? '–' }}</span>
+          <span class="stats-cell g-record" role="cell">{{ expectedWins(row.stats) }}</span>
+          <span class="stats-cell g-record stats-luck" role="cell" [ngClass]="'stats-luck--' + signClass(row.stats?.Luck)">{{ formatSigned(row.stats?.Luck) }}</span>
+
+          <ng-container *ngIf="vm.hasInjuryImpact">
+            <span class="stats-cell stats-strong g-injury" role="cell" [attr.title]="row.injury?.isLowerBound ? 'Some injured players have no projection' : null">{{ row.injury ? row.injury.hurtDisplay : '–' }}</span>
+            <span class="stats-cell g-injury" role="cell">{{ row.injury ? row.injury.totalDisplay : '–' }}</span>
+          </ng-container>
+
+          <ng-container *ngIf="vm.hasEfficiency">
+            <span class="stats-cell g-efficiency" role="cell">{{ formatPercent(row.stats?.LineupEfficiencyActual) }}</span>
+            <span class="stats-cell g-efficiency stats-luck" role="cell" [ngClass]="'stats-luck--' + signClass(row.stats?.ProjectionDelta)">{{ formatSigned(row.stats?.ProjectionDelta) }}</span>
+          </ng-container>
+
           <button
             type="button"
             class="stats-expand"
@@ -45,41 +87,58 @@
         </div>
 
         <div class="stats-details" *ngIf="isExpanded(row)">
-          <dl class="stats-facts">
-            <ng-container *ngIf="row.stats as s">
-              <div class="stats-fact--table"><dt>Expected Wins</dt><dd>{{ expectedWins(s) }}</dd></div>
-              <div class="stats-fact--table"><dt>Luck</dt><dd [ngClass]="'stats-luck--' + signClass(s.Luck)">{{ formatSigned(s.Luck) }}</dd></div>
-              <div class="stats-fact--table"><dt>All-Play</dt><dd>{{ formatAllPlay(s) }}</dd></div>
-            </ng-container>
-            <ng-container *ngIf="vm.hasInjuryImpact && row.injury as injury">
-              <div><dt>Hurt / Week</dt><dd>{{ injury.hurtDisplay }}</dd></div>
-              <div><dt>Points Lost</dt><dd>{{ injury.totalDisplay }}</dd></div>
-              <div><dt>Weeks Hit</dt><dd>{{ injury.weeksWithImpact }} of {{ injury.weeksComputed }}</dd></div>
-            </ng-container>
-          </dl>
+          <section class="stats-block">
+            <h4 class="stats-block__title">Record</h4>
+            <dl class="stats-facts" *ngIf="row.stats as s; else noRecord">
+              <div><dt>Expected Wins</dt><dd>{{ expectedWins(s) }}</dd></div>
+              <div><dt>Luck</dt><dd [ngClass]="'stats-luck--' + signClass(s.Luck)">{{ formatSigned(s.Luck) }}</dd></div>
+              <div><dt>All-Play</dt><dd>{{ formatAllPlay(s) }}</dd></div>
+              <div><dt>Underdog Wins</dt><dd>{{ s.UnderdogWins }}</dd></div>
+              <div><dt>Upset Losses</dt><dd>{{ s.UpsetLosses }}</dd></div>
+            </dl>
+            <ng-template #noRecord><p class="stats-note">No record statistics for this team in this season.</p></ng-template>
+          </section>
 
-          <ng-container *ngIf="vm.hasInjuryImpact && row.injury as injury">
-            <ng-container *ngIf="injury.topPlayers.length > 0">
-              <h4 class="injury-subheading">Most hurt players</h4>
-              <ul class="injury-players">
-                <li *ngFor="let player of injury.topPlayers" class="injury-player">
-                  <span class="injury-player__photo-wrap">
-                    <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
-                    <span *ngIf="!player.picture" class="injury-player__photo injury-player__photo--empty" aria-hidden="true"></span>
-                    <img *ngIf="nflLogo(vm, player.team) as logo" class="injury-player__nfl-logo" [src]="logo" [alt]="player.team" />
-                  </span>
-                  <span class="injury-player__body">
-                    <span class="injury-player__name">{{ player.name }}</span>
-                    <span class="injury-player__meta">
-                      <span *ngIf="player.position" class="position-chip" [ngStyle]="player.position | positionStyle">{{ player.position }}</span>
-                      <span class="injury-player__value">{{ player.impactDisplay }}<small> pts · {{ player.weeks }}w</small></span>
+          <section class="stats-block" *ngIf="vm.hasInjuryImpact">
+            <h4 class="stats-block__title">Injuries</h4>
+            <ng-container *ngIf="row.injury as injury; else noInjury">
+              <dl class="stats-facts">
+                <div><dt>Hurt / Week</dt><dd>{{ injury.hurtDisplay }}</dd></div>
+                <div><dt>Points Lost</dt><dd>{{ injury.totalDisplay }}</dd></div>
+                <div><dt>Weeks Hit</dt><dd>{{ injury.weeksWithImpact }} of {{ injury.weeksComputed }}</dd></div>
+              </dl>
+              <ng-container *ngIf="injury.topPlayers.length > 0">
+                <h5 class="stats-subtitle">Most hurt players</h5>
+                <ul class="injury-players">
+                  <li *ngFor="let player of injury.topPlayers" class="injury-player">
+                    <span class="injury-player__photo-wrap">
+                      <img *ngIf="player.picture" class="injury-player__photo" [src]="player.picture" alt="" loading="lazy" />
+                      <span *ngIf="!player.picture" class="injury-player__photo injury-player__photo--empty" aria-hidden="true"></span>
+                      <img *ngIf="nflLogo(vm, player.team) as logo" class="injury-player__nfl-logo" [src]="logo" [alt]="player.team" />
                     </span>
-                  </span>
-                </li>
-              </ul>
+                    <span class="injury-player__body">
+                      <span class="injury-player__name">{{ player.name }}</span>
+                      <span class="injury-player__meta">
+                        <span *ngIf="player.position" class="position-chip" [ngStyle]="player.position | positionStyle">{{ player.position }}</span>
+                        <span class="injury-player__value">{{ player.impactDisplay }}<small> pts · {{ player.weeks }}w</small></span>
+                      </span>
+                    </span>
+                  </li>
+                </ul>
+              </ng-container>
             </ng-container>
-          </ng-container>
-          <p class="injury-note" *ngIf="vm.hasInjuryImpact && !row.injury">No injury data for this team in this season.</p>
+            <ng-template #noInjury><p class="stats-note">No injury data for this team in this season.</p></ng-template>
+          </section>
+
+          <section class="stats-block" *ngIf="vm.hasEfficiency">
+            <h4 class="stats-block__title">Efficiency</h4>
+            <dl class="stats-facts" *ngIf="row.stats as s; else noEfficiency">
+              <div><dt>Lineup Efficiency</dt><dd>{{ formatPercent(s.LineupEfficiencyActual) }}</dd></div>
+              <div><dt>Projected Efficiency</dt><dd>{{ formatPercent(s.LineupEfficiencyProjected) }}</dd></div>
+              <div><dt>vs. Projection / Game</dt><dd [ngClass]="'stats-luck--' + signClass(s.ProjectionDelta)">{{ formatSigned(s.ProjectionDelta) }}</dd></div>
+            </dl>
+            <ng-template #noEfficiency><p class="stats-note">No efficiency statistics for this team in this season.</p></ng-template>
+          </section>
         </div>
       </ng-container>
     </div>
@@ -88,6 +147,15 @@
       <strong>Hurt</strong> is the average number of injured players per week whose absence cost the team points.
       <a routerLink="/handbook" [queryParams]="{ section: 'Injury_Impact' }">How is this calculated?</a>
     </p>
+
+    <article class="stats-card" *ngIf="vm.upset(season) as upset">
+      <span class="stats-card__icon" aria-hidden="true">💥</span>
+      <div class="stats-card__body">
+        <h3 class="stats-card__title">Biggest Upset <span class="stats-card__week">Week {{ upset.week }}</span></h3>
+        <p class="stats-card__text"><strong>{{ upset.winnerName }}</strong> beat {{ upset.loserName }} {{ upset.scoreDisplay }}</p>
+        <p class="stats-card__meta">{{ upset.chanceDisplay }} pregame win chance</p>
+      </div>
+    </article>
   </section>
 
   <ng-template #noData><p class="season-stats__empty">No season statistics are available yet.</p></ng-template>

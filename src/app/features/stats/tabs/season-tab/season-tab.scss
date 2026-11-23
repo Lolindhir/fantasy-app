@@ -59,9 +59,35 @@
   font-weight: 700;
 }
 
-/* Table: # | Team | Record | Exp. W | Luck | All-Play | Injury Impact | chevron. Exp. W, Luck and All-Play move into the detail row on small screens. */
+/* Group chips: small screens show one column group at a time; wide screens show all of them. */
+.stats-groups {
+  display: flex;
+  gap: 6px;
+}
+
+.stats-chip {
+  padding: 5px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stats-chip--active {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+/* Table: # | Team | Record group | Injuries group | Efficiency group | chevron. Cells carry their group as a class. */
 .stats-table {
-  --stats-grid: 24px minmax(0, 1fr) 52px 70px 26px;
+  --cols-mobile: 3;
+  --col-width: 56px;
+  --stats-grid: 24px minmax(0, 1fr) repeat(var(--cols-mobile), var(--col-width)) 26px;
   border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: 12px;
   background: #fff;
@@ -69,8 +95,19 @@
   font-variant-numeric: tabular-nums;
 }
 
-.stats-table--no-injury {
-  --stats-grid: 24px minmax(0, 1fr) 52px 26px;
+.stats-table[data-group='injury'],
+.stats-table[data-group='efficiency'] {
+  --cols-mobile: 2;
+  --col-width: 64px;
+}
+
+.stats-table[data-group='record'] .g-injury,
+.stats-table[data-group='record'] .g-efficiency,
+.stats-table[data-group='injury'] .g-record,
+.stats-table[data-group='injury'] .g-efficiency,
+.stats-table[data-group='efficiency'] .g-record,
+.stats-table[data-group='efficiency'] .g-injury {
+  display: none;
 }
 
 .stats-row {
@@ -80,6 +117,10 @@
   align-items: center;
   padding: 7px 8px;
   border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.stats-row--groups {
+  display: none;
 }
 
 .stats-row--head {
@@ -96,11 +137,7 @@
 .stats-row--head .stats-sort {
   font-size: inherit;
   font-weight: inherit;
-}
-
-.stats-row--head .stats-impact {
-  white-space: normal;
-  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .stats-place {
@@ -115,7 +152,7 @@
 .stats-team app-team-identity {
   --team-identity-avatar-size: 26px;
   --team-identity-gap: 6px;
-  --team-identity-title-font-size: 0.82rem;
+  --team-identity-title-font-size: 0.84rem;
 }
 
 .stats-cell {
@@ -125,12 +162,8 @@
   font-weight: 700;
 }
 
-.stats-impact {
+.stats-strong {
   font-weight: 800;
-}
-
-.stats-desktop {
-  display: none;
 }
 
 .stats-sort {
@@ -193,16 +226,35 @@
 }
 
 .stats-details {
-  padding: 4px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 12px 14px;
   border-top: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(148, 163, 184, 0.05);
+}
+
+/* Every group uses the same block: small heading, then a three-column fact grid. */
+.stats-block__title {
+  margin: 0 0 4px;
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.stats-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.74rem;
 }
 
 .stats-facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin: 8px 0 4px;
+  margin: 0;
 }
 
 .stats-facts div {
@@ -225,8 +277,8 @@
   font-weight: 800;
 }
 
-.injury-subheading {
-  margin: 12px 0 4px;
+.stats-subtitle {
+  margin: 10px 0 4px;
   color: #475569;
   font-size: 0.74rem;
   font-weight: 800;
@@ -317,12 +369,6 @@
   font-weight: 600;
 }
 
-.injury-note {
-  margin: 8px 0 0;
-  color: #64748b;
-  font-size: 0.7rem;
-}
-
 .position-chip {
   display: inline-flex;
   align-items: center;
@@ -334,13 +380,62 @@
   font-weight: 700;
 }
 
+.stats-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.stats-card__icon {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.stats-card__title {
+  margin: 0;
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.stats-card__week {
+  margin-left: 6px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.stats-card__text {
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+}
+
+.stats-card__meta {
+  margin: 1px 0 0;
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+/* Desktop: all groups side by side with a group header; the chips are not needed. */
 @media (min-width: 768px) {
-  .stats-table {
-    --stats-grid: 32px minmax(0, 1fr) 64px 56px 56px 64px 104px 26px;
+  .stats-groups {
+    display: none;
   }
 
-  .stats-table--no-injury {
-    --stats-grid: 32px minmax(0, 1fr) 64px 56px 56px 64px 26px;
+  .stats-table {
+    --col-width: 62px;
+    --stats-grid: 32px minmax(0, 1fr) repeat(var(--cols-desktop), var(--col-width)) 26px;
+  }
+
+  .stats-table[data-group] .g-record,
+  .stats-table[data-group] .g-injury,
+  .stats-table[data-group] .g-efficiency {
+    display: block;
   }
 
   .stats-row {
@@ -348,12 +443,31 @@
     padding: 8px 12px;
   }
 
-  .stats-desktop {
-    display: block;
+  .stats-row--groups {
+    display: grid;
+    padding-top: 7px;
+    padding-bottom: 0;
+    border-top: 0;
+    background: rgba(148, 163, 184, 0.08);
   }
 
-  .stats-fact--table {
-    display: none;
+  .stats-row--groups + .stats-row--head {
+    padding-top: 2px;
+  }
+
+  .stats-lead {
+    grid-column: span 2;
+  }
+
+  .stats-groupname {
+    padding: 0 0 3px;
+    border-bottom: 2px solid rgba(37, 99, 235, 0.35);
+    color: #1d4ed8;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
   }
 
   .stats-team app-team-identity {

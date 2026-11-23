@@ -31,6 +31,12 @@ export function formatExpectedRecord(team: SeasonStatisticsTeam): string {
   return `${formatDecimal(team.ExpectedWins)}-${formatDecimal(games - team.ExpectedWins)}`;
 }
 
+/** Percent value with one decimal, for example 82.3%; unknown stays visible. */
+export function formatPercent(value: number | null | undefined, digits = 1): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '–';
+  return `${formatDecimal(value, digits)}%`;
+}
+
 /** Sign class for luck-like values: positive, negative or neutral. */
 export function signClass(value: number | null | undefined): 'pos' | 'neg' | 'zero' {
   if (value === null || value === undefined || value === 0) return 'zero';
@@ -67,5 +73,30 @@ export function buildBiggestUpsetHighlight(
     valueDisplay: `${chance}% win chance`,
     reason: `${upset.Season} Week ${upset.Week}: ${winner.TeamName} beat ${loser?.TeamName ?? 'the favorite'} `
       + `${formatDecimal(upset.WinnerPoints, 2)}-${formatDecimal(upset.LoserPoints, 2)} with a ${chance}% pregame win chance.`
+  };
+}
+
+export interface SeasonUpsetCard {
+  week: number;
+  winnerName: string;
+  loserName: string;
+  scoreDisplay: string;
+  chanceDisplay: string;
+}
+
+/** Biggest-upset card of one season; the generator chose the game, this only renders it. Null when the season has none or its teams are unknown. */
+export function buildSeasonUpsetCard(doc: SeasonStatisticsReadModel | null | undefined): SeasonUpsetCard | null {
+  const upset = doc?.BiggestUpset;
+  if (!doc || !upset) return null;
+  const teams = statisticsByTeam(doc.Teams);
+  const winner = teams.get(String(upset.WinnerTeamID));
+  const loser = teams.get(String(upset.LoserTeamID));
+  if (!winner || !loser) return null;
+  return {
+    week: upset.Week,
+    winnerName: winner.TeamName || winner.Owner,
+    loserName: loser.TeamName || loser.Owner,
+    scoreDisplay: `${formatDecimal(upset.WinnerPoints, 2)}–${formatDecimal(upset.LoserPoints, 2)}`,
+    chanceDisplay: `${Math.round(upset.WinnerPregameWinProbability * 100)}%`
   };
 }
