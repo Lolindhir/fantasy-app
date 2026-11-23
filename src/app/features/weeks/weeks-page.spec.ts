@@ -111,8 +111,12 @@ describe('WeeksPageComponent', () => {
       'getPastWeeklyRecapsRaw',
       'getFantasyGameContext',
       'getPastFantasyGameContextRaw',
-      'getFantasyGameContextHistory'
+      'getFantasyGameContextHistory',
+      'getTeamSeasons'
     ]);
+    dataService.getTeamSeasons.and.returnValue(of({
+      SchemaVersion: 1, Product: 'league-teams', CanonicalLeagueID: 'test', CurrentSeason: '2026', Seasons: []
+    }));
     dataService.getLeagueWithPlayers.and.returnValue(of({
       league: { Season: '2026' },
       teams: [team(1), team(2)]
@@ -185,6 +189,24 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelector('.week-matchup-score')?.textContent).toContain('102');
   });
 
+
+  it('shows the team identity of the selected past season, not the current one', async () => {
+    const season = matchups('2025', [{ week: 1, stage: 'regular-season', state: 'final' }]);
+    season.Weeks[0].Matchups[0].Result = { Type: 'win', WinnerTeamID: 1 };
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+    dataService.getTeamSeasons.and.returnValue(of({
+      SchemaVersion: 1, Product: 'league-teams', CanonicalLeagueID: 'test', CurrentSeason: '2026',
+      Seasons: [{ Season: '2025', Teams: [{
+        TeamID: 1, CanonicalLeagueRosterID: 'r1', CanonicalLeagueMemberID: 'm1', OwnerID: 'u1', Owner: 'Old Owner', OwnerAvatar: null,
+        TeamName: 'Old Name', TeamNameSource: 'provider', TeamAbbr: 'OLD', TeamAvatar: null
+      }] }]
+    }));
+
+    const host = await create({ season: '2025' }, 'overview');
+    const row = host.querySelector('.schedule-played .week-matchup') as HTMLButtonElement;
+    expect(row.getAttribute('aria-label')).toContain('winner OLD');
+    expect(row.getAttribute('aria-label')).not.toContain('winner T1');
+  });
 
   it('tints only the authoritative winner side and associates each score with its team', async () => {
     const season = matchups('2025', [

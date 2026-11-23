@@ -5,6 +5,7 @@ import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { DataService } from '../../core/services/data.service';
 import type { PastSeasonIndexEntry } from '../../core/services/data-api.service';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
+import { TeamSeasonService, teamsWithSeasonIdentity } from '../../shared/services/team-season.service';
 import { DraftsViewModelService } from './services/drafts-view-model.service';
 import { CurrentDraftsTabComponent } from './tabs/current-drafts/current-drafts-tab';
 import { FutureDraftsTabComponent } from './tabs/future-drafts/future-drafts-tab';
@@ -27,6 +28,8 @@ type DraftsTab = 'current' | 'future' | 'past';
 export class DraftsPageComponent {
   private dataService = inject(DataService);
   private draftsViewModelService = inject(DraftsViewModelService);
+  private teamSeasons = inject(TeamSeasonService);
+  private teamSeasonLookup$ = this.teamSeasons.getLookup().pipe(catchError(() => of(null)));
   private selectedPastSeasonSubject = new BehaviorSubject<string | null>(null);
 
   activeTab: DraftsTab = 'current';
@@ -56,9 +59,10 @@ export class DraftsPageComponent {
   private pastDrafts$ = combineLatest([
     this.leagueData$,
     this.pastSeasons$,
-    this.selectedPastSeasonSubject
+    this.selectedPastSeasonSubject,
+    this.teamSeasonLookup$
   ]).pipe(
-    switchMap(([leagueData, pastSeasons, selectedSeason]) => {
+    switchMap(([leagueData, pastSeasons, selectedSeason, teamSeasonLookup]) => {
       const season = selectedSeason ?? pastSeasons[0]?.Season ?? null;
       const selectedEntry = season ? pastSeasons.find(entry => entry.Season === season) : undefined;
       const draftsPath = selectedEntry?.Resources?.Drafts?.Path;
@@ -69,7 +73,9 @@ export class DraftsPageComponent {
       }
 
       return this.dataService.getPastDraftsRaw(draftsPath).pipe(
-        map(drafts => this.draftsViewModelService.createDraftViewModels(drafts, leagueData.teams, leagueData.players)),
+        // Past drafts show the team identity of that draft's season (Issue #774); picks stay assigned to the same TeamIDs.
+        map(drafts => this.draftsViewModelService.createDraftViewModels(
+          drafts, teamsWithSeasonIdentity(leagueData.teams, teamSeasonLookup, season), leagueData.players)),
         catchError(() => of([]))
       );
     }),

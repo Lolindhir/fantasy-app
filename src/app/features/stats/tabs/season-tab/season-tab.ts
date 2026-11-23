@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../../../core/models/season-statistics.models';
 import { DataService } from '../../../../core/services/data.service';
 import { TeamIdentityComponent, type TeamIdentityElement, type TeamIdentitySubject } from '../../../../shared/components/team-identity/team-identity';
+import { TeamSeasonService } from '../../../../shared/services/team-season.service';
 import { PositionStylePipe } from '../../../../shared/pipes/position-style.pipe';
 import { buildInjuryImpactByTeam, type TeamInjuryImpactView } from '../../../../shared/utils/injury-impact-view.util';
 import { buildSeasonHistory } from '../../../../shared/utils/league-standings-view.util';
@@ -65,6 +66,7 @@ const DEFAULT_AVATAR = 'assets/default-team-avatar.png';
 })
 export class SeasonTabComponent {
   private readonly dataService = inject(DataService);
+  private readonly teamSeasons = inject(TeamSeasonService);
 
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
   readonly formatSigned = formatSigned;
@@ -84,9 +86,10 @@ export class SeasonTabComponent {
     data: this.dataService.getLeagueWithPlayers(),
     injury: this.dataService.getInjuryImpact(),
     nflTeams: this.dataService.getNflTeams(),
-    stats: this.dataService.getAllSeasonStatistics()
+    stats: this.dataService.getAllSeasonStatistics(),
+    teamSeasons: this.teamSeasons.getLookup().pipe(catchError(() => of(null)))
   }).pipe(
-    map(({ data: { league, teams }, injury, nflTeams, stats }): SeasonStatsViewModel => {
+    map(({ data: { league, teams }, injury, nflTeams, stats, teamSeasons }): SeasonStatsViewModel => {
       const history = buildSeasonHistory(league).seasons.filter(season => season.regularSeasonStandings.length > 0);
       const statsDocs = new Map<string, SeasonStatisticsReadModel>(stats.bySeason);
       if (stats.current) statsDocs.set(String(stats.current.Season), stats.current);
@@ -115,8 +118,8 @@ export class SeasonTabComponent {
             return {
               teamId,
               place: row.place,
-              // Season-specific identity; the current logo is only a fallback for the running season.
-              identity: {
+              // Identity of that season from the league-teams product; the standings snapshot is only the fallback while the product is unavailable.
+              identity: teamSeasons?.identity(season, teamId) ?? {
                 TeamID: Number(row.teamId),
                 Team: row.teamName ?? '',
                 // Season-specific abbreviation from the generator; the running season may also use the league abbreviation.

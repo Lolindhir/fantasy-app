@@ -1,5 +1,6 @@
 import type { RawTeamSeasonTeam, TeamSeasonsReadModel } from '../../core/models/team-season.models';
-import { DEFAULT_TEAM_AVATAR, TeamSeasonLookup } from './team-season.service';
+import type { FantasyTeam } from '../../core/models/league.models';
+import { DEFAULT_TEAM_AVATAR, TeamSeasonLookup, teamsWithSeasonIdentity } from './team-season.service';
 
 const team = (teamId: number, name: string, abbr: string, avatar: string | null): RawTeamSeasonTeam => ({
   TeamID: teamId, CanonicalLeagueRosterID: `r${teamId}`, CanonicalLeagueMemberID: `m${teamId}`, OwnerID: `u${teamId}`,
@@ -34,5 +35,25 @@ describe('TeamSeasonLookup', () => {
     expect(identity?.Avatar).toBe('new.png');
     expect(lookup.identity(2023, 1)).toBeNull();
     expect(lookup.identity(2025, 9)).toBeNull();
+  });
+});
+
+describe('teamsWithSeasonIdentity', () => {
+  const lookup = new TeamSeasonLookup(model);
+  const current = [{ TeamID: 1, Team: 'New Name', TeamAbbr: 'NEW', Avatar: 'new.png', Owner: 'Now', Wins: 3 }, { TeamID: 9, Team: 'Other', Avatar: 'o.png' }] as unknown as FantasyTeam[];
+
+  it('overlays only identity fields of the requested past season', () => {
+    const [team, unknown] = teamsWithSeasonIdentity(current, lookup, '2024');
+    expect(team.Team).toBe('Old Name');
+    expect(team.TeamAbbr).toBe('OLD');
+    expect(team.Avatar).toBe(DEFAULT_TEAM_AVATAR);
+    expect(team.Wins).toBe(3);
+    expect(unknown.Team).toBe('Other');
+  });
+
+  it('keeps the current identity for the current season, a missing lookup and an unknown season', () => {
+    expect(teamsWithSeasonIdentity(current, lookup, 2025)[0].Team).toBe('New Name');
+    expect(teamsWithSeasonIdentity(current, null, '2024')[0].Team).toBe('New Name');
+    expect(teamsWithSeasonIdentity(current, lookup, '2020')[0].Team).toBe('New Name');
   });
 });
