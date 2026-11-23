@@ -17,6 +17,7 @@ import nfl_pbp_source_auto as pbp_auto
 import nfl_pbp_source_history as pbp_history
 from nfl_source_data_lib.pbp_original import audit_original_pbp
 import nfl_pbp_2025_quality_report as pbp_quality
+import nfl_pbp_revision_readonly as pbp_revision
 from nfl_source_data_lib.draft import classify_draft_status
 from nfl_source_data_lib.materialize import materialize
 
@@ -30,6 +31,78 @@ def write_csv(path: Path, rows, fieldnames):
 
 
 class NflSourceDataTests(unittest.TestCase):
+    def test_pbp_2025_revision_readonly_detects_compression_only_change(self):
+        original_csv = b"game_id,play_id\n2025_01_ARI_NO,1\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            accepted = Path(tmp) / "accepted.csv.gz"
+            revised = Path(tmp) / "revised.csv.gz"
+            accepted.write_bytes(gzip.compress(original_csv, compresslevel=1, mtime=0))
+            revised.write_bytes(gzip.compress(original_csv, compresslevel=9, mtime=0))
+            pinned = {
+                "ARCHIVED_SHA": hashlib.sha256(accepted.read_bytes()).hexdigest(),
+                "ARCHIVED_BYTES": accepted.stat().st_size,
+                "PROVIDER_SHA": hashlib.sha256(revised.read_bytes()).hexdigest(),
+                "PROVIDER_BYTES": revised.stat().st_size,
+            }
+            with patch.multiple(pbp_revision, **pinned):
+                result = pbp_revision.compare_files(accepted, revised)
+            self.assertTrue(result["DecompressedCSVBytesIdentical"])
+            self.assertEqual(1, result["Accepted"]["SourceRows"])
+            self.assertEqual(2, result["OfficialRevision"]["CSVColumns"])
+            self.assertFalse(result["SemanticRowOrMetricDiffCertified"])
+            self.assertFalse(result["ProductionSourceChanged"])
+
+    def test_pbp_2025_revision_readonly_rejects_bad_gzip_crc_and_csv_width(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            corrupted = Path(tmp) / "crc.csv.gz"
+            raw = bytearray(gzip.compress(b"a,b\n1,2\n", mtime=0))
+            raw[-8] ^= 1
+            corrupted.write_bytes(raw)
+            with self.assertRaises(OSError):
+                pbp_revision.inspect_gzip(
+                    corrupted, expected_sha=hashlib.sha256(raw).hexdigest(),
+                    expected_bytes=len(raw),
+                )
+            invalid_csv = Path(tmp) / "invalid.csv.gz"
+            raw_csv = gzip.compress(b"a,b\n1\n", mtime=0)
+            invalid_csv.write_bytes(raw_csv)
+            with self.assertRaisesRegex(ValueError, "invalid width"):
+                pbp_revision.inspect_gzip(
+                    invalid_csv, expected_sha=hashlib.sha256(raw_csv).hexdigest(),
+                    expected_bytes=len(raw_csv),
+                )
+
+    def test_pbp_2025_revision_readonly_rejects_source_or_asset_drift(self):
+        manifest = {
+            "SchemaVersion": 1, "Status": "accepted-original-byte-identity",
+            "Season": 2025, "UpstreamSHA256": pbp_revision.ARCHIVED_SHA,
+            "CompressedBytes": pbp_revision.ARCHIVED_BYTES,
+            "ArchiveAssetID": pbp_revision.ARCHIVED_ASSET_ID,
+            "ArchiveURL": pbp_revision.ARCHIVED_URL,
+            "SourceCompletenessCertified": False,
+        }
+        pbp_revision.validate_manifest(manifest)
+        with self.assertRaises(ValueError):
+            pbp_revision.validate_manifest({**manifest, "ArchiveURL": "https://example.invalid"})
+        asset = {
+            "id": pbp_revision.PROVIDER_ASSET_ID, "name": pbp_revision.BASENAME,
+            "size": pbp_revision.PROVIDER_BYTES,
+            "digest": "sha256:" + pbp_revision.PROVIDER_SHA,
+            "state": "uploaded", "browser_download_url": pbp_revision.PROVIDER_URL,
+        }
+        pbp_revision.validate_release_asset(
+            asset, asset_id=pbp_revision.PROVIDER_ASSET_ID,
+            size=pbp_revision.PROVIDER_BYTES,
+            digest=pbp_revision.PROVIDER_SHA, url=pbp_revision.PROVIDER_URL,
+        )
+        with self.assertRaises(ValueError):
+            pbp_revision.validate_release_asset(
+                {**asset, "digest": "sha256:" + "0" * 64},
+                asset_id=pbp_revision.PROVIDER_ASSET_ID,
+                size=pbp_revision.PROVIDER_BYTES,
+                digest=pbp_revision.PROVIDER_SHA, url=pbp_revision.PROVIDER_URL,
+            )
+
     def test_stable_internal_id_is_deterministic(self):
         self.assertEqual(
             common_mod.stable_internal_id("GSIS:00-123"),
