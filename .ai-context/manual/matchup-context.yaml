@@ -84,7 +84,7 @@ function:
 
 inputs:
   leagueSource: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (league.json, members.json, rosters.json, matchups/week-<n>.json)
-  nflSchedule: data-source/nfl/schedules/<season>.json plus data-source/nfl/game-finality/<season>.json (App game IDs through tools/schedule_archive.build_schedule, as in decision-windows.yaml)
+  nflSchedule: data-source/nfl/schedules/<season>.json plus data-source/nfl/game-finality/<season>.json (App game IDs through derived_data_lib/nfl_schedule_games.build_schedule, as in decision-windows.yaml)
   weeklyRosters: data-source/nfl/weekly-rosters/<season>/<week>.json (history only; week-specific NFL team and position)
   markets: data-derived/nfl-games/<season>.json (market-implied points; nullable)
   neutralTeamOrder: data-derived/league-standings/<CanonicalLeagueID>/<season>.json (All-Time Overall order, domain.yaml neutralOrdering)
@@ -168,7 +168,7 @@ migration:
     8: 'Done: removed RequestHistoricalAppReadModels.ps1, MatchupReadModel*, FantasyGameContext*, FantasyMatchupPreview, FantasyWeeklyWatch, PlayerScoringAvailability, LineupRepairabilityDecision, ParticipantScoringPathDecision, AcquisitionCapability and CanonicalMatchupUtils plus their ten PowerShell tests (cases live in the Python Fast tests); inventory, legacy-uncovered baseline (27 to 17), data-sources.yaml and shortContext updated. Kept because still used: WeeklyRecapMatchupFacts.psm1 (verbatim extract for WeeklyRecapUtils until section 4), DecisionWindowUtils.psm1 with its legacy test until #1238 scope 2 (now removed after Python Fast coverage and an equivalent Save-JsonFile comparison), the TeamWeekPerformance PowerShell bridge modules until #1238 scope 1 (now removed, with NFL-team join evidence in Python Fast tests).'
 
 architectureReview:
-  existingFirst: Reuses the computed-function pattern (week-finality, lifecycle, Decision Windows), the model registry with a per-season choice in data-meta, schedule_archive for App game IDs, the league-standings product for the neutral order and the PlayerWeekFantasy product for projections. No new dataset, writer or workflow.
+  existingFirst: Reuses the computed-function pattern (week-finality, lifecycle, Decision Windows), the model registry with a per-season choice in data-meta, nfl_schedule_games for App game IDs, the league-standings product for the neutral order and the PlayerWeekFantasy product for projections. No new dataset, writer or workflow.
   configuration: The projection method is a versioned model chosen per season; everything else is fixed provider-neutral semantics. A new projection method needs a code change (team-range-v2) plus a data-meta choice from the season it applies.
   identity: CanonicalLeagueID + Season + AtUtc (+ team-range model ID). Matchups are identified by FantasyMatchupID; players by the Sleeper player ID (App contract) with the canonical identity only for joins.
   invalidation: Inputs are the league source, the NFL schedule and finality, weekly rosters, the three products, the three functions and data-meta. The result is recomputed on every call.

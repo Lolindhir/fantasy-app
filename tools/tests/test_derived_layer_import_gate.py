@@ -30,30 +30,63 @@ def derived_roots(tools: Path = TOOLS) -> list[Path]:
     return roots
 
 
+def _strip_tools(name: str) -> str:
+    parts = name.split(".")
+    return ".".join(parts[1:]) if parts[0] == "tools" and len(parts) > 1 else name
+
+
 def imports_of(source: str, top: set[str]) -> tuple[set[str], list[int]]:
-    """Return (imported top-level tools modules, line numbers of non-literal dynamic imports)."""
+    """Return (imported top-level tools modules, line numbers of non-literal dynamic imports).
+
+    Also counts the literal script names of subprocess/runpy calls (x.py) and the `tools.` package prefix.
+    """
     found: set[str] = set()
     dynamic: list[int] = []
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
-            found.update(a.name.split(".")[0] for a in node.names if a.name.split(".")[0] in top)
+            for a in node.names:
+                head = _strip_tools(a.name).split(".")[0]
+                if head in top:
+                    found.add(head)
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-            head = node.module.split(".")[0]
+            head = _strip_tools(node.module).split(".")[0]
             if head in top:
                 found.add(head)
-            if head == "derived_data_lib":
-                continue
+            if node.module == "tools":
+                found.update(a.name for a in node.names if a.name in top)
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.endswith(".py"):
+            stem = Path(node.value.replace("\\", "/")).stem
+            if stem in top and is_consumer(stem):
+                found.add(stem)
         elif isinstance(node, ast.Call):
             name = getattr(node.func, "attr", None) or getattr(node.func, "id", None)
             if name in {"import_module", "__import__"}:
                 arg = node.args[0] if node.args else None
                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    head = arg.value.split(".")[0]
+                    head = _strip_tools(arg.value).split(".")[0]
                     if head in top:
                         found.add(head)
                 else:
                     dynamic.append(node.lineno)
     return found, dynamic
+
+
+def public_data_literals(tools: Path = TOOLS) -> list[str]:
+    """Runtime string literals naming public/data in the Shared-Derived roots (docstrings excluded)."""
+    hits: list[str] = []
+    for path in derived_roots(tools):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        docstrings = set()
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                body = node.body
+                if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
+                    docstrings.add(id(body[0].value))
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Constant) and isinstance(node.value, str)
+                    and id(node) not in docstrings and "public/data" in node.value.replace("\\", "/")):
+                hits.append(f"{path.relative_to(tools).as_posix()}:{node.lineno}")
+    return sorted(hits)
 
 
 def violations(tools: Path = TOOLS) -> tuple[list[str], list[str]]:
@@ -115,6 +148,26 @@ class DerivedLayerImportGateTests(unittest.TestCase):
         self.assertIn("derived_data_lib/lazy.py -> schedule_archive", bad)
         self.assertIn("derived_data_lib/lit.py -> x_app_publish", bad)
         self.assertEqual(dynamic, ["derived_data_lib/dyn.py:2"])
+
+    def test_derived_layer_has_no_public_data_path_literals(self):
+        self.assertEqual(public_data_literals(), [])
+
+    def test_gate_is_red_for_tools_prefix_subprocess_and_public_data_literals(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tools = Path(tmp)
+            (tools / "derived_data_lib").mkdir()
+            (tools / "derived_data.py").write_text("")
+            (tools / "x_app_publish.py").write_text("")
+            (tools / "derived_data_lib" / "pre.py").write_text("from tools.x_app_publish import f\n")
+            (tools / "derived_data_lib" / "sub.py").write_text("import subprocess\nsubprocess.run(['python', 'tools/x_app_publish.py'])\n")
+            (tools / "derived_data_lib" / "doc.py").write_text('"""reads public/data/X.json"""\nPATH = "public/data/Players.json"\n')
+            bad, _ = violations(tools)
+            literals = public_data_literals(tools)
+        self.assertIn("derived_data_lib/pre.py -> x_app_publish", bad)
+        self.assertIn("derived_data_lib/sub.py -> x_app_publish", bad)
+        self.assertEqual(literals, ["derived_data_lib/doc.py:2"])
 
     def test_known_neutral_helpers_are_not_consumers(self):
         for module in ("data_roots", "league_metadata", "players_population", "matchup_projection", "nfl_schedule_games"):
