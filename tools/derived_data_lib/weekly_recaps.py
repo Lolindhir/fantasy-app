@@ -628,6 +628,16 @@ def player_award_history(models: dict[int, dict[str, Any]], refs: Callable[[str,
             }
         )
     result.sort(key=lambda p: (-p["Total"], p["PlayerID"]))
+    # Per-season ranking (Stats > Player Awards): counts of the entries of one season, same order rule as the all-time list; Name, Position and Picture stay in ``Players``.
+    for season_entry in seasons:
+        ranking: list[dict[str, Any]] = []
+        for player in result:
+            counts = {award: sum(1 for item in player["Entries"] if item["Season"] == season_entry["Season"] and item["Award"] == award) for award in PLAYER_AWARD_KEYS}
+            total = sum(counts.values())
+            if total > 0:
+                ranking.append({"PlayerID": player["PlayerID"], "Counts": counts, "Total": total})
+        ranking.sort(key=lambda item: (-item["Total"], item["PlayerID"]))
+        season_entry["Players"] = ranking
     # All-time leaders per award (Hall of Fame): every player holding the highest count, ties shared; an award nobody won has no leaders.
     leaders: dict[str, list[dict[str, Any]]] = {}
     for award in PLAYER_AWARD_KEYS:

@@ -150,7 +150,7 @@ playerAwards:
     path: public/data/PlayerAwardHistory.json
     generator: tools/weekly_recaps_app_publish.py (League Live recomputes the current season; the weekly update-history run recomputes completed seasons)
     shape: >-
-      SchemaVersion, Awards (award keys), Seasons[{Season, Weeks}] (weeks with available awards only), Leaders{Award: [{PlayerID, Name, Position, Count}]} (all-time leader(s) per award, ties shared, Hall of Fame), Players[{PlayerID, CanonicalPlayerID, Name, Position, Picture, Counts{MVP,
+      SchemaVersion, Awards (award keys), Seasons[{Season, Weeks, Players[{PlayerID, Counts, Total}]}] (weeks with available awards only; Players is the per-season ranking of the players with at least one award that season, Total descending then PlayerID, Name/Position/Picture via the top-level Players list; additive, Stats > Player Awards, Issue #1621), Leaders{Award: [{PlayerID, Name, Position, Count}]} (all-time leader(s) per award, ties shared, Hall of Fame), Players[{PlayerID, CanonicalPlayerID, Name, Position, Picture, Counts{MVP,
       MatchupHero, Heartbreaker, UnsungHero}, Total, Entries[{Season, Week, Award, FantasyTeamID, FantasyMatchupID, Points, figures}]}] sorted by Total descending, then PlayerID.
       The frontend only displays counts and lists; Name, Position and Picture come from the league-history PlayerRefs resolver (LeaguePlayerReferenceResolver, season-aware, never
       guessed in the frontend) and are the fallback for players that Players.json no longer lists.
