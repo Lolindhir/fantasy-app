@@ -5,7 +5,7 @@ import { DataService } from '../../core/services/data.service';
 import { TeamDetailDialogComponent } from '../components/team-detail-dialog/team-detail-dialog';
 
 export interface TeamDetailDialogOpenOptions {
-  initialTab?: 'overview' | 'lineup';
+  initialTab?: 'overview' | 'lineup' | 'rivals';
 }
 
 @Injectable({ providedIn: 'root' })

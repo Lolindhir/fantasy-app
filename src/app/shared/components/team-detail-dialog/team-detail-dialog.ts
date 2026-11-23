@@ -62,7 +62,7 @@ export interface TeamDetailDialogData {
   league: League;
   players: Player[];
   drafts: RawDraft[];
-  initialTab?: 'overview' | 'lineup';
+  initialTab?: 'overview' | 'lineup' | 'rivals';
 }
 
 interface TeamDraftGroup {
@@ -150,7 +150,10 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   /** Season lineup efficiency of this team (generator value of WeeklyRecaps.json); null while unknown. */
   lineupEfficiency: WeeklyRecapSeasonEfficiency | null = null;
   weekProjections: ReadonlyMap<string, PlayerWeekProjectionView> | null = null;
-  selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 2 : 0;
+  /** Rivals is the last tab: seven fixed tabs before it plus the conditional Lineup tab. */
+  selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive
+    ? 2
+    : this.data.initialTab === 'rivals' ? (this.decisionWindowPhaseActive ? 8 : 7) : 0;
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
   draftHistoryLoading = false;

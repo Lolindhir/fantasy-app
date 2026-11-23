@@ -1,0 +1,53 @@
+<ng-container *ngIf="ready() !== undefined; else loading">
+  <section class="h2h" *ngIf="ready(); else unavailable">
+    <div class="h2h__head">
+      <h2 class="h2h__title">Head-to-Head<span class="h2h__span" *ngIf="seasonSpan()"> · {{ seasonSpan() }}</span></h2>
+      <div class="h2h__filters" role="group" aria-label="Game filter">
+        <button
+          *ngFor="let option of filters"
+          type="button"
+          class="stats-chip"
+          [class.stats-chip--active]="filter() === option.id"
+          [attr.aria-pressed]="filter() === option.id"
+          (click)="selectFilter(option.id)">{{ option.label }}</button>
+      </div>
+    </div>
+
+    <div class="h2h-scroll">
+      <table class="h2h-grid">
+        <thead>
+          <tr>
+            <th class="h2h-corner" scope="col"><span class="h2h-corner-label">vs.</span></th>
+            <th *ngFor="let team of teams(); trackBy: trackTeam" scope="col" class="h2h-col-head">
+              <app-team-identity class="h2h-head-full" [team]="team" [elements]="compactIdentityElements" size="small"></app-team-identity>
+              <app-team-identity class="h2h-head-logo" [team]="team" [elements]="logoOnlyElements" size="small"></app-team-identity>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows(); trackBy: trackRow">
+            <th scope="row" class="h2h-row-head">
+              <app-team-identity class="h2h-head-full" [team]="row.team" [elements]="compactIdentityElements" size="small"></app-team-identity>
+              <app-team-identity class="h2h-head-logo" [team]="row.team" [elements]="logoOnlyElements" size="small"></app-team-identity>
+            </th>
+            <td *ngFor="let cell of row.cells" class="h2h-cell" [class.h2h-cell--self]="cell.opponent.TeamID === row.team.TeamID">
+              <button
+                *ngIf="cell.opponent.TeamID !== row.team.TeamID; else selfCell"
+                type="button"
+                class="h2h-record"
+                [ngClass]="cell.tone ? 'h2h-record--' + cell.tone : 'h2h-record--none'"
+                [attr.aria-label]="cellLabel(row, cell)"
+                [attr.title]="cell.meetings ? cell.meetings + (cell.meetings === 1 ? ' game' : ' games') : null"
+                (click)="openRivals(row.team)">{{ cell.label ?? '–' }}</button>
+              <ng-template #selfCell><span class="h2h-self" aria-hidden="true"></span></ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="h2h-legend">Record of the row team against the column team (wins–losses). Tap a record to open the team's rivals.</p>
+  </section>
+</ng-container>
+
+<ng-template #loading><p class="h2h-note">Loading head-to-head records…</p></ng-template>
+<ng-template #unavailable><p class="h2h-note">Head-to-head records are currently unavailable.</p></ng-template>
