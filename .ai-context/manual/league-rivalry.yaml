@@ -65,7 +65,8 @@ weekBasis:
     nonGoals: No change to Sleeper, real Draft-Pick rules, standings or league scoring.
 
 contract:
-  version: 1
+  version: 2
+  versionNote: 'Issue #1659: contract version 2 adds SeasonRecords additively (SchemaVersion 2); Records and all existing fields are unchanged and the counting rule (rivalry-v2) is unchanged.'
   rootShape: |
     {
       "SchemaVersion": 1, "Product": "league-rivalry", "CanonicalLeagueID": "<id>",
@@ -73,9 +74,11 @@ contract:
       "Seasons": [ { "Season": "<season>", "PlayoffsComplete": <bool>, "CountedRegular", "CountedPlayoffs", "ExcludedConsolation", "ExcludedUnclassified", "ExcludedSeasonIncomplete" } ],
       "Records": [ { "TeamID", "OpponentID", "Filter": "all"|"regular"|"playoffs", "Wins", "Losses", "Ties", "PointsFor", "PointsAgainst",
                      "BiggestWinMatchupID", "ClosestLossMatchupID",
-                     "Games": [ { "Season", "Week", "FantasyMatchupID", "Stage", "Bracket", "Outcome": "win"|"loss"|"tie", "TeamPoints", "OpponentPoints", "Margin" } ] } ]
+                     "Games": [ { "Season", "Week", "FantasyMatchupID", "Stage", "Bracket", "Outcome": "win"|"loss"|"tie", "TeamPoints", "OpponentPoints", "Margin" } ] } ],
+      "SeasonRecords": [ { "Season", "TeamID", "OpponentID", "Filter": "all"|"regular"|"playoffs", "Wins", "Losses", "Ties", "PointsFor", "PointsAgainst" } ]
     }
   records: Directional (every pair appears from both teams); only pairs with at least one counted game in the filter. Games are chronological, oldest first. PointsFor and PointsAgainst are the chronological sums rounded half up to two decimals; points and margins are the effective matchup points as published (nullable, Margin null when a score is missing).
+  seasonRecords: 'Issue #1659: the same directional record per season (Season, TeamID, OpponentID, Filter) without Games, counted with the same model and games as Records, so the season records of a pair and filter add up to its Records entry (guarded by tools/tests/test_rivalry.py). Only pairs with at least one counted game in that season and filter appear; the single games are not duplicated (Records.Games filtered by Season). Display order: Season, TeamID, filter, OpponentID. Consumers display the season view from these values and never recompute them from Games.'
   order: Display order only, no ranking - TeamID, then filter (all, regular, playoffs), then number of games descending, then OpponentID.
   appDelivery: public/data/Rivalry.json is the product document unchanged. Angular displays the values (last game, biggest win, closest loss, labels) and counts and classifies nothing (Regel 4).
   exclusionCounters: ExcludedConsolation, ExcludedUnclassified and ExcludedSeasonIncomplete remain for backward compatibility; under rivalry-v2 they are all zero for final matchups of eligible stages.

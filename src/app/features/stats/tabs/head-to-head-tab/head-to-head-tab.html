@@ -2,6 +2,13 @@
   <section class="h2h" *ngIf="ready(); else unavailable">
     <div class="h2h__head">
       <h2 class="h2h__title">Head-to-Head<span class="h2h__span" *ngIf="seasonSpan()"> · {{ seasonSpan() }}</span></h2>
+      <label class="h2h__select" *ngIf="seasons().length">
+        <span class="h2h__select-label">Season</span>
+        <select (change)="selectSeason($any($event.target).value)" aria-label="Season">
+          <option [value]="allTime" [selected]="selection() === allTime">All-Time</option>
+          <option *ngFor="let season of seasons()" [value]="season" [selected]="selection() === season">{{ season }}</option>
+        </select>
+      </label>
       <div class="h2h__filters" role="group" aria-label="Game filter">
         <button
           *ngFor="let option of filters"
