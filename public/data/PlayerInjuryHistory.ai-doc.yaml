@@ -11,7 +11,7 @@ shape:
   Coverage: '[{Season, ReportsAvailable, RosterStatusAvailable, SnapCountsAvailable}] which evidence exists per season'
   Players: '[{ID (Sleeper), Seasons[{Season, Weeks[{Week, GameType, Team, State, Participation, Report[{Game, Practice, Reasons[]}] | null, Roster{Status, Code} | null}]}]}]'
 rules:
-  - Only players listed in Players.json are published; Sleeper ID to CanonicalPlayerID through the canonical identity index.
+  - The population follows players_population.build_population (ADR-043, all configured leagues, current season) and can differ from Players.json; Sleeper ID to CanonicalPlayerID through the canonical identity index.
   - State and evidence are copied from the product; the generator and the frontend derive nothing and never treat unknown as healthy.
   - Compact JSON, loaded lazily; written only on a semantic difference; Timestamps.json key PlayerInjuryHistory.
 

@@ -63,7 +63,7 @@ inputs:
     note: Replaces public/data/Drafts.json. Only drafts of the requested season count; the product holds exactly those.
   nflSchedule:
     path: data-source/nfl/schedules/<season>.json plus data-source/nfl/game-finality/<season>.json
-    use: Regular-season kickoffs (SeasonKickoff, season window, PlayoffStart) and the first non-final regular-season game (CurrentWeek). Kickoffs are Eastern-time local times converted exactly like tools/schedule_archive.py (the Schedule.json derivation).
+    use: Regular-season kickoffs (SeasonKickoff, season window, PlayoffStart) and the first non-final regular-season game (CurrentWeek). Kickoffs are Eastern-time local times converted exactly like tools/derived_data_lib/nfl_schedule_games.py (the Schedule.json derivation).
     replaces: public/data/Schedule.json
   weekFinality:
     function: tools/derived_data_lib/week_finality.py::resolve_week_finality

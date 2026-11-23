@@ -100,7 +100,7 @@ canonical:
   schedule:
     - Match known season/week/game-type and source team only with explicit evidence.
     - Reports for a cancelled or unmatched game remain valid source observations.
-    - The 2022 Week-17 BUF@CIN cancellation (2022_17_BUF_CIN, documented in tools/schedule_archive.py::SUPPLEMENTS) is omitted from canonical nflverse schedules. Its BUF/CIN REG injury reports retain GameID=null and GameLinkState=not-found; they are NOT played-game evidence.
+    - The 2022 Week-17 BUF@CIN cancellation (2022_17_BUF_CIN, documented in tools/derived_data_lib/nfl_schedule_games.py::SUPPLEMENTS) is omitted from canonical nflverse schedules. Its BUF/CIN REG injury reports retain GameID=null and GameLinkState=not-found; they are NOT played-game evidence.
     - Only that explicitly documented team/week/game-type exception is allowed through historical Source admission with a missing GameID. Unknown unmatched team-weeks, ambiguous GameIDs and unresolved identities remain fail-closed; no canonical schedule repair, fabricated game or report dropping.
     - A team-week not observed in CSV is not a healthy team-week.
     - ScheduleGraphFingerprint is a versioned injury-game-link-v1 digest over

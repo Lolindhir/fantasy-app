@@ -49,7 +49,7 @@ architecture:
     tests: tools/tests/test_weekly_recaps.py
   rules:
     - The result is a pure function of explicit inputs. There is no clock input, because only final weeks go in.
-    - Facts come only from the canonical league matchup rows (pairings through matchup_context.canonical_pairings, starters and points through fantasy_game_context.canonical_matchup_facts), schedule_archive.build_schedule (App game IDs and final scores), the canonical weekly rosters, the league-standings product (neutral team order), the team-week-performance product with the canonical league matchups (TeamAwards), week_finality and data-meta. public/data is never an input.
+    - Facts come only from the canonical league matchup rows (pairings through matchup_context.canonical_pairings, starters and points through fantasy_game_context.canonical_matchup_facts), nfl_schedule_games.build_schedule (App game IDs and final scores), the canonical weekly rosters, the league-standings product (neutral team order), the team-week-performance product with the canonical league matchups (TeamAwards), week_finality and data-meta. public/data is never an input.
     - v1 introduces no new selection rule or award. It reproduces the PowerShell behaviour 1:1; the only intended value difference is R2.
     - The WeeklyRecaps.json contract (SchemaVersion 1) is unchanged.
 
@@ -105,7 +105,7 @@ selectionRules:
 
 inputs:
   - matchup_context.resolve (tools/derived_data_lib/matchup_context.py)
-  - tools/schedule_archive.py build_schedule (canonical schedule and finality)
+  - tools/derived_data_lib/nfl_schedule_games.py build_schedule (canonical schedule and finality)
   - data-source/nfl/weekly-rosters/<season>/<WW>.json
   - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json
   - data-derived/league-standings/<CanonicalLeagueID>/<season>.json
@@ -176,7 +176,7 @@ migration:
     6: 'Delete WeeklyRecapMatchupFacts.psm1 once no caller remains (may coincide with step 5).'
 
 architectureReview:
-  existingFirst: Reuses matchup_context.resolve, schedule_archive.build_schedule, the league-standings and team-week-performance products and week_finality; no new product, writer or workflow.
+  existingFirst: Reuses matchup_context.resolve, nfl_schedule_games.build_schedule, the league-standings and team-week-performance products and week_finality; no new product, writer or workflow.
   configuration: The selection rules are fixed editorial semantics; the league and season are inputs. A new rule needs a code change plus a model ID (weekly-recap-v2).
   identity: CanonicalLeagueID + Season; weeks by number; games by the App GameID; teams by FantasyTeamID; players by the Sleeper player ID (App contract).
   invalidation: Recomputed on every call from final facts; the consumer generator writes only on a semantic difference.

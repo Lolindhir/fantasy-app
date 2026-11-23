@@ -68,8 +68,8 @@ inputs:
     note: The same canonical rosters RequestLeague.ps1 uses for League.json Teams[] (Get-CanonicalCurrentTeamsForLeague).
   nflSchedule:
     path: data-source/nfl/schedules/<season>.json plus data-source/nfl/game-finality/<season>.json (the inputs of the data-derived/nfl-games product)
-    use: Kickoff, game week, teams and Final status per regular-season game, with the App game ID (tools/schedule_archive.py build_schedule, proven equal to Schedule.json).
-    note: The nfl-games product itself carries the canonical GameID only; the App GameID of the output contract needs the ESPN-based conversion of schedule_archive, so the function reads the same two canonical inputs the product reads.
+    use: Kickoff, game week, teams and Final status per regular-season game, with the App game ID (tools/derived_data_lib/nfl_schedule_games.py build_schedule, proven equal to Schedule.json).
+    note: The nfl-games product itself carries the canonical GameID only; the App GameID of the output contract needs the ESPN-based conversion of nfl_schedule_games, so the function reads the same two canonical inputs the product reads.
   players:
     path: data-source/nfl/platform/sleeper/players.json plus the NFL team registry (ADR-042)
     use: NFL team and app fantasy position per Sleeper player, with the population rule of tools/players_population.py. Replaces Players.json.
@@ -140,7 +140,7 @@ migration:
     8: 'Documentation and register (data-sources.yaml, domain.yaml, consumer-read register).'
 
 architectureReview:
-  existingFirst: Reuses the computed-function pattern (week-finality, lifecycle), the model registry with a per-season choice in data-meta, schedule_archive for the App game IDs, players_population for the player population rule and the canonical ESPN snapshot. No new dataset, writer or workflow.
+  existingFirst: Reuses the computed-function pattern (week-finality, lifecycle), the model registry with a per-season choice in data-meta, nfl_schedule_games for the App game IDs, players_population for the player population rule and the canonical ESPN snapshot. No new dataset, writer or workflow.
   configuration: >-
     Slots come from the league RosterPositions, the acquisition policy from the chosen repairability model. Window, lock and relevance rules are fixed provider-neutral semantics.
     A new acquisition policy needs a code change (repairability-v2) plus a data-meta choice from the season it applies.

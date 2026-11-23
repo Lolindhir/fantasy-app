@@ -668,7 +668,7 @@ playerWeekFantasy:
   matchupProjections:
     output: public/data/MatchupProjections.json
     owner: tools/matchup_projection.py
-    inputs: computed FantasyGameContext (matchup-context function) and the App adaptation of the PlayerWeekFantasy product (same Season+Week); no public/data read since Issue #1199 section 3 step 6
+    inputs: computed FantasyGameContext (matchup-context function) and the Sleeper-keyed view of the PlayerWeekFantasy product (tools/derived_data_lib/player_week_fantasy_view.py) (same Season+Week); no public/data read since Issue #1199 section 3 step 6
     rule: team projection and range arithmetic lives in published data, not in Angular
   migrationRule: >
     Existing provider/current consumer score paths remain productive until a later
@@ -1268,7 +1268,7 @@ consumerReadClassification:
     tools/matchup_projection.py:
       reads:
         legacy:MatchupProjections: app-output-owner
-      note: 'Matchup projection takes the computed FantasyGameContext (matchup-context function, ADR-075), the in-memory App adaptation of the PlayerWeekFantasy product and the shared Decision Windows function (scoring availability, ADR-074); it reads nothing from public/data and writes MatchupProjections.json with the team-range model chosen in data-meta.'
+      note: 'Matchup projection takes the computed FantasyGameContext (matchup-context function, ADR-075), the Sleeper-keyed view of the PlayerWeekFantasy product (derived_data_lib/player_week_fantasy_view.py) and the shared Decision Windows function (scoring availability, ADR-074); it reads nothing from public/data and writes MatchupProjections.json with the team-range model chosen in data-meta.'
     tools/nfl_source_data_lib/mapping_history.py:
       reads:
         legacy:past_seasons: historical-static-reference

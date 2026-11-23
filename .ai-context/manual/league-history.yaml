@@ -182,7 +182,7 @@ inputs:
     owner: data-meta / data-source league manifest (LeagueYear); never read from public/data.
   transitionalInputs:
     - id: standings-draft-order
-      input: league-standings Shared Derived product (Playoffs placement, seasons and AllTime), built in memory by tools/derived_data.py build_league_standings and rendered by tools/league_standings_app_publish.py render_standings
+      input: league-standings Shared Derived product (Playoffs placement, seasons and AllTime), built in memory by tools/derived_data.py build_league_standings and read through tools/derived_data_lib/league_standings.py draft_order_placements (no App renderer)
       use: Draft order for configured OrderSource PreviousPlayoffs and AllTime when the provider draft has no slot order yet (Get-DraftOrderRosterIDs).
       status: resolved in Issue #987 step 4; no published App file is read any more. The dependency stays fail-closed (missing season, empty ranking or duplicate standing identity fail the draft) and affects only Exact drafts without a provider slot order.
 
