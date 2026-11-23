@@ -1,7 +1,7 @@
 <div class="stats-page">
   <app-hall-of-fame [highlights]="hallOfFame$ | async"></app-hall-of-fame>
 
-  <div class="activity-tabs" aria-label="Stats sections" *ngIf="tabs.length > 1">
+  <div #tabBar class="activity-tabs stats-tabs" aria-label="Stats sections" *ngIf="tabs.length > 1">
     <button
       *ngFor="let tab of tabs"
       class="activity-tab"
@@ -12,8 +12,10 @@
     </button>
   </div>
 
+  <div #tabBody class="stats-tab-body">
   <app-stats-season-tab *ngIf="selectedTab === 'season'"></app-stats-season-tab>
   <app-stats-head-to-head-tab *ngIf="selectedTab === 'head-to-head'"></app-stats-head-to-head-tab>
   <app-stats-player-awards-tab *ngIf="selectedTab === 'player-awards'"></app-stats-player-awards-tab>
   <app-stats-weekly-tab *ngIf="selectedTab === 'weekly'"></app-stats-weekly-tab>
+  </div>
 </div>

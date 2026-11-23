@@ -525,8 +525,13 @@ class PersistedStateGuard(unittest.TestCase):
             schedule = json.loads((repo / "data-source" / "nfl" / "schedules" / f"{season}.json").read_text(encoding="utf-8"))
             played = {(int(g["Week"]), t) for g in schedule["Games"] for t in (g["AwayTeam"], g["HomeTeam"])}
             last_regular = max(int(g["Week"]) for g in schedule["Games"] if g.get("GameType") == "REG")
+            # The guard compares persisted derived state with the live source, which a sync can advance before the derived writer runs:
+            # only roster weeks the persisted file itself marks as covered (WeekCoverage.RosterPartition) are checked.
+            covered = {int(c["Week"]) for c in document["Quality"]["WeekCoverage"] if c["RosterPartition"]}
             rows_by_key = {}
             for week_file in sorted((repo / "data-source" / "nfl" / "weekly-rosters" / str(season)).glob("*.json")):
+                if int(week_file.stem) not in covered:
+                    continue
                 for row in json.loads(week_file.read_text(encoding="utf-8")).get("Records", []):
                     if row.get("CanonicalPlayerID"):
                         rows_by_key[(int(week_file.stem), row["CanonicalPlayerID"])] = row
@@ -538,6 +543,8 @@ class PersistedStateGuard(unittest.TestCase):
                     self.assertIn(nxt, recorded, f"{season} week {week + 1}: bye without a record")
             for week_file in sorted((repo / "data-source" / "nfl" / "weekly-rosters" / str(season)).glob("*.json")):
                 week = int(week_file.stem)
+                if week not in covered:
+                    continue
                 for row in json.loads(week_file.read_text(encoding="utf-8")).get("Records", []):
                     pid = row.get("CanonicalPlayerID")
                     if pid and row.get("Status") is not None and row.get("Position") in positions:
