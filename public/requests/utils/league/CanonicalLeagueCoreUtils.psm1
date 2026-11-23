@@ -118,78 +118,6 @@ function ConvertTo-CanonicalLeagueCoreProviderPlayerIDs {
     return @($result)
 }
 
-function Resolve-CanonicalLeagueCoreTeamDisplayName {
-    param(
-        [AllowNull()][string]$TeamName,
-        [AllowNull()][string]$OwnerName
-    )
-
-    if (-not [string]::IsNullOrWhiteSpace($TeamName)) {
-        return $TeamName.Trim()
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($OwnerName)) {
-        return "Team $($OwnerName.Trim())"
-    }
-
-    return $null
-}
-
-function ConvertTo-CanonicalLeagueCoreTeamAbbreviation {
-    param(
-        [AllowNull()][string]$TeamName,
-        [AllowNull()]$TeamID
-    )
-
-    $fallbackNumber = 0
-    $fallback = if ([int]::TryParse([string]$TeamID, [ref]$fallbackNumber)) { "T{0:D2}" -f $fallbackNumber } else { "TBD" }
-
-    if ([string]::IsNullOrWhiteSpace($TeamName)) {
-        return $fallback
-    }
-
-    $normalized = $TeamName.Trim()
-    $normalized = $normalized -creplace '(\p{Lu}+)(\p{Lu}\p{Ll})', '$1 $2'
-    $normalized = $normalized -creplace '([\p{Ll}\p{N}])(\p{Lu})', '$1 $2'
-    $normalized = $normalized -replace '[^\p{L}\p{N}]+', ' '
-    $normalized = $normalized.Trim()
-
-    if ([string]::IsNullOrWhiteSpace($normalized)) {
-        return $fallback
-    }
-
-    $stopWords = @('team', 'the')
-    $nameParts = @($normalized -split '\s+' | Where-Object {
-        -not [string]::IsNullOrWhiteSpace($_) -and $_.ToLowerInvariant() -notin $stopWords
-    })
-
-    if ($nameParts.Count -eq 0) {
-        return $fallback
-    }
-
-    if ($nameParts.Count -eq 1) {
-        $part = [string]$nameParts[0]
-        $length = [Math]::Min(3, $part.Length)
-        $abbr = $part.Substring(0, $length)
-        return $abbr.Substring(0, 1).ToUpperInvariant() + $abbr.Substring(1).ToLowerInvariant()
-    }
-
-    if ($nameParts.Count -eq 2) {
-        $firstPart = [string]$nameParts[0]
-        $secondPart = [string]$nameParts[1]
-        $firstLength = [Math]::Min(2, $firstPart.Length)
-        $prefix = $firstPart.Substring(0, $firstLength)
-        $prefix = $prefix.Substring(0, 1).ToUpperInvariant() + $prefix.Substring(1).ToLowerInvariant()
-        return $prefix + $secondPart.Substring(0, 1).ToUpperInvariant()
-    }
-
-    $initials = $nameParts |
-        Select-Object -First 3 |
-        ForEach-Object { ([string]$_).Substring(0, 1).ToUpperInvariant() }
-
-    return [string]::Join('', $initials)
-}
-
 function New-CanonicalLeagueCoreLookups {
     param(
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Members,
@@ -306,12 +234,44 @@ function Get-CanonicalCurrentLeagueRaw {
     }
 }
 
+# Fantasy-team identity (name, abbreviation, logos) comes from the single league-teams implementation (Issue #774, ADR-098,
+# tools/league_teams.py); this module only joins it to the roster facts by provider roster ID. Fails closed.
+function Get-CanonicalLeagueTeamIdentities {
+    param(
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][string]$Season
+    )
+
+    $repoRoot = Get-CanonicalLeagueCoreRepoRoot
+    $toolPath = Join-Path $repoRoot "tools/league_teams.py"
+    if (-not (Test-Path $toolPath)) { throw "League teams tool missing at '$toolPath'." }
+
+    $python = $null
+    foreach ($name in @("python3", "python")) {
+        $command = Get-Command $name -ErrorAction SilentlyContinue
+        if ($command) { $python = $command.Source; break }
+    }
+    if (-not $python) { throw "Python is required for the league team identity." }
+
+    $output = & $python $toolPath season --league $CanonicalLeagueID --season $Season --repo-root $repoRoot 2>&1
+    $exitCode = $LASTEXITCODE
+    $outputText = (@($output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ($exitCode -ne 0) { throw "League team identity failed with exit code $exitCode. $outputText" }
+    try { $identities = @($outputText | ConvertFrom-Json) }
+    catch { throw "League team identity returned invalid JSON. $outputText" }
+
+    $byTeamID = @{}
+    foreach ($identity in $identities) { $byTeamID[[int]$identity.TeamID] = $identity }
+    return $byTeamID
+}
+
 function Get-CanonicalCurrentTeamsForLeague {
     param(
         [string]$CanonicalLeagueID = (Get-Config).CanonicalLeagueID
     )
 
     $season = [string](Get-Config).LeagueYear
+    $identities = Get-CanonicalLeagueTeamIdentities -CanonicalLeagueID $CanonicalLeagueID -Season $season
     $members = @(ConvertTo-SafeArray -value (Get-CanonicalLeagueCoreJson -CanonicalLeagueID $CanonicalLeagueID -Season $season -FileName "members.json"))
     $rosters = @(ConvertTo-SafeArray -value (Get-CanonicalLeagueCoreJson -CanonicalLeagueID $CanonicalLeagueID -Season $season -FileName "rosters.json"))
     $lookups = New-CanonicalLeagueCoreLookups -Members $members -Rosters $rosters
@@ -322,28 +282,20 @@ function Get-CanonicalCurrentTeamsForLeague {
         $memberSource = $lookups.MembersByCanonicalID[[string]$rosterSource.CanonicalLeagueMemberID]
         $member = $memberSource.Source
 
-        $owner = [string](Get-CanonicalLeagueCorePropertyValue -Object $member -PropertyName "DisplayName" -DefaultValue "")
-        if ([string]::IsNullOrWhiteSpace($owner)) {
-            throw "Canonical member '$($memberSource.CanonicalLeagueMemberID)' is missing DisplayName."
-        }
-
-        $teamName = Resolve-CanonicalLeagueCoreTeamDisplayName -TeamName ([string](Get-CanonicalLeagueCorePropertyValue -Object $member.Metadata -PropertyName "team_name" -DefaultValue "")) -OwnerName $owner
-        if ([string]::IsNullOrWhiteSpace($teamName)) {
-            throw "Canonical member '$($memberSource.CanonicalLeagueMemberID)' cannot resolve a team display name."
-        }
-
-        $ownerAvatarID = [string](Get-CanonicalLeagueCorePropertyValue -Object $member -PropertyName "Avatar" -DefaultValue "")
-        $ownerAvatar = if ([string]::IsNullOrWhiteSpace($ownerAvatarID)) { $null } else { Get-SleeperAvatar $ownerAvatarID }
         $providerRosterID = [int]$rosterSource.ProviderRosterID
+        $identity = $identities[$providerRosterID]
+        if ($null -eq $identity) {
+            throw "League team identity lacks provider roster $providerRosterID for $CanonicalLeagueID/$season."
+        }
 
         $teams += [PSCustomObject][ordered]@{
-            Owner          = $owner
-            OwnerID        = [string]$memberSource.ProviderUserID
-            OwnerAvatar    = $ownerAvatar
-            Team           = $teamName
-            TeamAbbr       = ConvertTo-CanonicalLeagueCoreTeamAbbreviation -TeamName $teamName -TeamID $providerRosterID
+            Owner          = [string]$identity.Owner
+            OwnerID        = [string]$identity.OwnerID
+            OwnerAvatar    = $identity.OwnerAvatar
+            Team           = [string]$identity.TeamName
+            TeamAbbr       = [string]$identity.TeamAbbr
             TeamID         = $providerRosterID
-            TeamAvatar     = Get-CanonicalLeagueCorePropertyValue -Object $member.Metadata -PropertyName "avatar" -DefaultValue $null
+            TeamAvatar     = $identity.TeamAvatar
             MatchupID      = Get-CanonicalLeagueCorePropertyValue -Object $roster.Settings -PropertyName "matchup_id" -DefaultValue $null
             WaiverPosition = Get-CanonicalLeagueCorePropertyValue -Object $roster.Settings -PropertyName "waiver_position" -DefaultValue $null
             WaiverAdjusted = Get-CanonicalLeagueCorePropertyValue -Object $roster.Settings -PropertyName "waiver_adjusted" -DefaultValue $null

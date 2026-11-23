@@ -222,7 +222,7 @@ class WeekGamesTests(unittest.TestCase):
 
 
 class TeamAbbreviationTests(unittest.TestCase):
-    """Issue #1621: the season-specific abbreviation follows the rule of League.json TeamAbbr (TeamUtils.psm1 ConvertTo-TeamAbbreviation)."""
+    """Issue #1621: the season-specific abbreviation follows the rule of League.json TeamAbbr (tools/derived_data_lib/league_teams.py team_abbreviation)."""
 
     def test_rule_by_word_count_and_stop_words(self) -> None:
         self.assertEqual(team_abbreviation("Mighty Giants", 1), "MiG")

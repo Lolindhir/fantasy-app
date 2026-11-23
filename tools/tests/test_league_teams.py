@@ -136,6 +136,24 @@ class ProductTests(unittest.TestCase):
                 self.assertEqual(team["OwnerID"], product["OwnerID"])
                 self.assertEqual(team["OwnerAvatar"], product["OwnerAvatar"])
 
+    def test_cli_season_equals_the_product_season(self):
+        """The consumers that call tools/league_teams.py (League.json, Issue #774 step 4) get exactly the product's season identity."""
+        import subprocess
+        out = subprocess.run([sys.executable, str(REPO / "tools" / "league_teams.py"), "season", "--league", "nfl-reise",
+                              "--season", self.document["CurrentSeason"]], capture_output=True, text=True, check=True).stdout
+        self.assertEqual(self.document["Seasons"][-1]["Teams"], json.loads(out))
+
+    def test_standings_sources_use_the_team_name_rule(self):
+        """The standings loader no longer keeps its own name rule: its Team equals the product's TeamName for every team."""
+        import league_standings_sources as sources
+        season = self.document["CurrentSeason"]
+        folder = REPO / "data-source" / "leagues" / "nfl-reise" / "seasons" / season
+        members = json.loads((folder / "members.json").read_text(encoding="utf-8"))
+        rosters = json.loads((folder / "rosters.json").read_text(encoding="utf-8"))
+        names = {t["TeamID"]: t["TeamName"] for t in self.document["Seasons"][-1]["Teams"]}
+        teams = sources.build_teams(members, rosters)
+        self.assertEqual(names, {t["TeamID"]: t["Team"] for t in teams})
+
 
 if __name__ == "__main__":
     unittest.main()
