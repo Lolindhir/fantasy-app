@@ -25,18 +25,20 @@ doesNotOwn:
   - manually authored league rules
 
 sources:
-  - Sleeper transaction endpoint
-  - data-meta/<CanonicalLeagueID>/transactions-manual.json
-  - Sleeper draft and traded-pick endpoints
-  - public/data/Drafts.json
-  - public/data/past_seasons/Drafts/Drafts_<season>.json
+  providerEvidence: >
+    Sleeper transaction, draft and traded-pick endpoints are acquired only by the League Source
+    sync into data-source/providers/sleeper; no App generator calls them.
+  canonicalInputs: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (transactions, drafts, picks, traded picks, rosters, league)
+  manualOverlay: data-meta/<CanonicalLeagueID>/transactions-manual.json
+  sharedDerivedOwner: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json (with data-derived/league-drafts for pick identity and results)
+  notInputs: public/data/Drafts.json and past_seasons Drafts files are consumer outputs and never inputs.
 
 generation:
   primaryGenerator: tools/league_history_app_publish.py
   product: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
   entryPoints:
-    - public/requests/RequestLeague.ps1
-    - .github/workflows/update-history.yml
+    - .github/workflows/league-live.yml (current season, ten-minute chain)
+    - .github/workflows/update-history.yml (weekly, all seasons)
 
 notes:
   - EffectiveAt is the authoritative timestamp of a completed move (Shared Derived LeagueTransactions v2). Source/Canonical preserve Sleeper created and status_updated; CreatedAt/CreatedDate remain submission provenance. Manual and legacy missing updated time use CreatedAt deterministically.

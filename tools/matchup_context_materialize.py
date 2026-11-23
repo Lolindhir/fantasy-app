@@ -2,7 +2,7 @@
 """Materializer of the matchup-context Shared Derived product (ADR-089, amends ADR-075; Issue #1571).
 
 The pure function tools/derived_data_lib/matchup_context.py (plus fantasy_game_context.py and the team-range/win-prob projection
-of tools/matchup_projection.py) stays the single implementation. This module persists its results per league and season; the App
+of tools/derived_data_lib/matchup_projection.py) stays the single implementation. This module persists its results per league and season; the App
 files (Matchups.json, FantasyGameContext.json, FantasyGameContextHistory.json, MatchupProjections.json, past_seasons files) are
 rendered from the persisted documents by tools/matchup_context_app_publish.py with an unchanged App contract.
 

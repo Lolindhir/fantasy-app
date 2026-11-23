@@ -3,8 +3,8 @@ schemaVersion: 1
 file:
   path: public/data/Matchups.json
   kind: generated-json-read-model
-  generator: public/requests/RequestLeague.ps1
-  derivation: public/requests/utils/league/MatchupReadModelUtils.psm1
+  generator: tools/matchup_context_app_publish.py (renders the persisted Shared Derived product data-derived/matchup-context, ADR-089)
+  derivation: tools/derived_data_lib/matchup_context.py (pure function resolve_matchups, ADR-075; materialized by tools/matchup_context_materialize.py)
   issue: 305
 
 contract:
@@ -37,18 +37,18 @@ contract:
 sourceOfTruth:
   pairingAndScoreBase: >
     data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-*.json
-    owns durable pairing and score evidence. During the active lineup week RequestLeague
-    consumes the productively refreshed canonical partition through CanonicalMatchupUtils;
-    there is no direct Sleeper matchup overlay in the app consumer.
+    owns durable pairing and score evidence. The matchup context function reads the
+    productively refreshed canonical partitions directly; there is no direct Sleeper
+    matchup overlay and no PowerShell derivation any more.
   nflSchedule: data-source/nfl/schedules/<season>.json
   nflFinality: data-source/nfl/game-finality/<season>.json
   weeklyRosterEvidence: data-source/nfl/weekly-rosters/<season>/<week>.json
-  currentLineupEvidence: public/data/DecisionWindows.json generation facts in-memory
+  currentLineupEvidence: computed Decision Windows function (tools/derived_data_lib/decision_windows.py, ADR-074); public/data/DecisionWindows.json is not an input
   ordering: >
-    Existing generated All-Time Overall Standings sequence. Current-season storage
-    uses the current All-Time sequence; historical archives recompute that sequence
-    only from standings through the archived season cutoff. Validation/indexing uses
-    the neutral-order resolver of tools/derived_data_lib/matchup_context.py (the former PowerShell FantasyTeamOrderUtils was removed, Issue #1263).
+    All-Time Overall sequence of the Shared Derived league-standings product of the
+    season (AllTime through that season), so archives never use later standings.
+    The neutral-order resolver is tools/derived_data_lib/matchup_context.py
+    (neutral_order_index, participant_order_from_standings); public/data/Standings.json is not an input.
   boundary: >
     Canonical League/NFL source data remains the source of truth. Matchups.json is
     an application read model and must not be used to write back or repair source data.
@@ -121,17 +121,19 @@ history:
   path: public/data/past_seasons/Matchups/Matchups_<season>.json
   index: public/data/PastSeasonsIndex.json resources.Matchups
   materialization: >
-    Completed canonical seasons are materialized when their Matchups archive is
-    absent. #193 remains the owner of the broader atomic season-finalization/archive
-    lifecycle and any future force/rematerialization policy.
+    Disposable consumer output. The weekly update-history run materializes the product
+    (tools/matchup_context_materialize.py --scope history) and renders the archive with
+    tools/matchup_context_app_publish.py write --scope history, only on a semantic
+    difference. An existing archive is never an input. #193 remains the owner of the broader
+    season-finalization/archive lifecycle.
 
 compatibility:
   leagueMatchups: >
     League.Matchups was the transitional single-week scoreboard snapshot. #305 removes
     that duplicate public contract after migrating current Angular consumers; Matchups.json
-    is the sole app-facing matchup schedule/score/result/finality contract. Provider
-    matchup rows may still be loaded in RequestLeague as generation evidence for Matchups
-    and FantasyGameContext, but they are no longer published inside League.json.
+    is the sole app-facing matchup schedule/score/result/finality contract. RequestLeague.ps1
+    does not generate or read matchup rows; League Live runs the product materializer and the
+    publisher before it.
   nonGoals:
     - player-level matchup detail
     - Strength of Schedule (#506)

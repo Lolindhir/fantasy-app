@@ -669,12 +669,12 @@ dataFlow:
     to: public/data/League.json
     purpose: Provide disable_adds, disable_trades, trade_review_days, trade_deadline and playoff settings for generated move openness, Status and Phase rules.
 
-  - from: already-loaded League, Team, Player and Schedule facts in RequestLeague.ps1
+  - from: canonical League and NFL facts (data-source) through the computed function tools/derived_data_lib/decision_windows.py (ADR-074)
     to: public/data/DecisionWindows.json
     purpose: >
-      Build the current exact-kickoff Decision Window read model without duplicate
-      provider requests. Sleeper settings.leg owns current lineup-week evidence;
-      stable current TeamID fields join players to Schedule games.
+      Build the current exact-kickoff Decision Window read model (written by RequestLeague.ps1 from the
+      function result) without provider requests. The lifecycle LineupWeek (Sleeper settings.leg from
+      canonical league.json) owns current lineup-week evidence; Players.json and Schedule.json are no inputs.
 
   - from: ESPN Fantasy kona_player_info injuryStatus
     to: data-source/nfl/player-availability/espn.json
