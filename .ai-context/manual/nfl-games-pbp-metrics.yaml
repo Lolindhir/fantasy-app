@@ -67,7 +67,7 @@ competitiveOpportunitiesDecision:
     them. Rates aggregate observed numerators and denominators with explicit missing
     and unknown eligibility, never official-attempt substitutions.
   implementationAndVerification: >-
-    Read-only candidate logic starts with play_type pass/run and excludes
+    The published provisional v2 ten-metric logic starts with play_type pass/run and excludes
     qb_spike=1 (even when source qb_dropback=1) plus play_type=qb_kneel or
     explicit qb_kneel=1, before deriving competitive metric denominators.
     The field qb_kneel is optional when upstream does not supply it; unknown
@@ -87,17 +87,35 @@ competitiveOpportunitiesDecision:
     versioned derived schema. A later eligibility change is a model/schema
     semantic change, not a silent recalculation.
 
+productionAcceptance:
+  verifiedAt: 2026-11-23
+  sourceSyncRun: https://github.com/Lolindhir/fantasy-app/actions/runs/45103501097
+  historicalSourceSeasons: 26
+  historicalEligibleGameDetailsWithOriginalRows: 6988
+  historicalEligibleGameDetailsWithoutOriginalRows: 0
+  changedOrNewOnMondayReplay: 0
+  publishedMetrics: ten-provisional-v2-competitive-opportunity-metrics
+  independentUpstreamFullPlayCompletenessCertified: false
+  frozen2025ProviderRevision: separate-review-only
+  historicalResearchSectionsBelow: snapshots-not-current-release-blockers
+
 evidenceLevel:
   canonicalAlreadyPresent: >-
     nfl-games season index and existing player-stats, schedule and game-finality;
     not evidence of complete original PBP rows.
   originalPbpReadOnlyPreview: >-
-    A source-row-preserving original CSV.GZ reader and provisional analytics are
-    implemented, but no full original-season asset has yet passed real replay.
+    A source-row-preserving original CSV.GZ reader and provisional analytics
+    are implemented. Accepted immutable original assets now exist for every
+    historical season 1999-2024, plus frozen 2025 and active 2026; the
+    Monday 2026-11-23 derived replay validated 6,988 eligible historical
+    GameDetails with observed original rows and exact deterministic no-op.
+    Independent upstream per-game/play completeness remains uncertified.
   upstreamDocumentedOnly: >-
-    nflfastR documentation names the candidate fields. Per-season original CSV
-    headers, field-level null rates, semantics and historical aliases remain
-    unverified until a real, pinned original-asset audit succeeds.
+    nflfastR documentation names the candidate fields. The production Source
+    intake checks accepted-original byte and canonical game/play identity.
+    Complete per-season nullability, every one of the 23 research-catalog
+    field populations and historical player-position semantics remain
+    independently unverified.
   externalRequired: >-
     Contact-level rushing, tracking RYOE and player-specific coverage or pressure
     cannot be assumed available from this nflverse PBP release.
@@ -122,7 +140,7 @@ fieldFamilies:
   outcomes: [yards_gained, rushing_yards, passing_yards, first_down, success, third_down_converted]
   efficiency: [epa, air_yards, yards_after_catch, cp, cpoe]
   players: [rusher_player_id, receiver_player_id, passer_player_id]
-  actualFieldStatus: upstream-documented-except-repository-preview-subset;real-season-header-audit-pending
+  actualFieldStatus: ten-provisional-v2-metrics-observed-from-accepted-originals;full-23-catalog-season-field-audit-pending
   upstreamFieldDictionary:
     url: https://cran.r-project.org/web/packages/nflreadr/vignettes/dictionary_pbp.html
     auditAsOf: 2026-11-14
@@ -320,7 +338,7 @@ researchOnlyNotNflGamesFacts:
   - Any claimed incremental player-fantasy-points improvement over FPA or V4-C without out-of-sample evidence
   - Naive additive weighting of correlated YPC, rushing EPA, rush success and explosive rates
 
-requiredGatesBeforeAnyMetricActivation:
+requiredGatesForAdditionalMetricActivation:
   - Original asset header and nullability audit for target seasons plus source digest and correction handling
   - Canonical GameID, season, week, team and play identity verified for every metric; season-valid provider-player-position joins verified only before position-conditional metrics are activated
   - Verify nflreadr dictionary pass_attempt-includes-sacks and success-equals-positive-EPA semantics against actual season rows; precise eligibility, contact/playoff/penalty edge cases and scoring direction
@@ -331,6 +349,7 @@ requiredGatesBeforeAnyMetricActivation:
   - Versioned output schema, code owner, validation, storage/publication scope, rights and rollback separately authorized
 
 readOnlySourceFieldAudit:
+  historicalCheckpoint: true
   checkpoint: P0a
   status: implemented-local-cli-synthetic-tests-real-original-assets-not-yet-observed
   tool: tools/nfl_pbp_metric_field_audit.py
@@ -374,6 +393,7 @@ readOnlySourceFieldAudit:
   rollback: revert-audit-tool-tests-and-catalog-contract
 
 historicalGameContextReconciliation:
+  historicalCheckpoint: true
   checkpoint: P0b-partial
   status: real-persisted-PBP-subset-reconciled-original-full-season-asset-blocked
   tool: tools/nfl_pbp_metric_field_audit.py
@@ -420,6 +440,7 @@ historicalGameContextReconciliation:
   rollback: revert-read-only-context-validation-tests-and-catalog-note
 
 teamOnlyReadOnlyResearchCheckpoint:
+  historicalCheckpoint: true
   checkpoint: P1-team-2026-11-15
   status: code-candidate-implemented-no-real-asset-replay-or-publication
   code: tools/derived_data_lib/nfl_pbp_team_metrics.py
@@ -450,8 +471,8 @@ teamOnlyReadOnlyResearchCheckpoint:
   v4cOrFantasyProjectionChange: none
 
 recommendedSequence:
-  - P0 inventory original PBP per-season headers, game/team/play coverage and stable asset; audit player-position mapping independently for later P2
-  - P1 implement and validate compact unadjusted team-game opportunity/efficiency/situation groups as read-only proofs
-  - P2 add RB rushing vs receiving and QB/WR/TE target/dropback subgroups after identity and denominator audit
-  - P3 run ex-ante research for shrinkage/opponent-adjusted and ROS scheduling with explicit bye and cutoff semantics
-  - P4 consider persistent GameDetail and consumers only after concrete contract and writer/publication approval
+  - Historical Source acceptance and productive GameDetail v2 publication are already complete; preserve the 2026-11-23 full-history no-op as production evidence
+  - Audit original per-season header/nullability, field/denominator population and source-game-play completeness without changing the accepted immutable originals
+  - Evaluate remaining 13 candidate metrics and season-valid GSIS/player-position joins independently before any new versioned metric activation
+  - Evaluate shrinkage and opponent-adjusted team strength ex ante against existing fantasy baselines with explicit time cutoffs
+  - Consider new App/Fantasy consumer deliveries as separately approved scopes; never equate accepted original rows with complete-game certification
