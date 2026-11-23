@@ -194,7 +194,7 @@ appDelivery:
   rules:
     - Pure reshaping of the product; no derivation in the generator.
     - v2: the generator keeps publishing only signal weeks (report row or RES/PUP status) so the file stays equal to its v1 content; healthy roster weeks, Available and Played are not copied (Issue #1610 step 4).
-    - The population follows players_population.build_population (ADR-043, all configured leagues, current season) and can differ from Players.json (for example while Players.json is not yet refreshed); Sleeper ID to CanonicalPlayerID through data-source/nfl/identities/players.json (the canonical identity owner).
+    - The population follows players_population.build_population (ADR-043, default league like Players.json, current season) and can differ from Players.json (for example while Players.json is not yet refreshed); Sleeper ID to CanonicalPlayerID through data-source/nfl/identities/players.json (the canonical identity owner).
     - The file is loaded lazily by the player-detail Injury tab (History).
 
 notInScope:
