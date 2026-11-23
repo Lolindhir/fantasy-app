@@ -1,0 +1,60 @@
+schemaVersion: 1
+status: accepted-contract-v1
+trackingIssue: 774
+architectureDecision: ADR-098
+implementationState: 'Issue #774 step 1: product, materializer, contract and Fast tests (parity with League.json for the current season). Steps 2 to 4 (App file TeamSeasons.json and frontend lookup, consumer switch, publishers and League.json read the product) follow in separate pull requests.'
+
+purpose: >
+  Define the Shared Derived Data product LeagueTeams: the identity of every fantasy team in every season of a league, with the manager fields and the
+  fantasy-team fields strictly separated. Before this product no data product owned the team identity per season; weekly recaps, matchups, awards,
+  drafts and transactions resolved their TeamIDs against the current League.json teams, so older seasons showed today's name and logo.
+
+architecture:
+  decisionBasis: [ADR-037, ADR-038, ADR-054, ADR-089, ADR-098]
+  logicalLayer: Shared Derived Data
+  physicalStorage: data-derived/league-teams/<CanonicalLeagueID>.json
+  owner:
+    function: tools/derived_data_lib/league_teams.py resolve(repo_root, CanonicalLeagueID)
+    rules: tools/derived_data_lib/league_teams.py (team_name, team_abbreviation, sleeper_avatar_url) is the only implementation of the name and abbreviation rule
+    materializer: tools/derived_data.py materialize --product league-teams
+    tests: tools/tests/test_league_teams.py
+  rules:
+    - The product is consumer-neutral and has one file per league with every manifest season (a season is a snapshot, not a model run).
+    - Inputs are only data-source/leagues/<CanonicalLeagueID>/seasons/<season>/members.json and rosters.json plus the league manifest. No public/data file is an input.
+    - A season row is a snapshot of that season's canonical Sleeper members and rosters. A later name, logo or manager is never projected into an older season; a missing season logo stays null and is never replaced by the current logo.
+    - Manager fields (OwnerID, Owner, OwnerAvatar) and fantasy-team fields (TeamName, TeamNameSource, TeamAbbr, TeamAvatar) are separate. There is no mixed Avatar field; the manager avatar is never a fallback for the team logo.
+    - The name rule and the abbreviation rule keep their previous content (CanonicalLeagueCoreUtils.psm1); only their implementation is unified.
+    - Presentation defaults (neutral default team logo, display fallbacks) belong to the consumer; the product keeps null for missing values.
+    - TeamID is the provider roster ID like in standings and rivalry. Franchise continuity and ownership history across seasons stay with Issue #777.
+
+identity:
+  fileTuple: [CanonicalLeagueID]
+  teamKey: Season + TeamID (provider roster ID); CanonicalLeagueRosterID and CanonicalLeagueMemberID are carried for canonical joins.
+  invalidation: any change of the season's canonical members.json or rosters.json, or of the name or abbreviation rule (a rule change is a code change plus a full rematerialization).
+
+contract:
+  version: 1
+  rootShape: |
+    {
+      "SchemaVersion": 1, "Product": "league-teams", "CanonicalLeagueID": "<id>", "CurrentSeason": "<season>",
+      "Seasons": [ { "Season": "<season>", "Teams": [ {
+        "TeamID": <provider roster id>, "CanonicalLeagueRosterID": "...", "CanonicalLeagueMemberID": "...",
+        "OwnerID": "<provider user id>", "Owner": "<display name>", "OwnerAvatar": "<url>"|null,
+        "TeamName": "<name>", "TeamNameSource": "provider"|"owner-fallback", "TeamAbbr": "<abbr>", "TeamAvatar": "<url>"|null } ] } ]
+    }
+  order: Seasons ascending, Teams by TeamID.
+  nameRule: the provider team name (trimmed); without one "Team <Owner>" with TeamNameSource owner-fallback.
+  abbreviationRule: one word the first three letters, two words the first two letters plus the second initial, more words up to three initials; the words "team" and "the" are ignored; without a name T<TeamID> (two digits) or TBD.
+  failClosed: a roster referencing an unknown member, an owner mapping that differs from the member, duplicate member or roster IDs, a missing Sleeper mapping or a missing display name stop the build.
+
+writers:
+  - workflow: .github/workflows/league-live.yml
+    scope: fail-soft (a failure keeps the last product and warns), prefix data-derived/league-teams added to the existing rebuild-and-retry publication
+  - workflow: .github/workflows/update-history.yml
+    scope: weekly, prefix data-derived/league-teams added to the existing rebuild-and-retry publication
+rollback: remove the prefix and the materializer call from both workflows and delete data-derived/league-teams.
+
+validation:
+  tests: tools/tests/test_league_teams.py
+  parity: the current season equals the name, abbreviation, logos and manager of League.json (test_current_season_equals_league_json_identity).
+  restoreProbe: tools/derived_clean_root_audit.py (product league-teams; the product is fully reproducible from data-source)

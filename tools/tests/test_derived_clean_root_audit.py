@@ -97,6 +97,14 @@ class CleanRootProbeTests(unittest.TestCase):
         written = emit(target, self.body("league-rivalry", root, existing))
         return {"Seasons": [{"Written": written}]}
 
+    def fake_league_teams(self, root, out_root, league, seasons, check_only):
+        self.check_isolation(root)
+        self.calls.append(("league-teams", league))
+        target = out_root / "league-teams" / f"{league}.json"
+        existing = target.read_text() if target.is_file() else None
+        written = emit(target, self.body("league-teams", root, existing))
+        return {"Seasons": [{"Written": written}]}
+
     def fake_matchup_context(self, root, out_root, league, scope, at_utc):
         self.check_isolation(root)
         self.assertEqual("history", scope)  # the running season is a clock-dependent snapshot, never probed
@@ -163,6 +171,7 @@ class CleanRootProbeTests(unittest.TestCase):
                 ("materialize_league_standings", self.fake_standings),
                 ("materialize_season_statistics", self.fake_season_statistics),
                 ("materialize_league_rivalry", self.fake_league_rivalry),
+                ("materialize_league_teams", self.fake_league_teams),
                 ("materialize_matchup_context", self.fake_matchup_context),
                 ("materialize_weekly_recaps", self.fake_weekly_recaps),
                 ("materialize_historical", self.fake_pwf),
@@ -182,7 +191,7 @@ class CleanRootProbeTests(unittest.TestCase):
     def publish_all_stable(self):
         for relative in (
             f"player-valuation/{LEAGUE}/2024/week-00.json", f"league-transactions/{LEAGUE}/2024.json",
-            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"matchup-context/{LEAGUE}/2024/matchups.json", f"weekly-recaps/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
+            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"league-teams/{LEAGUE}.json", f"matchup-context/{LEAGUE}/2024/matchups.json", f"weekly-recaps/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
             f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json", "nfl-injuries/2024.json", "nfl-player-availability/2024.json",
         ):
             self.publish(relative, "stable")

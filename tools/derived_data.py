@@ -25,7 +25,7 @@ playoffs, awards and the all-time standing through that season. The seasons are 
 always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1, awards-v2 or awards-v3).
 
 Usage:
-  derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings|season-statistics|league-rivalry [--league nfl-reise]
+  derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings|season-statistics|league-rivalry|league-teams [--league nfl-reise]
                               [--season 2026 ...] [--out-root DIR] [--check]
 """
 from __future__ import annotations
@@ -55,6 +55,7 @@ from league_history_sources import LeagueHistorySourceError, load_inputs  # noqa
 from derived_data_lib.league_standings import build_season  # noqa: E402
 from derived_data_lib.season_statistics import resolve as resolve_season_statistics  # noqa: E402
 from derived_data_lib.rivalry import resolve as resolve_league_rivalry  # noqa: E402
+from derived_data_lib.league_teams import LeagueTeamsError, resolve as resolve_league_teams  # noqa: E402
 from derived_data_lib.models.registry import get_model  # noqa: E402
 import league_standings_sources as standings_sources  # noqa: E402
 from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver, provider_draft_names  # noqa: E402
@@ -64,7 +65,8 @@ LEAGUE_DRAFTS = "league-drafts"
 LEAGUE_STANDINGS = "league-standings"
 SEASON_STATISTICS = "season-statistics"
 LEAGUE_RIVALRY = "league-rivalry"
-PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS, SEASON_STATISTICS, LEAGUE_RIVALRY)
+LEAGUE_TEAMS = "league-teams"
+PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS, SEASON_STATISTICS, LEAGUE_RIVALRY, LEAGUE_TEAMS)
 EXIT_CHANGED = 3  # --check found a snapshot that differs from disk
 
 
@@ -367,6 +369,36 @@ def materialize_league_rivalry(
     }
 
 
+def league_teams_path(out_root: Path, league_id: str) -> Path:
+    """One file per league (all seasons): data-derived/league-teams/<CanonicalLeagueID>.json."""
+    return out_root / LEAGUE_TEAMS / f"{league_id}.json"
+
+
+def materialize_league_teams(
+    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
+) -> dict[str, Any]:
+    """The league-teams document covers every season of the league at once (a snapshot per season); ``seasons`` is not supported."""
+    if seasons:
+        raise ValueError("league-teams has one file per league covering all seasons; --season is not supported")
+    document = resolve_league_teams(repo_root, league_id)
+    text = serialize(document)
+    path = league_teams_path(out_root, league_id)
+    unchanged = path.is_file() and path.read_text(encoding="utf-8") == text
+    if not unchanged and not check_only:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return {
+        "Product": LEAGUE_TEAMS,
+        "CanonicalLeagueID": league_id,
+        "Seasons": [{
+            "Teams": sum(len(season["Teams"]) for season in document["Seasons"]),
+            "Bytes": len(text.encode("utf-8")),
+            "Unchanged": 1 if unchanged else 0,
+            "Written" if not check_only else "WouldWrite": 0 if unchanged else 1,
+        }],
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -375,7 +407,7 @@ def parse_args() -> argparse.Namespace:
     mat.add_argument("--product", required=True, choices=PRODUCTS)
     mat.add_argument("--league", help="CanonicalLeagueID (default: every league in data-meta)")
     mat.add_argument("--season", type=int, action="append", help="only this season (repeatable); default: all manifest seasons")
-    mat.add_argument("--scope", choices=("current", "history", "all"), help="season selection by lifecycle: current season, completed earlier seasons or both (exclusive with --season; league-rivalry covers all seasons and ignores it)")
+    mat.add_argument("--scope", choices=("current", "history", "all"), help="season selection by lifecycle: current season, completed earlier seasons or both (exclusive with --season; league-rivalry and league-teams cover all seasons and ignore it)")
     mat.add_argument("--out-root", type=Path, help="derived data root (default: the repository's derived root)")
     mat.add_argument("--check", action="store_true", help="write nothing; exit 3 when any snapshot would change")
     return parser.parse_args()
@@ -403,7 +435,7 @@ def main() -> int:
         leagues = [args.league] if args.league else list_league_ids(data_meta_root(args.repo_root))
         if args.scope and args.season:
             raise ValueError("--scope and --season are exclusive")
-        if args.scope and args.product != LEAGUE_RIVALRY:
+        if args.scope and args.product not in (LEAGUE_RIVALRY, LEAGUE_TEAMS):
             # per league because the current season differs by league; a scope maps to one season list per league
             per_league = {league: seasons_for_scope(args.repo_root, league, args.scope) for league in leagues}
             leagues = [league for league in leagues if per_league[league]]  # an empty list would mean all seasons
@@ -424,6 +456,11 @@ def main() -> int:
                 materialize_league_rivalry(args.repo_root, out_root, league, args.season, args.check)
                 for league in leagues
             ]
+        elif args.product == LEAGUE_TEAMS:
+            results = [
+                materialize_league_teams(args.repo_root, out_root, league, args.season, args.check)
+                for league in leagues
+            ]
         elif args.product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):
             results = [
                 materialize_league_history(args.repo_root, out_root, league, args.product, per_league[league], args.check)
@@ -434,7 +471,7 @@ def main() -> int:
                 materialize_player_valuation(args.repo_root, out_root, league, per_league[league], args.check)
                 for league in leagues
             ]
-    except (sources.SourceError, LeagueMetadataError, LeagueHistorySourceError, standings_sources.StandingsSourceError,
+    except (sources.SourceError, LeagueMetadataError, LeagueHistorySourceError, standings_sources.StandingsSourceError, LeagueTeamsError,
             ValueError, KeyError, OSError) as error:
         print(f"derived_data materialize failed: {error}", file=sys.stderr)
         return 1

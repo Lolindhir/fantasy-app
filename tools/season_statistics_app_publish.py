@@ -33,7 +33,7 @@ from derived_data_lib.season_statistics import SeasonStatisticsError  # noqa: E4
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
 from matchup_context_app_publish import Writer, _warn, history_matchup_seasons  # noqa: E402
-from team_abbreviation import team_abbreviation  # noqa: E402
+from derived_data_lib.league_teams import team_abbreviation  # noqa: E402
 
 EXPECTED_ERRORS = (SeasonStatisticsError, LifecycleError, StandingsSourceError, LeagueMetadataError)
 

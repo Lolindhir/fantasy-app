@@ -17,7 +17,7 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 # current-season snapshot of the live rosters, Issue #1571; team-injury-impact depends on the current PlayerWeekFantasy partition, Issue #1584).
 OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook", "team-cap-outlook", "team-injury-impact"})
 # Documented before the first productive fill created the directory (Issue #1571).
-NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps", "nfl-player-availability"})
+NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps", "nfl-player-availability", "league-teams"})
 
 
 def _readme_rows() -> dict[str, tuple[str, str, list[str]]]:

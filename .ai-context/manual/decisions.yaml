@@ -3404,3 +3404,30 @@ decisions:
         - ESPN is an unofficial API without a stability promise; its terms of use are not reviewed.
         - A wrong ESPN time overrides a correct nflverse time until the plausibility rule or the next observation corrects it.
 
+  - id: ADR-098
+    title: Fantasy-team identity per season is a Shared Derived product (league-teams) with strictly separated manager and team fields
+    status: accepted
+    context: >-
+      No data product owned the fantasy-team identity per season. Only league-standings and season-statistics carried a season snapshot (TeamName, TeamAvatar, Owner);
+      weekly recaps, matchups, awards, team schedule, drafts and transactions carried IDs only and the App resolved them against the current League.json teams, so older seasons
+      showed today's name and logo. The name and abbreviation rule existed several times (CanonicalLeagueCoreUtils.psm1, a dead copy in TeamUtils.psm1, tools/team_abbreviation.py,
+      tools/league_standings_sources.py) plus a divergent initials fallback in the Angular team-identity component (Issue #774).
+    decision: >-
+      Robert decided on 2026-11-23 (Issue #774, including the elevated effect of one new write prefix through existing writers): a Shared Derived product
+      data-derived/league-teams/<CanonicalLeagueID>.json, one file per league with every season, built from the canonical members and rosters of each season by the single
+      implementation tools/derived_data_lib/league_teams.py (name rule, abbreviation rule unchanged in content). Manager fields (OwnerID, Owner, OwnerAvatar) and fantasy-team
+      fields (TeamName with TeamNameSource, TeamAbbr, TeamAvatar) are strictly separate; there is no mixed Avatar. Season- or week-bound views show the identity of that season,
+      cross-season views (Rivalry, All-Time, Team Detail) the current one; a missing season logo is a neutral default logo at presentation time, never the current logo. The App
+      delivery public/data/TeamSeasons.json and the frontend lookup, the consumer switch and the removal of the duplicate implementations follow in steps 2 to 4 of the issue.
+      Franchise continuity and ownership history stay with Issue #777. The existing writers league-live.yml and update-history.yml write the new prefix; no new workflow, credential
+      or permission. Contract: .ai-context/manual/league-teams.yaml.
+    rationale: >-
+      One owner of the team identity per season removes the current-team lookup of historical views, keeps manager and team identity apart and leaves one rule for name and abbreviation.
+    consequences:
+      positive:
+        - Historical views can show the name and logo of their own season from one product; Angular only looks up (Season, TeamID).
+        - One implementation of the name and abbreviation rule.
+      negative:
+        - Until steps 2 to 4 land the existing consumers and publishers keep their current paths.
+        - Owner changes of a roster inside a season are not represented (snapshot per season).
+
