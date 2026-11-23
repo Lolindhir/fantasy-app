@@ -226,7 +226,7 @@ consumerBoundary:
     - The joins are compatibility-safe: missing publication, duplicate non-null App PlayerID, or Season/Week mismatch leaves the raw context unchanged. The frontend never calculates a projection, range, display level or axis.
     - Players/Free Agents may join the same published value for unrostered players in a later checkpoint.
   teamProjection:
-    owner: tools/matchup_projection.py (see matchupProjections below)
+    owner: tools/derived_data_lib/matchup_projection.py (see matchupProjections below)
     pointRule: sum of starter Projection.Points; byes count zero; PregameProjectedScore only when every starter has one
   liveProjectedFinal:
     rule: >
@@ -234,7 +234,7 @@ consumerBoundary:
       players require a separate remaining-points model. Current points must not
       be added to the full pregame Projection.
     publishedData:
-      owner: tools/matchup_projection.py
+      owner: tools/derived_data_lib/matchup_projection.py
       field: MatchupProjections.json::Matchups[].Teams[].ProjectedFinalScore
       starterRule:
         finalGame: actual FantasyGameContext starter Points; no projection required
@@ -252,12 +252,12 @@ consumerBoundary:
         playerRows: app-player-projection under the starter chips for current starters whose game is not scored yet and whose published projection is available - "PROJ." number, range bar on the published PlayerRangeAxis at the published PlayerRangeLevel, and the range as text under the bar; final or scored games keep showing actual points
         rangeChart: app-matchup-range-chart under the hero while the matchup is not final; both teams (avatar, abbreviation as fallback) on the published Axis, range at the published TeamRangeLevel, marker at ProjectedFinalScore; the "Scored so far" sentence appears only once a team has scored
         precision: projections, markers and ranges show one decimal in the UI (formatProjectionPoints); real scores keep their own precision
-        axisRoom: the data pads the shared team Axis by 10 points (tools/matchup_projection.py AXIS_PADDING) so the end labels never touch the card edge
+        axisRoom: the data pads the shared team Axis by 10 points (tools/derived_data_lib/matchup_projection.py AXIS_PADDING) so the end labels never touch the card edge
         levelRule: the shown level and all axes are published data (DISPLAY_INTERVAL_LEVEL); the UI only maps values to percentages (src/app/shared/utils/projection-range.util.ts)
 
 matchupProjections:
   output: public/data/MatchupProjections.json
-  owner: tools/matchup_projection.py
+  owner: tools/derived_data_lib/matchup_projection.py
   inputs:
     - public/data/FantasyGameContext.json
     - public/data/PlayerWeekFantasy.json

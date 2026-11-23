@@ -33,7 +33,6 @@ def build_repo(root: Path) -> None:
     )
 
 
-CONTEXT = {"Season": 2026, "Week": 4}
 
 
 def target(week, league_ids=("league-a",)):
@@ -115,23 +114,13 @@ class RefreshTests(unittest.TestCase):
                 self.assertEqual((league_id, season, week), ("league-a", 2026, 4))
                 return {"Records": [1, 2, 3]}, False
 
-            def fake_matchups(repo_root, context, player_model, *, league_id, at_utc):
-                calls.append("matchups")
-                self.assertEqual(repo_root, root.resolve())
-                self.assertIs(context, CONTEXT)
-                self.assertEqual(player_model, {"Records": [1, 2, 3]})
-                self.assertEqual(league_id, "league-a")
-                return {"Status": "published", "Changed": True}
-
             with mock.patch.object(refresh, "build_player_week_fantasy_dataset", fake_build), mock.patch.object(
                 refresh, "write_dataset", fake_write
-            ), mock.patch.object(refresh, "materialize_app_player_week_fantasy", fake_publish), mock.patch.object(
-                refresh, "publish_matchup_projections", fake_matchups
-            ), mock.patch.object(refresh, "resolve_current_context", return_value=CONTEXT), target(4):
+            ), mock.patch.object(refresh, "materialize_app_player_week_fantasy", fake_publish), target(4):
                 result = refresh.refresh(root)
 
-            self.assertEqual(calls, ["build", "write", "publish", "matchups"])
-            self.assertEqual(result["MatchupProjections"], {"Status": "published", "Changed": True})
+            self.assertEqual(calls, ["build", "write", "publish"])
+            self.assertNotIn("MatchupProjections", result)
             self.assertEqual(result["Status"], "published")
             self.assertTrue(result["DerivedChanged"])
             self.assertFalse(result["AppChanged"])
@@ -149,9 +138,7 @@ class RefreshTests(unittest.TestCase):
                 side_effect=lambda repo_root, **kwargs: (kwargs_seen.append(kwargs) or dataset),
             ), mock.patch.object(refresh, "write_dataset", return_value=True), mock.patch.object(
                 refresh, "materialize_app_player_week_fantasy", return_value=({"Records": []}, True)
-            ), mock.patch.object(
-                refresh, "publish_matchup_projections", return_value={"Status": "published"}
-            ), mock.patch.object(refresh, "resolve_current_context", return_value={"Season": 2026}), target(4):
+            ), target(4):
                 result = refresh.refresh(root)
             self.assertEqual(result["Status"], "published")
             self.assertEqual(result["RosterSourceWeek"], 3)
@@ -161,19 +148,10 @@ class RefreshTests(unittest.TestCase):
                 "allow_provisional_roster": True,
             }])
 
-    def test_without_a_matchup_context_the_projections_are_skipped(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            build_repo(root)
-            write_json(refresh.weekly_roster_path(root, 2026, 4), {"Records": []})
-            with mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value={"Records": []}), \
-                    mock.patch.object(refresh, "write_dataset", return_value=False), \
-                    mock.patch.object(refresh, "materialize_app_player_week_fantasy", return_value=({"Records": []}, False)), \
-                    mock.patch.object(refresh, "resolve_current_context", return_value=None), \
-                    mock.patch.object(refresh, "publish_matchup_projections") as publish, target(4):
-                result = refresh.refresh(root)
-            publish.assert_not_called()
-            self.assertEqual(result["MatchupProjections"], {"Status": "skipped-no-matchup-context"})
+    def test_refresh_never_writes_matchup_projections(self) -> None:
+        source = Path(refresh.__file__).read_text(encoding="utf-8")
+        for forbidden in ("matchup_projection", "MatchupProjections.json", "skip-matchup-projections"):
+            self.assertNotIn(forbidden, source)
 
     def test_week_one_does_not_use_previous_season_roster(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -223,8 +201,7 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
              mock.patch.object(refresh, "write_dataset", side_effect=write), \
              mock.patch.object(refresh, "materialize_app_player_week_fantasy",
                                return_value=({"Records": []}, False)) as app_publish, \
-             mock.patch.object(refresh, "resolve_current_context", return_value={"Season": 2026}), \
-             mock.patch.object(refresh, "publish_matchup_projections", return_value={"Status": "ok"}), target(7):
+             target(7):
             result = refresh.refresh(root)
 
         self.assertEqual([x[1]["week"] for x in calls if x[0] == "build"], [7, 6])

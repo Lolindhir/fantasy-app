@@ -41,7 +41,7 @@ from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
 from derived_data_lib.matchup_context import MatchupContextError, resolve_matchups  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest, manifest_seasons  # noqa: E402
-from matchup_projection import compute_matchup_projections  # noqa: E402
+from derived_data_lib.matchup_projection import compute_matchup_projections  # noqa: E402
 from derived_data_lib.player_week_fantasy_view import load_sleeper_keyed_view  # noqa: E402
 
 PRODUCT = "matchup-context"

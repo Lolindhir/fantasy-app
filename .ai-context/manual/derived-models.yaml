@@ -29,7 +29,7 @@ architecture:
     - tools/derived_data_lib/league_lifecycle.py (computed lifecycle function, no product, #1199 step 2)
     - tools/derived_data_lib/decision_windows.py (computed Decision Windows function with the repairability model, no product, #1199 section 2)
     - tools/derived_data_lib/matchup_context.py (computed matchup context function with the team-range model, no product, #1199 section 3)
-    - tools/matchup_projection.py and tools/derived_data_lib/weekly_recaps.py (win-prob model on the team-range projections, no product, #1443)
+    - tools/derived_data_lib/matchup_projection.py and tools/derived_data_lib/weekly_recaps.py (win-prob model on the team-range projections, no product, #1443)
     - tools/derived_data_lib/season_statistics.py and the season-statistics product (season-stats-v1, #506)
     - tools/derived_data_lib/rivalry.py and the league-rivalry product (rivalry-v1, #1455)
     - tools/derived_data_lib/models/schedule_outlook/v1.py: pure upcoming Regular Season / SoS model (Issue #1519 I1, not yet published)
@@ -284,7 +284,7 @@ models:
   team-range-v1:
     status: registered-1199-section-3-step-6
     module: tools/derived_data_lib/models/team_range/v1.py
-    behaviour: exact move of the method normal-independent-v1 of tools/matchup_projection.py (no new rule); contract in matchup-context.yaml
+    behaviour: exact move of the method normal-independent-v1 of the former tools/matchup_projection.py (now tools/derived_data_lib/matchup_projection.py) (no new rule); contract in matchup-context.yaml
     contract: .ai-context/manual/matchup-context.yaml
     parameters: calibrated Gaussian team range, starters independent, 50/80/90 percent levels (values stay those of matchup_projection.py at the time of the move)
     rules:

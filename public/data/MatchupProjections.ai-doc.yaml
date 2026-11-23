@@ -8,14 +8,16 @@ role: >
   and FantasyTeamID and display it; they do not calculate projections or ranges.
 
 source:
-  publisher: tools/matchup_projection.py
+  computation: tools/derived_data_lib/matchup_projection.py (pure function compute_matchup_projections, Issue #1645; writes nothing)
+  product: data-derived/matchup-context/<CanonicalLeagueID>/<Season>/ (section MatchupProjections of the current document, tools/matchup_context_materialize.py)
+  publisher: tools/matchup_context_app_publish.py (renders this file from the product; no other writer exists)
   inputs:
     - computed FantasyGameContext (tools/derived_data_lib/fantasy_game_context.py, ADR-075)
     - App adaptation of the data-derived/player-week-fantasy product (in memory, no public/data read)
     - optional data-derived/season-statistics/<league>/<season>.json (season-to-date Best Ball, historical actual manager efficiency, and per-team actual weekly scores for estimated display uncertainty; only completed weeks strictly before the target)
     - optional computed Decision Windows FantasyRelevance (slot definitions, per-player current roster placement, exact lock state and scoring availability; resolved once with supplied AtUtc, never re-read from public/data)
   model: team-range-v1 (tools/derived_data_lib/models/team_range/v1.py, chosen per season in data-meta Models.TeamRange)
-  scheduling: tools/player_week_fantasy_refresh.py inside the APP Data League workflow (about every 10 minutes)
+  scheduling: League Live workflow (about every 10 minutes): player_week_fantasy_refresh.py, then matchup_context_materialize.py, then matchup_context_app_publish.py
   backtest: tools/historical_team_range_backtest.py
 
 contract:

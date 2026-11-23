@@ -2,8 +2,8 @@
 """Refresh current App PlayerWeekFantasy and safely catch up its preceding scored week.
 
 The current week is the lifecycle LineupWeek (ADR-073/075; it no longer follows the App file
-FantasyGameContext.json) and feeds the App PWF delivery model and MatchupProjections, which take their
-FantasyGameContext from the computed matchup-context function instead of a file. Once the preceding week is *both* canonically league
+FantasyGameContext.json) and feeds the App PWF delivery model. MatchupProjections are no longer written here: they are a section of the
+matchup-context product (Issue #1571, #1645). Once the preceding week is *both* canonically league
 scored and NFL finalized, rebuild its source-owned Shared-Derived snapshot as
 well. This prevents late-arriving final NFL statistics from being frozen as
 zero when the App advances to a new week. The preceding-week repair never
@@ -27,10 +27,8 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from derived_data_lib.week_finality import stats_complete_weeks  # noqa: E402
-from derived_data_lib.fantasy_game_context import resolve_current_context  # noqa: E402
 from derived_data_lib.league_lifecycle import resolve_lifecycle  # noqa: E402
 from league_metadata import data_meta_root, list_league_ids  # noqa: E402
-from matchup_projection import publish_matchup_projections  # noqa: E402
 from player_valuation_sources import current_season, league_manifest  # noqa: E402
 from player_week_fantasy_app_publish import materialize_app_player_week_fantasy  # noqa: E402
 from player_week_fantasy_materialize import (  # noqa: E402
@@ -134,14 +132,14 @@ def refresh_previous_scored_week(
             "RecordCount": len(candidate["Records"])}
 
 
-def refresh(repo_root: Path, at_utc: datetime | None = None, *, publish_projections: bool = True) -> dict[str, Any]:
+def refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
     # G5 E3 (Issue #1263): the current-week build and the previous-week repair use identical model
     # inputs; compute the calibrated model state once per process (no persisted cache).
     with memoized_model_state():
-        return _refresh(repo_root, at_utc, publish_projections=publish_projections)
+        return _refresh(repo_root, at_utc)
 
 
-def _refresh(repo_root: Path, at_utc: datetime | None = None, *, publish_projections: bool = True) -> dict[str, Any]:
+def _refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
     root = repo_root.resolve()
     at_utc = at_utc or datetime.now(timezone.utc)
     league_id, season, week = resolve_target(root, at_utc)
@@ -164,16 +162,6 @@ def _refresh(repo_root: Path, at_utc: datetime | None = None, *, publish_project
         output_path(root, league_id=league_id, season=season, week=week), payload
     )
     published, app_changed = materialize_app_player_week_fantasy(root, league_id, season, week)
-    context = resolve_current_context(root, league_id, season, at_utc) if publish_projections else None
-    if not publish_projections:
-        # Issue #1571: the projections are a section of the matchup-context product and rendered by the App publisher.
-        matchup_projections = {"Status": "delegated-to-matchup-context-product"}
-    elif context is None:
-        matchup_projections = {"Status": "skipped-no-matchup-context"}
-    else:
-        matchup_projections = publish_matchup_projections(
-            root, context, published, league_id=league_id, at_utc=at_utc
-        )
     previous_scored = refresh_previous_scored_week(
         root, league_id=league_id, season=season, current_week=week,
     )
@@ -185,7 +173,6 @@ def _refresh(repo_root: Path, at_utc: datetime | None = None, *, publish_project
         "DerivedChanged": derived_changed,
         "AppChanged": app_changed,
         "RecordCount": len(published["Records"]),
-        "MatchupProjections": matchup_projections,
         "FinalizedPreviousWeek": previous_scored,
     }
 
@@ -193,10 +180,8 @@ def _refresh(repo_root: Path, at_utc: datetime | None = None, *, publish_project
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=TOOLS.parent)
-    parser.add_argument("--skip-matchup-projections", action="store_true",
-                        help="do not write MatchupProjections.json (the matchup-context product materializer owns it, Issue #1571)")
     args = parser.parse_args(argv)
-    print(json.dumps(refresh(args.repo_root, publish_projections=not args.skip_matchup_projections), indent=2, sort_keys=True))
+    print(json.dumps(refresh(args.repo_root), indent=2, sort_keys=True))
     return 0
 
 

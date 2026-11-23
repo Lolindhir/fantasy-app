@@ -124,7 +124,7 @@ knownLimits:
 
 consumers:
   app: public/requests/RequestLeague.ps1 calls the CLI, writes DecisionWindows.json and hands the facts to FantasyGameContext and Matchups (their migration is section 3 of Issue #1199).
-  matchupProjection: tools/matchup_projection.py calls the function instead of reading DecisionWindows.json (step 7).
+  matchupProjection: tools/derived_data_lib/matchup_projection.py (since Issue #1645; formerly tools/matchup_projection.py) calls the function instead of reading DecisionWindows.json (step 7).
   angular: Reads DecisionWindows.json only; unchanged.
 
 migration:

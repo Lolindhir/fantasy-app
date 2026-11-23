@@ -13,7 +13,7 @@ purpose: >-
   completed seasons and the team projections) as one pure function of canonical facts, products and data-meta. It replaces the
   PowerShell derivation of public/requests (MatchupReadModelCore, FantasyGameContextCore, FantasyGameContextUtils,
   FantasyMatchupPreviewUtils, FantasyWeeklyWatchUtils, FantasyRelevanceV2Utils context part, CanonicalMatchupUtils,
-  FantasyTeamOrderUtils) and the file-reading tools/matchup_projection.py. The function stays computed; since ADR-089 (Issue #1571) its
+  FantasyTeamOrderUtils) and the file-reading tools/matchup_projection.py (moved to tools/derived_data_lib/matchup_projection.py as a pure computation in Issue #1645). The function stays computed; since ADR-089 (Issue #1571) its
   result is additionally persisted as the Shared Derived product data-derived/matchup-context by tools/matchup_context_materialize.py. The App files stay deliveries with unchanged contracts.
 
 architecture:
