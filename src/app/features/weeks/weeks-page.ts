@@ -5,7 +5,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, combineLatest, map, of, switchMap, type Observable } from 'rxjs';
 
 import type { FantasyGameContextReadModel } from '../../core/models/fantasy-game-context.models';
@@ -44,7 +44,7 @@ interface SeasonData {
 @Component({
   selector: 'app-weeks-page',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatDialogModule, MatFormFieldModule, MatSelectModule, RouterLink, TeamIdentityComponent, WeekRecapContentComponent],
+  imports: [CommonModule, MatCardModule, MatDialogModule, MatFormFieldModule, MatSelectModule, TeamIdentityComponent, WeekRecapContentComponent],
   templateUrl: './weeks-page.html',
   styleUrl: './weeks-page.scss'
 })

@@ -459,14 +459,11 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelector('.week-matchup-chevron')).not.toBeNull();
   });
 
-  it('links to the season grid in Stats instead of showing it', async () => {
+  it('does not offer a Season tab or the season grid anymore', async () => {
     const host = await create({ season: '2025' }, 'overview');
 
-    const link = Array.from(host.querySelectorAll('a.activity-tab')).find(a => a.textContent?.includes('Season grid')) as HTMLAnchorElement;
-    expect(link).toBeTruthy();
-    expect(link.getAttribute('href')).toContain('/stats');
-    expect(link.getAttribute('href')).toContain('tab=weekly');
-    expect(link.getAttribute('href')).toContain('season=2025');
+    const labels = Array.from(host.querySelectorAll('.activity-tab')).map(tab => tab.textContent?.trim());
+    expect(labels).toEqual(['Overview', 'Week']);
     expect(host.querySelector('.season-grid')).toBeNull();
   });
 
