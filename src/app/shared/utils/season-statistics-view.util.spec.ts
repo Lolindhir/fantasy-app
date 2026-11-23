@@ -1,5 +1,5 @@
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../core/models/season-statistics.models';
-import { buildBiggestUpsetHighlight, formatExpectedRecord, formatSigned, statisticsByTeam } from './season-statistics-view.util';
+import { buildBiggestUpsetHighlight, buildSeasonUpsetCard, formatExpectedRecord, formatPercent, formatSigned, statisticsByTeam } from './season-statistics-view.util';
 
 function team(id: number, owner: string): SeasonStatisticsTeam {
   return {
@@ -40,5 +40,19 @@ describe('season statistics view util', () => {
   it('returns nothing without an all-time upset or a resolvable winner', () => {
     expect(buildBiggestUpsetHighlight(doc(2026), new Map())).toBeNull();
     expect(buildBiggestUpsetHighlight(doc(2026, { BiggestUpsetAllTime: { Season: 2020, Week: 1, WinnerTeamID: 9, LoserTeamID: 1, WinnerPoints: 1, LoserPoints: 0, WinnerPregameWinProbability: 0.1 } }), new Map())).toBeNull();
+  });
+
+  it('formats percentages and keeps unknown visible', () => {
+    expect(formatPercent(82.2565)).toBe('82.3%');
+    expect(formatPercent(null)).toBe('–');
+  });
+
+  it('builds the season upset card from the generator-chosen game and hides it without one', () => {
+    const upset = { Week: 4, WinnerTeamID: 1, LoserTeamID: 2, WinnerPoints: 100.5, LoserPoints: 90, WinnerPregameWinProbability: 0.0954 };
+    expect(buildSeasonUpsetCard(doc(2025, { BiggestUpset: upset }))).toEqual({
+      week: 4, winnerName: 'Team 1', loserName: 'Team 2', scoreDisplay: '100.50–90.00', chanceDisplay: '10%'
+    });
+    expect(buildSeasonUpsetCard(doc(2025))).toBeNull();
+    expect(buildSeasonUpsetCard(doc(2025, { BiggestUpset: { ...upset, LoserTeamID: 99 } }))).toBeNull();
   });
 });

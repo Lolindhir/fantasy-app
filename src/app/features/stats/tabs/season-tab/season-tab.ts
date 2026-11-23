@@ -11,11 +11,14 @@ import { PositionStylePipe } from '../../../../shared/pipes/position-style.pipe'
 import { buildInjuryImpactByTeam, type TeamInjuryImpactView } from '../../../../shared/utils/injury-impact-view.util';
 import { buildSeasonHistory } from '../../../../shared/utils/league-standings-view.util';
 import {
+  buildSeasonUpsetCard,
   formatAllPlay,
   formatDecimal,
+  formatPercent,
   formatSigned,
   signClass,
-  statisticsByTeam
+  statisticsByTeam,
+  type SeasonUpsetCard
 } from '../../../../shared/utils/season-statistics-view.util';
 
 export interface SeasonStatsRow {
@@ -27,13 +30,24 @@ export interface SeasonStatsRow {
   injury: TeamInjuryImpactView | null;
 }
 
-type SortKey = 'place' | 'luck' | 'impact';
+/** Column groups of the table; on small screens one group is shown at a time (Issue #1621). */
+export type StatsGroup = 'record' | 'injury' | 'efficiency';
+
+export type SortKey = 'place' | 'record' | 'expected' | 'luck' | 'hurt' | 'lost' | 'lineup' | 'delta';
+
+interface GroupOption {
+  id: StatsGroup;
+  label: string;
+}
 
 interface SeasonStatsViewModel {
   seasons: string[];
   defaultSeason: string | null;
-  /** True when at least one season has Injury Impact; otherwise the column is hidden. */
+  /** True when at least one season has Injury Impact; otherwise the group is hidden. */
   hasInjuryImpact: boolean;
+  /** True when any season carries lineup efficiency; otherwise the group is hidden. */
+  hasEfficiency: boolean;
+  upset(season: string): SeasonUpsetCard | null;
   rows(season: string): SeasonStatsRow[];
   /** NFL team logo by canonical abbreviation. */
   nflLogos: ReadonlyMap<string, string>;
@@ -52,16 +66,19 @@ const DEFAULT_AVATAR = 'assets/default-team-avatar.png';
 export class SeasonTabComponent {
   private readonly dataService = inject(DataService);
 
-  readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
+  readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
   readonly formatSigned = formatSigned;
   readonly formatDecimal = formatDecimal;
   readonly formatAllPlay = formatAllPlay;
+  readonly formatPercent = formatPercent;
   readonly signClass = signClass;
 
   selectedSeason: string | null = null;
   expandedTeamId: string | null = null;
   sortKey: SortKey = 'place';
   sortDescending = false;
+  /** Group shown on small screens; wide screens show all groups. */
+  group: StatsGroup = 'record';
 
   readonly vm$ = forkJoin({
     data: this.dataService.getLeagueWithPlayers(),
@@ -82,6 +99,8 @@ export class SeasonTabComponent {
         seasons,
         defaultSeason: seasons.includes(String(league.Season)) ? String(league.Season) : (seasons[0] ?? null),
         hasInjuryImpact: injurySeasons.size > 0,
+        hasEfficiency: [...statsDocs.values()].some(doc => doc.Teams.some(team => team.LineupEfficiencyActual != null || team.ProjectionDelta != null)),
+        upset: season => buildSeasonUpsetCard(statsDocs.get(season)),
         nflLogos: new Map(nflTeams.filter(team => team.Logo).map(team => [team.ID, team.Logo])),
         rows: season => {
           const cached = cache.get(season);
@@ -100,6 +119,8 @@ export class SeasonTabComponent {
               identity: {
                 TeamID: Number(row.teamId),
                 Team: row.teamName ?? '',
+                // Season-specific abbreviation from the generator; the running season may also use the league abbreviation.
+                TeamAbbr: stat?.TeamAbbr ?? (isCurrent ? currentTeams.get(teamId)?.TeamAbbr : undefined),
                 Owner: row.owner,
                 Avatar: row.teamAvatar || (isCurrent ? currentTeams.get(teamId)?.Avatar : null) || DEFAULT_AVATAR
               },
@@ -124,24 +145,49 @@ export class SeasonTabComponent {
     this.expandedTeamId = null;
   }
 
+  groupOptions(vm: SeasonStatsViewModel): GroupOption[] {
+    return [
+      { id: 'record', label: 'Record' },
+      ...(vm.hasInjuryImpact ? [{ id: 'injury' as const, label: 'Injuries' }] : []),
+      ...(vm.hasEfficiency ? [{ id: 'efficiency' as const, label: 'Efficiency' }] : [])
+    ];
+  }
+
+  /** The group a small screen shows; falls back to Record when the chosen group is not available. */
+  activeGroup(vm: SeasonStatsViewModel): StatsGroup {
+    return this.groupOptions(vm).some(option => option.id === this.group) ? this.group : 'record';
+  }
+
+  selectGroup(group: StatsGroup): void {
+    this.group = group;
+  }
+
   sortedRows(vm: SeasonStatsViewModel): SeasonStatsRow[] {
     const season = this.activeSeason(vm);
     if (!season) return [];
-    const value = (row: SeasonStatsRow): number | null => {
-      if (this.sortKey === 'luck') return row.stats?.Luck ?? null;
-      if (this.sortKey === 'impact') return row.injury?.hurt ?? null;
-      return row.place;
-    };
     const direction = this.sortDescending ? -1 : 1;
     // Rows without a value always sort last, never as zero.
     return [...vm.rows(season)].sort((a, b) => {
-      const left = value(a);
-      const right = value(b);
+      const left = this.sortValue(a);
+      const right = this.sortValue(b);
       if (left === null && right === null) return a.place - b.place;
       if (left === null) return 1;
       if (right === null) return -1;
       return (left - right) * direction || a.place - b.place;
     });
+  }
+
+  private sortValue(row: SeasonStatsRow): number | null {
+    switch (this.sortKey) {
+      case 'record': return row.stats ? row.stats.Wins + row.stats.Ties / 2 : null;
+      case 'expected': return row.stats?.ExpectedWins ?? null;
+      case 'luck': return row.stats?.Luck ?? null;
+      case 'hurt': return row.injury?.hurt ?? null;
+      case 'lost': return row.injury?.total ?? null;
+      case 'lineup': return row.stats?.LineupEfficiencyActual ?? null;
+      case 'delta': return row.stats?.ProjectionDelta ?? null;
+      default: return row.place;
+    }
   }
 
   sortBy(key: SortKey): void {
@@ -150,7 +196,7 @@ export class SeasonTabComponent {
       return;
     }
     this.sortKey = key;
-    // Luck and Injury Impact start with the largest value, the place with the best (lowest) one.
+    // The place starts with the best (lowest) one, every other column with the largest value.
     this.sortDescending = key !== 'place';
   }
 

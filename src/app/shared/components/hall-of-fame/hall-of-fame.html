@@ -1,0 +1,17 @@
+<section class="hof" *ngIf="highlights && highlights.length > 0" aria-label="Hall of Fame">
+  <header class="hof__head">
+    <span class="hof__crest" aria-hidden="true">🏛️</span>
+    <h2 class="hof__title">Hall of Fame</h2>
+  </header>
+
+  <ul class="hof__grid">
+    <li *ngFor="let item of highlights; trackBy: trackHighlight" class="hof__card" [matTooltip]="item.reason">
+      <span class="hof__icon" aria-hidden="true"><app-glyph [glyph]="item.icon"></app-glyph></span>
+      <span class="hof__body">
+        <span class="hof__label">{{ item.title }}</span>
+        <span class="hof__owner">{{ item.owner }}</span>
+        <span class="hof__value">{{ item.valueDisplay }}</span>
+      </span>
+    </li>
+  </ul>
+</section>

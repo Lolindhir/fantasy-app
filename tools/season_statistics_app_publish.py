@@ -9,7 +9,7 @@
 Usage:
   season_statistics_app_publish.py write [--league ID] [--scope current|history|all] [--fail-on-error]
 
-The App files carry the product document unchanged; the only addition is ``BiggestUpsetAllTime`` in the current file, chosen here (not in
+The App files carry the product document unchanged; additions are ``TeamAbbr`` per team row (season-specific team name, Issue #1621) and ``BiggestUpsetAllTime`` in the current file, chosen here (not in
 the frontend) from the persisted products of every season: the win with the lowest pregame chance (earlier season, then earlier week on
 a tie). Files are written only on a semantic difference and Timestamps.json[SeasonStatistics] is stamped for the current file only. A
 season whose canonical evidence is incomplete keeps its last file and raises a warning; the current season fails the run with
@@ -33,6 +33,7 @@ from derived_data_lib.season_statistics import SeasonStatisticsError  # noqa: E4
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
 from matchup_context_app_publish import Writer, _warn, history_matchup_seasons  # noqa: E402
+from team_abbreviation import team_abbreviation  # noqa: E402
 
 EXPECTED_ERRORS = (SeasonStatisticsError, LifecycleError, StandingsSourceError, LeagueMetadataError)
 
@@ -55,6 +56,12 @@ def biggest_upset_all_time(documents: dict[int, dict[str, Any]]) -> dict[str, An
     return None if best is None else best[1]
 
 
+def with_team_abbreviations(document: dict[str, Any]) -> dict[str, Any]:
+    """Adds ``TeamAbbr`` to every team row from the team name of that season (same rule as the league team abbreviation, Issue #1621)."""
+    teams = [{**team, "TeamAbbr": team_abbreviation(team.get("TeamName"), team.get("TeamID"))} for team in document.get("Teams", [])]
+    return {**document, "Teams": teams}
+
+
 def leagues(requested: str | None) -> list[str]:
     if requested:
         return [requested]
@@ -72,14 +79,14 @@ def publish(repo_root: Path, league_id: str, scope: str, writer: Writer) -> None
     if scope in ("current", "all"):
         if current not in stored:
             raise SeasonStatisticsError(f"season-statistics product missing for {league_id} {current}; materialize it first")
-        rendered = {**stored[current], "BiggestUpsetAllTime": biggest_upset_all_time(stored)}
+        rendered = {**with_team_abbreviations(stored[current]), "BiggestUpsetAllTime": biggest_upset_all_time(stored)}
         writer.put("SeasonStatistics.json", rendered, "SeasonStatistics")
     if scope in ("history", "all"):
         for season in history:
             if season not in stored:
                 _warn(f"Historical SeasonStatistics {season} not published", "season-statistics product missing; materialize it first")
                 continue
-            writer.put(f"past_seasons/SeasonStatistics/SeasonStatistics_{season}.json", stored[season])
+            writer.put(f"past_seasons/SeasonStatistics/SeasonStatistics_{season}.json", with_team_abbreviations(stored[season]))
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

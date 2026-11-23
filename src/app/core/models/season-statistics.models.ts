@@ -13,6 +13,13 @@ export interface SeasonStatisticsTeam {
   OpponentTiming: number | null;
   UnderdogWins: number;
   UpsetLosses: number;
+  /** Abbreviation from the team name of that season, derived by the generator (Issue #1621). Absent in files published before it existed. */
+  TeamAbbr?: string;
+  /** Season mean, in percent. */
+  LineupEfficiencyActual?: number | null;
+  LineupEfficiencyProjected?: number | null;
+  /** Season mean per game: points minus pregame projection. */
+  ProjectionDelta?: number | null;
 }
 
 export interface SeasonStatisticsUpset {

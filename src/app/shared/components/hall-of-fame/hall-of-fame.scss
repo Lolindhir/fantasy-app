@@ -1,0 +1,106 @@
+:host {
+  display: block;
+}
+
+.hof {
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #111827, #1f2937);
+  color: #f8fafc;
+}
+
+.hof__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hof__crest {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.hof__title {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+/* Two columns on phones, three from tablet width: a card always has room for a whole title. */
+.hof__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hof__card {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hof__icon {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.hof__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hof__label {
+  color: rgba(248, 250, 252, 0.72);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.hof__owner {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.hof__value {
+  color: rgba(248, 250, 252, 0.82);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+@media (min-width: 640px) {
+  .hof {
+    padding: 14px;
+  }
+
+  .hof__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
