@@ -1255,6 +1255,10 @@ consumerReadClassification:
         provider:cbssports: display-link-construction
         provider:espn: display-link-construction
       note: 'Neutral App-shaped NFL schedule games from data-source/nfl (schedules, game-finality), extracted from tools/schedule_archive.py (Issue #1263 CP3) so that Decision Windows, lifecycle, FantasyGameContext and Weekly Recaps import no consumer generator. The ESPN and CBS names are display link construction only (no provider request).'
+    tools/derived_data_lib/league_teams.py:
+      reads:
+        provider:sleeper: display-link-construction
+      note: 'Shared Derived league-teams product (Issue #774, ADR-098): reads only canonical data-source/leagues members and rosters; the Sleeper CDN URL is the provider avatar link construction (former AvatarUtils.psm1::Get-SleeperAvatar), not a provider request.'
     tools/league_source_data_lib/acquire.py:
       reads:
         network: source-layer-acquisition

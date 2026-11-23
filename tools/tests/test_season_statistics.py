@@ -15,7 +15,7 @@ from derived_data_lib.models.team_range import v1 as team_range  # noqa: E402
 from derived_data_lib.models.win_prob import v1 as win_prob  # noqa: E402
 from derived_data_lib import season_statistics as ss  # noqa: E402
 from season_statistics_app_publish import with_team_abbreviations  # noqa: E402
-from team_abbreviation import team_abbreviation  # noqa: E402
+from derived_data_lib.league_teams import team_abbreviation  # noqa: E402
 
 REPO = TOOLS.parent
 
