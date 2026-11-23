@@ -1,0 +1,53 @@
+<ng-container *ngIf="ready() !== undefined; else loading">
+  <section class="pa-stats" *ngIf="ready()?.view as view; else noData">
+    <div class="pa-stats__head">
+      <h2 class="pa-stats__title">Player Awards</h2>
+      <label class="pa-stats__select">
+        <span class="pa-stats__select-label">Season</span>
+        <select (change)="selectSeason($any($event.target).value)" aria-label="Season">
+          <option [value]="allTime" [selected]="selected() === allTime">All-time</option>
+          <option *ngFor="let season of seasons()" [value]="season" [selected]="selected() === season">{{ season }}</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="pa-table" role="table" aria-label="Weekly player awards" *ngIf="rows().length > 0; else noRows">
+      <div class="pa-row pa-row--head" role="row">
+        <span class="pa-rank" role="columnheader">#</span>
+        <span class="pa-player" role="columnheader">Player</span>
+        <span *ngFor="let column of columns" class="pa-cell" role="columnheader" [attr.title]="column.label + ': ' + column.hint" [attr.aria-label]="column.label">{{ column.icon }}</span>
+        <span class="pa-cell pa-total" role="columnheader">Total</span>
+      </div>
+
+      <div *ngFor="let row of visibleRows(); trackBy: trackRow" class="pa-row" role="row">
+        <span class="pa-rank" role="cell">{{ row.rank }}</span>
+        <span class="pa-player" role="cell">
+          <button type="button" class="pa-identity" [disabled]="!row.player" (click)="openPlayer(row.player)" [attr.aria-label]="'Open ' + row.name + ' details'">
+            <span class="pa-photo-wrap">
+              <img *ngIf="row.picture" class="pa-photo" [src]="row.picture" alt="" loading="lazy" />
+              <span *ngIf="!row.picture" class="pa-photo pa-photo--empty" aria-hidden="true"></span>
+              <img *ngIf="row.teamLogo" class="pa-nfl-logo" [src]="row.teamLogo" [alt]="row.teamAbbr || 'NFL team'" />
+            </span>
+            <span class="pa-name-block">
+              <span class="pa-name">{{ row.name }}</span>
+              <span *ngIf="row.position" class="position-chip" [ngStyle]="row.position | positionStyle">{{ row.position }}</span>
+            </span>
+          </button>
+        </span>
+        <span *ngFor="let column of columns" class="pa-cell" role="cell" [class.pa-cell--zero]="!row.counts[column.key]">{{ row.counts[column.key] || '–' }}</span>
+        <span class="pa-cell pa-total" role="cell">{{ row.total }}</span>
+      </div>
+    </div>
+    <button type="button" class="pa-more" *ngIf="hiddenCount() > 0" (click)="toggleExpanded()">
+      {{ expanded() ? 'Show fewer' : 'Show all ' + rows().length + ' players' }}
+    </button>
+
+    <ul class="pa-legend">
+      <li *ngFor="let column of columns"><span class="pa-legend__icon">{{ column.icon }}</span><strong>{{ column.label }}</strong> {{ column.hint }}</li>
+    </ul>
+    <ng-template #noRows><p class="pa-note">No awards in this view yet.</p></ng-template>
+  </section>
+</ng-container>
+
+<ng-template #loading><p class="pa-note">Loading player awards…</p></ng-template>
+<ng-template #noData><p class="pa-note">No player award data is available.</p></ng-template>

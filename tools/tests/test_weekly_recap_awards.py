@@ -183,7 +183,12 @@ class HistoryTests(unittest.TestCase):
             2026: {"Weeks": [{"Week": 1}]},
         }
         history = wr.player_award_history(models, self.refs)
-        self.assertEqual([{"Season": 2024, "Weeks": [1, 2]}, {"Season": 2025, "Weeks": [2]}], history["Seasons"])
+        self.assertEqual([(2024, [1, 2]), (2025, [2])], [(item["Season"], item["Weeks"]) for item in history["Seasons"]])
+        # Per-season ranking: only that season's entries count, order by total then PlayerID.
+        season_2024, season_2025 = history["Seasons"]
+        self.assertEqual([("a", 2), ("b", 1)], [(p["PlayerID"], p["Total"]) for p in season_2024["Players"]])
+        self.assertEqual({"MVP": 1, "MatchupHero": 0, "Heartbreaker": 1, "UnsungHero": 0}, season_2024["Players"][0]["Counts"])
+        self.assertEqual([("a", 1), ("c", 1)], [(p["PlayerID"], p["Total"]) for p in season_2025["Players"]])
         by_id = {item["PlayerID"]: item for item in history["Players"]}
         self.assertEqual({"MVP": 2, "MatchupHero": 0, "Heartbreaker": 1, "UnsungHero": 0}, by_id["a"]["Counts"])
         self.assertEqual(3, by_id["a"]["Total"])

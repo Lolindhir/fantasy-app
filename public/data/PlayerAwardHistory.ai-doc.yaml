@@ -8,7 +8,7 @@ contract: .ai-context/manual/weekly-recaps.yaml (playerAwards.historyFile)
 shape:
   SchemaVersion: 1
   Awards: award keys in display order
-  Seasons: '[{Season, Weeks}] weeks with available awards only; a week with an evidence gap is absent'
+  Seasons: '[{Season, Weeks, Players[{PlayerID, Counts, Total}]}] weeks with available awards only (a week with an evidence gap is absent); Players is the per-season ranking, Total descending then PlayerID, joined to the top-level Players by PlayerID for Name, Position and Picture'
   Leaders: '{Award: [{PlayerID, Name, Position, Count}]} all-time leader(s) per award, ties shared, empty when nobody won it (Hall of Fame)'
   Players: >
     [{PlayerID (Sleeper), CanonicalPlayerID, Name, Position, Picture, Counts{MVP, MatchupHero, Heartbreaker, UnsungHero}, Total,

@@ -26,10 +26,18 @@ export interface PlayerAwardLeader {
   Count: number;
 }
 
+/** Per-season ranking row; Name, Position and Picture come from the top-level Players list. */
+export interface PlayerAwardSeasonRanking {
+  PlayerID: string;
+  Counts: Record<PlayerAwardKey, number>;
+  Total: number;
+}
+
 export interface PlayerAwardHistoryReadModel {
   SchemaVersion: number;
   Awards: PlayerAwardKey[];
-  Seasons: Array<{ Season: number; Weeks: number[] }>;
+  /** Players (per-season ranking) is absent in files generated before the Stats > Player Awards extension. */
+  Seasons: Array<{ Season: number; Weeks: number[]; Players?: PlayerAwardSeasonRanking[] }>;
   /** Absent in files generated before the Hall of Fame extension. */
   Leaders?: Partial<Record<PlayerAwardKey, PlayerAwardLeader[]>>;
   Players: PlayerAwardHistoryPlayer[];
