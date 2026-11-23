@@ -107,10 +107,6 @@
                 <div><dt>Points Lost</dt><dd>{{ injury.totalDisplay }}</dd></div>
                 <div><dt>Weeks Hit</dt><dd>{{ injury.weeksWithImpact }} of {{ injury.weeksComputed }}</dd></div>
               </dl>
-              <p class="stats-note stats-note--hint" *ngIf="activeGroup(vm) !== 'injury'">
-                Hurt: average injured players per week whose absence cost points.
-                <a routerLink="/handbook" [queryParams]="{ section: 'Injury_Impact' }">How is this calculated?</a>
-              </p>
               <ng-container *ngIf="injury.topPlayers.length > 0">
                 <h5 class="stats-subtitle">Most hurt players</h5>
                 <ul class="injury-players">
@@ -130,6 +126,10 @@
                   </li>
                 </ul>
               </ng-container>
+              <p class="stats-note stats-note--hint" *ngIf="activeGroup(vm) !== 'injury'">
+                Hurt: average injured players per week whose absence cost points.
+                <a routerLink="/handbook" [queryParams]="{ section: 'Injury_Impact' }">How is this calculated?</a>
+              </p>
             </ng-container>
             <ng-template #noInjury><p class="stats-note">No injury data for this team in this season.</p></ng-template>
           </section>
