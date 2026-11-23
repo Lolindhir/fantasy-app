@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 774
 architectureDecision: ADR-098
-implementationState: 'Issue #774 steps 1 and 2: product, materializer, contract and Fast tests (parity with League.json for the current season); App file public/data/TeamSeasons.json (the product document unchanged, written by tools/team_seasons_app_publish.py in league-live.yml and update-history.yml) and the frontend lookup TeamSeasonLookup (src/app/shared/services/team-season.service.ts, lookup by Season and TeamID, neutral default logo for a missing season logo, no derivation). Steps 3 and 4 (consumer switch, publishers and League.json read the product) follow in separate pull requests.'
+implementationState: 'Issue #774 steps 1 and 2: product, materializer, contract and Fast tests (parity with League.json for the current season); App file public/data/TeamSeasons.json (the product document unchanged, written by tools/team_seasons_app_publish.py in league-live.yml and update-history.yml) and the frontend lookup TeamSeasonLookup (src/app/shared/services/team-season.service.ts, lookup by Season and TeamID, neutral default logo for a missing season logo, no derivation). Step 3 (frontend consumers show the identity of their season) is merged. Step 4: League.json (CanonicalLeagueCoreUtils.psm1 Get-CanonicalCurrentTeamsForLeague) and the standings loader (tools/league_standings_sources.py) take name, abbreviation and logos from the single implementation (tools/league_teams.py season, league_teams.team_name); the duplicate PowerShell/Python copies are removed.'
 
 purpose: >
   Define the Shared Derived Data product LeagueTeams: the identity of every fantasy team in every season of a league, with the manager fields and the
@@ -23,7 +23,7 @@ architecture:
     - Inputs are only data-source/leagues/<CanonicalLeagueID>/seasons/<season>/members.json and rosters.json plus the league manifest. No public/data file is an input.
     - A season row is a snapshot of that season's canonical Sleeper members and rosters. A later name, logo or manager is never projected into an older season; a missing season logo stays null and is never replaced by the current logo.
     - Manager fields (OwnerID, Owner, OwnerAvatar) and fantasy-team fields (TeamName, TeamNameSource, TeamAbbr, TeamAvatar) are separate. There is no mixed Avatar field; the manager avatar is never a fallback for the team logo.
-    - The name rule and the abbreviation rule keep their previous content (CanonicalLeagueCoreUtils.psm1); only their implementation is unified.
+    - The name rule and the abbreviation rule keep their previous content (formerly CanonicalLeagueCoreUtils.psm1, TeamUtils.psm1 and the standings loader); only their implementation is unified and the duplicates are removed (Issue #774 step 4).
     - Presentation defaults (neutral default team logo, display fallbacks) belong to the consumer; the product keeps null for missing values.
     - TeamID is the provider roster ID like in standings and rivalry. Franchise continuity and ownership history across seasons stay with Issue #777.
 

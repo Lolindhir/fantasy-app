@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 from derived_data_lib.league_standings import SeasonInputs  # noqa: E402
+from derived_data_lib.league_teams import team_name as league_team_name  # noqa: E402
 from derived_data_lib.week_finality import resolve_week_finality  # noqa: E402
 
 REQUIRED_FILES = ("league.json", "members.json", "rosters.json", "winners-bracket.json", "losers-bracket.json")
@@ -133,8 +134,7 @@ def build_teams(members: list[dict[str, Any]], rosters: list[dict[str, Any]]) ->
         if not owner.strip():
             raise StandingsSourceError(f"Canonical member {roster_source['CanonicalLeagueMemberID']!r} is missing DisplayName.")
         metadata = member.get("Metadata") or {}
-        team_name = str(metadata.get("team_name") or "")
-        team_name = f"Team {owner}" if not team_name.strip() else team_name.strip()
+        team_name, _ = league_team_name(str(metadata.get("team_name") or ""), owner)
         owner_avatar = str(member.get("Avatar") or "").strip() or None
         team_avatar = str(metadata.get("avatar") or "").strip() or None
         settings = roster.get("Settings") or {}

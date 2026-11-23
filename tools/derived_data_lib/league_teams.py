@@ -180,6 +180,12 @@ def season_teams(members: list[dict[str, Any]], rosters: list[dict[str, Any]]) -
     return teams
 
 
+def season_teams_for(repo_root: Path, league_id: str, season: str | int) -> list[dict[str, Any]]:
+    """Teams of one season read from the canonical files (consumers that need the identity without the whole product)."""
+    folder = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season)
+    return season_teams(_read_list(folder / "members.json"), _read_list(folder / "rosters.json"))
+
+
 def resolve(repo_root: Path, league_id: str) -> dict[str, Any]:
     """The league-teams document of one league over every manifest season (a pure function of the canonical members and rosters)."""
     import league_standings_sources as sources
