@@ -1309,6 +1309,11 @@ consumerReadClassification:
       reads:
         provider:nflverse: source-layer-acquisition
       note: 'Issue #1421: no-write injury release metadata and artifact planning; nflverse URL is a source-origin reference, not an HTTP call or active publisher.'
+    tools/nfl_pbp_revision_readonly.py:
+      reads:
+        network: source-layer-acquisition
+        provider:nflverse: source-layer-acquisition
+      note: 'Issue #1656: read-only 2025 pinned original-PBP release audit; downloads only into disposable temporary storage, no Source/Derived or app writer and no output publication.'
     tools/nfl_pbp_source_archive.py:
       reads:
         network: source-layer-acquisition
