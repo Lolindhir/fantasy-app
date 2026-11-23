@@ -1,5 +1,5 @@
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, distinctUntilChanged, forkJoin, map, of } from 'rxjs';
@@ -64,7 +64,26 @@ export class StatsPageComponent implements OnInit {
     ).subscribe(tab => (this.selectedTab = tab));
   }
 
+  @ViewChild('tabBar') private tabBar?: ElementRef<HTMLElement>;
+  @ViewChild('tabBody') private tabBody?: ElementRef<HTMLElement>;
+
   selectTab(id: string): void {
+    // Keep the tab bar where it is on screen: a shorter tab body would otherwise clamp the
+    // scroll position and make the page jump up to the Hall of Fame.
+    const before = this.tabBar?.nativeElement.getBoundingClientRect().top;
+    // Never let the page get shorter than it is now, so the scroll position stays valid.
+    const body = this.tabBody?.nativeElement;
+    if (body) {
+      body.style.minHeight = `${body.offsetHeight}px`;
+    }
+    if (before !== undefined) {
+      setTimeout(() => {
+        const after = this.tabBar?.nativeElement.getBoundingClientRect().top;
+        if (after !== undefined && Math.abs(after - before) > 1) {
+          window.scrollBy(0, after - before);
+        }
+      }, 0);
+    }
     void this.router.navigate([], { queryParams: { tab: id }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 }
