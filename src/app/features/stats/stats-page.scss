@@ -14,3 +14,34 @@
     margin: auto;
   }
 }
+
+.stats-tabs {
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.stats-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.stats-tabs .activity-tab {
+  flex: 1 1 auto;
+  padding: 10px 8px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .stats-tabs .activity-tab {
+    padding: 10px 18px;
+    font-size: 1rem;
+  }
+}
+
+.stats-tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
