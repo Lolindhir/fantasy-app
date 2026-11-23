@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT  # noqa: E402
 from derived_data_lib.nfl_player_availability import PRODUCT, PRODUCT_VERSION, RESERVE_STATUSES  # noqa: E402
-from league_metadata import data_meta_root, list_league_ids  # noqa: E402
+from league_metadata import data_meta_root, default_league_id  # noqa: E402
 from league_standings_sources import current_season, manifest  # noqa: E402
 from matchup_context_app_publish import Writer, _load, _warn, diff_values  # noqa: E402
 from players_population import PopulationError, build_population  # noqa: E402
@@ -159,13 +159,13 @@ def build_document(
 
 
 def population_players(repo_root: Path) -> list[dict[str, Any]]:
-    """Players of the shared Fantasy population rule (tools/players_population.py, ADR-043) for every league's current season.
+    """Players of the shared Fantasy population rule (tools/players_population.py, ADR-043) for the default league's current season.
 
-    This is the same rule that defines the Players file population, applied directly to canonical facts so the published
-    the published Players file is not an input of this Shared-Derived-based rendering (Issue #1263, finding F4).
+    This is the same league scope and rule that define the Players file population (Players.json is built for the default
+    league only), applied directly to canonical facts so the published Players file is not an input of this Shared-Derived-based rendering (Issue #1263, finding F4).
     """
     players: dict[str, dict[str, Any]] = {}
-    for league_id in list_league_ids(data_meta_root(repo_root)):
+    for league_id in [default_league_id(data_meta_root(repo_root))]:
         season = current_season(manifest(repo_root, league_id))
         try:
             population = build_population(repo_root, league_id, season)

@@ -108,8 +108,12 @@ class PublisherTests(unittest.TestCase):
         source = Path(publisher.__file__).read_text(encoding="utf-8")
         self.assertNotIn("Players.json\"", source.split("def publish", 1)[1].split("def parse_args", 1)[0])
         with tempfile.TemporaryDirectory() as tmp:
-            with patch.object(publisher, "list_league_ids", return_value=[]):
-                self.assertEqual(publisher.population_players(Path(tmp)), [])
+            with patch.object(publisher, "default_league_id", return_value="L1"), \
+                    patch.object(publisher, "manifest", return_value={}), \
+                    patch.object(publisher, "current_season", return_value=2026), \
+                    patch.object(publisher, "build_population", return_value={"Players": [{"SleeperID": 7}]}) as built:
+                self.assertEqual(publisher.population_players(Path(tmp)), [{"ID": "7"}])
+                built.assert_called_once_with(Path(tmp), "L1", 2026)  # default league only, like Players.json
 
 
 if __name__ == "__main__":
