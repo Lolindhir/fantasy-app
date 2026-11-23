@@ -1,7 +1,7 @@
 """Team abbreviation of a historical season (Issue #1621).
 
 Python port of ``ConvertTo-TeamAbbreviation`` (public/requests/utils/league/TeamUtils.psm1), the rule that produces ``TeamAbbr`` of the
-running season in League.json. The frontend derives no abbreviation; consumer generators call this so every season uses the same rule
+running season. The frontend derives no abbreviation; consumer generators call this so every season uses the same rule
 with the team name of that season.
 """
 from __future__ import annotations

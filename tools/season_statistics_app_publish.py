@@ -57,7 +57,7 @@ def biggest_upset_all_time(documents: dict[int, dict[str, Any]]) -> dict[str, An
 
 
 def with_team_abbreviations(document: dict[str, Any]) -> dict[str, Any]:
-    """Adds ``TeamAbbr`` to every team row from the team name of that season (same rule as League.json TeamAbbr, Issue #1621)."""
+    """Adds ``TeamAbbr`` to every team row from the team name of that season (same rule as the league team abbreviation, Issue #1621)."""
     teams = [{**team, "TeamAbbr": team_abbreviation(team.get("TeamName"), team.get("TeamID"))} for team in document.get("Teams", [])]
     return {**document, "Teams": teams}
 
