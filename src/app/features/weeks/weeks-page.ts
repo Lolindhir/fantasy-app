@@ -17,6 +17,7 @@ import {
   type FantasyGameContextDialogData
 } from '../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../../shared/components/team-identity/team-identity';
+import { TeamSeasonService, teamsWithSeasonIdentity } from '../../shared/services/team-season.service';
 import { WeekRecapContentComponent } from '../../shared/components/week-recap-content/week-recap-content';
 import {
   buildPlayoffDisplayLabels,
@@ -52,6 +53,7 @@ export class WeeksPageComponent {
   private readonly dataService = inject(DataService);
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
+  private readonly teamSeasons = inject(TeamSeasonService);
 
   readonly activeTab = signal<WeeksTab>(parseWeekParam(this.route.snapshot.queryParamMap.get('week')) !== null ? 'week' : 'overview');
   readonly playedExpanded = signal(false);
@@ -68,14 +70,19 @@ export class WeeksPageComponent {
     combineLatest({
       leagueData: this.dataService.getLeagueWithPlayers(),
       index: this.dataService.getPastSeasonsIndex().pipe(catchError(() => of(null))),
-      nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[])))
+      nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[]))),
+      teamSeasons: this.teamSeasons.getLookup().pipe(catchError(() => of(null)))
     }).pipe(catchError(() => of(null))),
     { initialValue: undefined }
   );
 
   /** undefined while loading, null when the league data could not be loaded. */
   readonly ready = computed(() => this.base());
-  readonly teams = computed(() => this.base()?.leagueData.teams ?? []);
+  /** Teams carry the identity (name, abbreviation, logo, manager) of the selected season; rosters and standings stay current. */
+  readonly teams = computed(() => {
+    const base = this.base();
+    return teamsWithSeasonIdentity(base?.leagueData.teams ?? [], base?.teamSeasons ?? null, this.activeSeason()?.season);
+  });
   readonly nflTeams = computed(() => this.base()?.nflTeams ?? []);
 
   readonly seasonOptions = computed<WeeksSeasonOption[]>(() => {
@@ -191,7 +198,7 @@ export class WeeksPageComponent {
       decisionWindows: null,
       matchups: this.data()?.matchups ?? null,
       nflTeams: this.nflTeams(),
-      league,
+      league: { ...league, Teams: this.teams() },
       fantasyMatchupId: matchupID,
       players: this.base()?.leagueData.players ?? [],
       lineupEfficiency: recapWeek?.TeamPerformance ?? null,

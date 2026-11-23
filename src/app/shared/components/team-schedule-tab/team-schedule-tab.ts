@@ -9,6 +9,7 @@ import type { NFLTeam, Player } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { TeamScheduleDataService } from '../../services/team-schedule-data.service';
+import { TeamSeasonService, teamsWithSeasonIdentity } from '../../services/team-season.service';
 import {
   buildTeamSchedule,
   formatScheduleRecord,
@@ -44,6 +45,7 @@ import {
 export class TeamScheduleTabComponent {
   private readonly dataService = inject(DataService);
   private readonly scheduleData = inject(TeamScheduleDataService);
+  private readonly teamSeasons = inject(TeamSeasonService);
   private readonly dialog = inject(MatDialog);
 
   private readonly teamSignal = signal<FantasyTeam | null>(null);
@@ -59,7 +61,8 @@ export class TeamScheduleTabComponent {
     combineLatest({
       index: this.dataService.getPastSeasonsIndex().pipe(catchError(() => of(null))),
       nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[]))),
-      outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null as ScheduleOutlookReadModel | null)))
+      outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null as ScheduleOutlookReadModel | null))),
+      teamSeasons: this.teamSeasons.getLookup().pipe(catchError(() => of(null)))
     }),
     { initialValue: undefined }
   );
@@ -114,8 +117,10 @@ export class TeamScheduleTabComponent {
     return row.outcome !== null || (row.opponentID === null && row.week < this.lastPlayedWeek());
   }
 
+  /** Opponents carry the identity (name, abbreviation, logo) of the selected season (Issue #774). */
   private readonly teamsById = computed(() =>
-    new Map((this.leagueSignal()?.Teams ?? []).map(candidate => [Number(candidate.TeamID), candidate])));
+    new Map(teamsWithSeasonIdentity(this.leagueSignal()?.Teams ?? [], this.base()?.teamSeasons ?? null, this.activeSeason()?.season)
+      .map(candidate => [Number(candidate.TeamID), candidate])));
 
   readonly seasonRecordLabel = computed(() => {
     const schedule = this.schedule();
