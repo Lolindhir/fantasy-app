@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 774
 architectureDecision: ADR-098
-implementationState: 'Issue #774 step 1: product, materializer, contract and Fast tests (parity with League.json for the current season). Steps 2 to 4 (App file TeamSeasons.json and frontend lookup, consumer switch, publishers and League.json read the product) follow in separate pull requests.'
+implementationState: 'Issue #774 steps 1 and 2: product, materializer, contract and Fast tests (parity with League.json for the current season); App file public/data/TeamSeasons.json (the product document unchanged, written by tools/team_seasons_app_publish.py in league-live.yml and update-history.yml) and the frontend lookup TeamSeasonLookup (src/app/shared/services/team-season.service.ts, lookup by Season and TeamID, neutral default logo for a missing season logo, no derivation). Steps 3 and 4 (consumer switch, publishers and League.json read the product) follow in separate pull requests.'
 
 purpose: >
   Define the Shared Derived Data product LeagueTeams: the identity of every fantasy team in every season of a league, with the manager fields and the

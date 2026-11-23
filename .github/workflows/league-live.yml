@@ -245,6 +245,7 @@ jobs:
           python3 tools/league_schedule_outlook_app_publish.py write &&
           { python3 tools/derived_data.py materialize --product league-teams > /dev/null ||
             echo "::warning title=league-teams not materialized::kept the last product"; } &&
+          python3 tools/team_seasons_app_publish.py write &&
           { python3 tools/derived_data.py materialize --product league-rivalry > /dev/null ||
             echo "::warning title=league-rivalry not materialized::kept the last product"; } &&
           python3 tools/rivalry_app_publish.py write &&

@@ -27,6 +27,7 @@ import type {
 } from '../models/player.models';
 import type { RawTransaction, Transaction } from '../models/transaction.models';
 import type { RivalryReadModel } from '../models/rivalry.models';
+import type { TeamSeasonsReadModel } from '../models/team-season.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
 import type { InjuryImpactReadModel } from '../models/injury-impact.models';
@@ -299,6 +300,10 @@ export class DataService {
 
   getRivalry(): Observable<RivalryReadModel> {
     return this.dataApiService.getRivalryRaw();
+  }
+
+  getTeamSeasons(): Observable<TeamSeasonsReadModel> {
+    return this.dataApiService.getTeamSeasonsRaw();
   }
 
   getWeeklyRecaps(): Observable<WeeklyRecapsReadModel> {

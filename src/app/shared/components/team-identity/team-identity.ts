@@ -45,20 +45,9 @@ export class TeamIdentityComponent {
     return this.team.Team?.trim() || this.team.Owner?.trim() || `Team ${this.team.TeamID}`;
   }
 
+  /** The abbreviation is generator-owned (TeamSeasons / Teams); a missing value shows a neutral placeholder instead of deriving initials. */
   get displayAbbreviation(): string {
-    const configured = this.team.TeamAbbr?.trim();
-    if (configured) return configured;
-
-    const words = this.displayName.split(/\s+/).filter(Boolean);
-    if (words.length > 1) {
-      return words
-        .map(word => word.charAt(0))
-        .join('')
-        .slice(0, 3)
-        .toUpperCase();
-    }
-
-    return this.displayName.slice(0, 3).toUpperCase();
+    return this.team.TeamAbbr?.trim() || `T${this.team.TeamID}`;
   }
 
   get avatarFallback(): string {

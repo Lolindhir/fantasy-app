@@ -14,6 +14,7 @@ import type { RawNFLTeam, RawPlayer } from '../models/player.models';
 import type { TeamCapOutlookReadModel } from '../models/team-cap-outlook.models';
 import type { RawTransaction } from '../models/transaction.models';
 import type { RivalryReadModel } from '../models/rivalry.models';
+import type { TeamSeasonsReadModel } from '../models/team-season.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
 import type { InjuryImpactReadModel } from '../models/injury-impact.models';
@@ -119,6 +120,10 @@ export class DataApiService {
 
   getRivalryRaw(): Observable<RivalryReadModel> {
     return this.http.get<RivalryReadModel>('data/Rivalry.json');
+  }
+
+  getTeamSeasonsRaw(): Observable<TeamSeasonsReadModel> {
+    return this.http.get<TeamSeasonsReadModel>('data/TeamSeasons.json');
   }
 
   getWeeklyRecapsRaw(): Observable<WeeklyRecapsReadModel> {
