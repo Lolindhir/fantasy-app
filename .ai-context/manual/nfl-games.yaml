@@ -1,6 +1,6 @@
 schemaVersion: 1
 domain: nfl-games
-status: active-upon-first-published-full-sync
+status: productive-index-v1-and-game-details-v2
 issue: 1077
 architecture: ADR-037/ADR-038
 ownership:
@@ -101,7 +101,7 @@ operation:
     real-source clean-root restore, then executes the existing rebuild-and-retry
     publisher from current main with scope nfl-games and only
     data-derived/nfl-games as allowed write destination.
-  activation: gated-by-PR1082-green-CI-and-first-production-publish
+  activation: productive-after-verified-main-publication
   workflow: .github/workflows/sync-nfl-source-data.yml
   sourceTrigger: full-source-or-scoped-schedule-odds
   excludedTriggers:
@@ -125,7 +125,17 @@ guards:
   - no-UI-or-fantasy-projection-consumer-in-this-issue
 futureGameDetailDirection:
   confirmedAt: 2026-11-14
-  status: v2-dynamic-derived-writer-implementation-under-release-review
+  status: v2-dynamic-derived-writer-productive
+  productionAcceptance:
+    verifiedAt: 2026-11-23
+    sourceSyncRun: https://github.com/Lolindhir/fantasy-app/actions/runs/45103501097
+    historicalOriginalSeasons: 26
+    historicalEligibleGameDetails: 6988
+    historicalGameDetailsWithOriginalRows: 6988
+    historicalGameDetailsWithoutOriginalRows: 0
+    changedOrNewOnMondayReplay: 0
+    sourceCompletenessCertified: false
+    frozen2025ProviderRevision: review-only-not-automatically-replaced
   ownership: extend-existing-nfl-games-product-not-a-second-game-product
   summary: >
     Keep the existing compact season/game index and evolve the same consumer-neutral
@@ -139,13 +149,14 @@ futureGameDetailDirection:
     - advanced-play-derived-metrics
     - data-coverage-and-provenance
   metricDerivationOwnership:
-    status: versioned-game-detail-v2-production-publisher-wiring-in-review
+    status: versioned-game-detail-v2-productive
     source: >-
       Raw/provider evidence and canonical NFL facts live under data-source/nfl.
       Existing canonical schedule, player-stats and snap-counts remain independent.
-      The 2025 original PBP has accepted immutable Source-byte identity and
-      is available as explicitly unverified-upstream-completeness evidence.
-      Future accepted original seasons are discovered from Source manifests,
+      Immutable, accepted historical original PBP assets for 1999-2025 and
+      the separately revisioned active-season 2026 original are available
+      through per-season Source manifests. None certifies upstream full-play
+      completeness. Future accepted seasons remain manifest-discovered,
       never a derived hard-coded season list.
     implementation: >-
       Consumer-neutral, versioned formulas belong under tools/derived_data_lib,
@@ -173,7 +184,7 @@ futureGameDetailDirection:
       Shared Derived; Angular, Operations, Management and V4-C may consume or
       interpret but must not independently reimplement the shared formula.
   teamSnapUsagePreview:
-    status: read-only-candidate-not-published
+    status: historical-read-only-preview;team-snap-core-published
     input: data-source/nfl/snap-counts/<season>/<week>.json
     identity: GameID + Team + Offense/Defense/SpecialTeams
     calculation: >-
@@ -321,10 +332,10 @@ futureGameDetailDirection:
         Specifically authorized 2026-11-16 for the existing nfl_games_derived
         publisher to write details across current and all supported historical
         indexed seasons. Scoped, deterministic GameDetails only; rights/coverage
-        for full original PBP and metric-candidate activation remain separately
-        gated. First real productive publication and historical CI audit must
-        confirm live output health, no-op and race handling before claiming a
-        completed cutover.
+        for full original PBP and further metric-candidate activation remain separately
+        gated. Productive v2 publication, accepted-source SHA readback and the
+        full-history deterministic no-op were verified on 2026-11-23 in
+        Source Sync #45103501097; historical GameDetails remained unchanged.
       rollbackPlan: >-
         Revert new detail generator invocation and new scoped write allowance,
         preserve existing season index and historical detail files pending
@@ -349,7 +360,7 @@ futureGameDetailDirection:
   gameDetailV2DynamicPublication:
     issue: 1077
     targetScope: all-canonical-indexed-seasons-no-hardcoded-years
-    status: writer-implementation-awaiting-ci-and-first-productive-run
+    status: productive-v2-historical-backfill-and-noop-validated
     owner: existing-nfl-games
     definitionVersion: 2
     pureBuilder: tools/derived_data_lib/nfl_game_detail_core.py::build_nfl_game_detail_v2
@@ -414,8 +425,10 @@ futureGameDetailDirection:
       Full historical preflight before any write; tests for v1 group parity,
       unknown and missing data, per-GameID deterministic fingerprint,
       accepted source identity, publisher no-op, and existing consumers.
-      After productive merge require actual published v2 readback and a
-      second unchanged-source no-op. CI alone is not production readback.
+      Production acceptance is evidenced by persisted v2 readback and a
+      complete unchanged-source Monday replay on 2026-11-23 (run #45103501097):
+      6,988 eligible games with original PBP, zero without, zero writes.
+      This is not independent certification of upstream play completeness.
     rollback: >-
       Revert v2 builder invocation and the historical schema upgrade check
       in the same existing producer; regenerate v1 details from canonical
@@ -428,7 +441,7 @@ futureGameDetailDirection:
       --expected-sha256 <accepted-manifest-sha256>
   historicalOriginalPbpDelivery:
     issue: 1077
-    status: automatic-historical-reconciliation-in-implementation
+    status: productive-all-26-historical-original-seasons-accepted
     sourceContract: .ai-context/manual/nfl-source-data.yaml::fullPlayByPlayTarget
     sourceBoundary: >-
       An original PBP Source manifest represents accepted immutable history;
@@ -460,18 +473,18 @@ futureGameDetailDirection:
   pbpDerivedMetricCatalog:
     path: .ai-context/manual/nfl-games-pbp-metrics.yaml
     catalogVersion: 1
-    status: ten-mvp-metrics-in-versioned-derived-v2-candidate-publisher
+    status: ten-mvp-metrics-published-v2-provisional
     issue: 1077
     producer: existing-versioned-derived-nfl-games-not-a-new-product
     sourceEvidence: immutable-accepted-original-nflverse-pbp-seasons-only
     productRule: >-
-      Future detailed nfl-games views publish only compact team, situation,
-      usage and optional position-specific aggregates with coverage and versioned
-      denominators, NOT all raw source plays. The PBP-only reader/analytics
-      currently remain experimental read-only checkpoints. Fantasy player
-      predictions, the externally discussed Stone Luck Score and ROS rankings are
-      independent downstream research until separately validated.
-    requiredBeforeActivation: original-source-and-field-audit;game-team-play-identity-and-coverage;metric-eligibility-tests;season-valid-player-position-join-only-for-position-metrics;versioned-output-and-risk-approved-publication
+      Productive GameDetail v2 publishes ten compact, versioned provisional
+      PBP-based metrics with observed denominators and source-quality metadata,
+      NOT raw source plays. The standalone read-only research checkpoint and
+      remaining 13 metric candidates are separate from this live ten-metric
+      contract. Fantasy predictions, the externally discussed Stone Luck Score
+      and ROS rankings remain downstream research until separately validated.
+    gatesForAdditionalMetricActivation: per-metric-original-field-coverage-and-eligibility-audit;season-valid-player-position-join-only-for-position-metrics;versioned-accuracy-and-risk-approved-publication
   inputPrinciple: >
     Use canonical NFL facts including retained full play-by-play evidence, player
     stats, snap counts, schedules, game finality and market odds as applicable.
@@ -479,11 +492,14 @@ futureGameDetailDirection:
     game-detail derived view. Derived metrics require explicit ownership and
     versioned definitions. Missing or incomplete is not zero.
   storagePrinciple: >
-    Retain a lean season index and load detailed games on demand; per-game
-    partition layout, schemas, compatibility, invalidation, and publishing
-    require a separate approved implementation decision.
+    Retain the published lean SchemaVersion 1 season index and load the
+    published per-GameID SchemaVersion 2 details on demand. Current output
+    partitioning, invalidation, provenance and publication are implemented
+    under the existing classified NFL Games Derived writer; additional
+    consumer-facing delivery or contract versions require separate review.
 
   fullPbpReadOnlyVerticalSlice:
+    historicalCheckpoint: true
     checkpoint: CP3
     status: code-implemented-original-game-asset-replay-not-yet-verified
     intent: >-
@@ -629,12 +645,15 @@ futureGameDetailDirection:
     existingNflGamesSeasonIndexVersion: 1
     rollback: revert-additive-GameDetail-builder-and-CLI-flags-and-tests-docs
   sourcePrerequisite: >
-    Complete play-by-play evidence must become durably and reproducibly
-    accessible through the Source layer; the current transient upstream download
-    and reduced projections do not yet meet this target.
+    The durable original-PBP Source evidence goal is fulfilled for all 26
+    historical seasons 1999-2024, plus accepted 2025 and active 2026 assets,
+    via immutable content-addressed GitHub Release gzip assets and manifests.
+    This ensures reproducible access to the accepted original bytes but does
+    not certify that an upstream release contains every actual NFL play.
   preservesExistingV1Contract: true
   enablesNewWritersOrConsumerChanges: false
   readOnlyPreviewCheckpoint:
+    historicalCheckpoint: true
     status: implementation-preview-only-not-published
     pureBuilder: tools/derived_data_lib/nfl_game_detail.py
     cli: python3 tools/nfl_game_detail_preview.py --season 2026 --game-id 2026_01_ARI_LAC

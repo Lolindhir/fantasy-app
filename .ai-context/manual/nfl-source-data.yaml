@@ -478,26 +478,35 @@ teamRegistryContract:
 
 fullPlayByPlayTarget:
   confirmedAt: 2026-11-14
-  status: dynamic-current-season-original-source-accepted-into-existing-publisher
+  status: productive-active-and-historical-original-source-evidence
   upstream: nflverse play-by-play season release csv.gz
   responsibility: >
-    Full original play-level records must be persistently and reproducibly
-    accessible as canonical Source Evidence for future game-detail derivations,
-    historic new metrics, replay and audit. Today's reduced special-teams fumble
-    and long-gains projections, with transient full upstream download, do not
-    satisfy the long-term full-play retention requirement.
+    Accepted original play-level bytes are retained as immutable, SHA-addressed
+    GitHub Release gzip assets with per-season Source manifests for every
+    historical season 1999-2024, frozen 2025 and active 2026. They can be
+    reproducibly read for game-detail derivations and audits, without claiming
+    independent completeness of every upstream play or replacing existing
+    special-teams fumble and long-gains projections.
+  productionAcceptance:
+    verifiedAt: 2026-11-23
+    sourceSyncRun: https://github.com/Lolindhir/fantasy-app/actions/runs/45103501097
+    historicalSeasonsAccepted: 26
+    historicalSeasonsMissing: 0
+    historicalGameDetailsWithOriginalRows: 6988
+    mondayFullDerivedReplayChangedOrNew: 0
+    originalSourceBytesCompleteUpstreamCertification: false
+    frozen2025ProviderRevision: review-only-no-implicit-overwrite
   identity: Season + GameID + PlayID + upstream-version
-  designPending:
-    - rights-license-and-attribution-verification
-    - durable-storage-format-and-location-outside-large-git-payloads-if-needed
-    - seasonal-and-per-game-coverage-with-known-unavailable-exceptions
-    - schema-field-preservation-and-player-identity-mapping
-    - upstream-corrections-versioning-and-ex-ante-time-semantics
-    - source-health-hashes-provenance-and-clean-root-replay
-    - incremental-refresh-publisher-and-race-safety
+  remainingQualityAndGovernanceQuestions:
+    - independent-upstream-per-game-and-play-completeness-certification
+    - full-catalog-field-nullability-and-season-valid-player-identity-audits
+    - 2025-frozen-upstream-digest-revision-review-without-automatic-replacement
+    - dataset-specific-rights-attribution-and-any-new-public-redistribution
+    - historical-ex-ante-observation-time-and-upstream-correction-semantics
+    - continued-archive-restorability-and-publisher-race-observability
   downstreamOwner: data-derived/nfl-games
   currentSourceRegistryAndProjectionsUnchanged: true
-  productiveAcquisitionScope: current-season-original-pbp-only-in-existing-source-writer
+  productiveAcquisitionScope: dynamic-current-season-and-bounded-missing-history-in-existing-source-writer
   newWriterOrSchedulerAuthorized: false
   activeSeasonOriginalPbp:
     issue: 1077
@@ -555,7 +564,7 @@ fullPlayByPlayTarget:
       Derived v2 is regenerated through the same existing writer.
   historicalOriginalPbpReconciliation:
     issue: 1077
-    status: dynamic-history-intake-and-reconciliation-in-implementation
+    status: productive-1999-to-2024-original-archive-complete
     producer: tools/nfl_pbp_source_history.py
     sourceOwnership: existing-sync-nfl-source-data-full-raw-publisher
     discovery: >-
@@ -611,7 +620,7 @@ fullPlayByPlayTarget:
   original2025Pilot:
     issue: 1077
     authorizationDate: 2026-11-16
-    status: approved-pilot-implementation-pending-first-successful-real-run
+    status: accepted-immutable-2025-original-frozen-upstream-revision-review-only
     providerAsset: nflverse/nflverse-data release pbp, play_by_play_2025.csv.gz
     sourceDigestSha256: 2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978
     compressedBytes: 19105296
