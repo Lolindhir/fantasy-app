@@ -33,6 +33,12 @@ describe('RivalryLookup', () => {
     expect(views[0].closestLoss).toBeNull();
   });
 
+  it('selects one pair per filter and returns null without games', () => {
+    expect(lookup.pair(1, 2, 'all')?.wins).toBe(1);
+    expect(lookup.pair(1, 2, 'playoffs')).toBeNull();
+    expect(lookup.pair(2, 1, 'all')).toBeNull();
+  });
+
   it('skips records without games and unknown pairs', () => {
     expect(lookup.recordsFor(1, 'playoffs')).toEqual([]);
     expect(lookup.headToHead(1, 9)).toBeNull();

@@ -45,6 +45,13 @@ export class RivalryLookup {
     return record ? this.toView(record) : null;
   }
 
+  /** Generated record of one team against one opponent for a filter; null when they never met under that filter. */
+  pair(teamId: number, opponentId: number, filter: RivalryFilter): RivalryRecordView | null {
+    const record = this.model.Records.find(candidate =>
+      candidate.TeamID === teamId && candidate.OpponentID === opponentId && candidate.Filter === filter && candidate.Games.length > 0);
+    return record ? this.toView(record) : null;
+  }
+
   private toView(record: RawRivalryRecord): RivalryRecordView {
     const byId = (id: string | null) => (id ? record.Games.find(game => game.FantasyMatchupID === id) ?? null : null);
     return {
