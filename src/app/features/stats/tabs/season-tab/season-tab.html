@@ -141,6 +141,9 @@
               <div><dt>Projected Efficiency</dt><dd>{{ formatPercent(s.LineupEfficiencyProjected) }}</dd></div>
               <div><dt>vs. Projection / Game</dt><dd [ngClass]="'stats-luck--' + signClass(s.ProjectionDelta)">{{ formatSigned(s.ProjectionDelta) }}</dd></div>
             </dl>
+            <p class="stats-note stats-note--hint" *ngIf="row.stats">
+              Projected Efficiency: how strong the starting lineup looked before kickoff, as a share of the best possible lineup by projection.
+            </p>
             <ng-template #noEfficiency><p class="stats-note">No efficiency statistics for this team in this season.</p></ng-template>
           </section>
         </div>
