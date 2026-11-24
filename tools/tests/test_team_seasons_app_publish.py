@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import team_seasons_app_publish as publisher  # noqa: E402
 from derived_data import league_teams_path  # noqa: E402
 from data_roots import data_derived_dir  # noqa: E402
-from matchup_context_app_publish import Writer  # noqa: E402
+from app_delivery import Writer  # noqa: E402
 
 LEAGUE = "test-league"
 

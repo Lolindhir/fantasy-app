@@ -14,6 +14,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 import weekly_recaps_app_publish as publish  # noqa: E402
+from app_delivery import Writer, history_matchup_seasons  # noqa: E402
 from derived_data_lib.weekly_recaps import WeeklyRecapsError  # noqa: E402
 
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
@@ -47,7 +48,7 @@ class PublishCase(unittest.TestCase):
 class WriteTests(PublishCase):
     def test_current_is_written_and_stamped(self):
         self.product(2026, {"Season": "2026", "Weeks": []})
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         publish.write_current(self.root, LEAGUE, writer)
         changed = writer.finish()
         self.assertIn("public/data/WeeklyRecaps.json", changed)
@@ -57,7 +58,7 @@ class WriteTests(PublishCase):
     def test_semantic_no_op_keeps_file_and_timestamp(self):
         write_json(self.data / "WeeklyRecaps.json", {"Season": "2026", "Weeks": [{"Week": 1, "Points": 3}]})
         self.product(2026, {"Season": "2026", "Weeks": [{"Week": 1, "Points": 3.0}]})
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         publish.write_current(self.root, LEAGUE, writer)
         self.assertEqual([], writer.finish())
         self.assertEqual("old", self.stamps()["WeeklyRecaps"])
@@ -65,7 +66,7 @@ class WriteTests(PublishCase):
     def test_history_writes_each_season_without_timestamp_and_skips_missing_one(self):
         self.product(2025, {"Season": "2025", "Weeks": []})
         with mock.patch.object(publish, "history_matchup_seasons", return_value=[2024, 2025]):
-            writer = publish.Writer(self.root, NOW)
+            writer = Writer(self.root, NOW)
             publish.write_history(self.root, LEAGUE, writer)
             changed = writer.finish()
         self.assertEqual(["public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_2025.json"], changed)
@@ -77,7 +78,7 @@ class WriteTests(PublishCase):
         self.product(2025, {"Season": "2025", "Weeks": []})
         with mock.patch.object(publish, "manifest_seasons", return_value=[2025]):
             models = publish.product_models(self.root, LEAGUE)
-            writer = publish.Writer(self.root, NOW)
+            writer = Writer(self.root, NOW)
             publish.write_award_history(self.root, LEAGUE, writer)
         self.assertEqual({2025: {"Season": "2025", "Weeks": []}}, models)
         self.assertEqual([], writer.finish())

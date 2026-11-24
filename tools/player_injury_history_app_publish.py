@@ -23,7 +23,8 @@ from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT  # noqa: E402
 from derived_data_lib.nfl_player_availability import PRODUCT, PRODUCT_VERSION, RESERVE_STATUSES  # noqa: E402
 from league_metadata import data_meta_root, default_league_id  # noqa: E402
 from league_standings_sources import current_season, manifest  # noqa: E402
-from matchup_context_app_publish import Writer, _load, _warn, diff_values  # noqa: E402
+from app_delivery import Writer, load_json, warn  # noqa: E402
+from matchup_context import diff_values  # noqa: E402
 from players_population import PopulationError, build_population  # noqa: E402
 
 CONTRACT_VERSION = 1
@@ -36,7 +37,7 @@ class CompactWriter(Writer):
 
     def put(self, relative: str, payload: Any, timestamp_key: str | None = None) -> None:
         path = self.data / relative
-        if path.is_file() and not diff_values(_load(path), json.loads(json.dumps(payload))):
+        if path.is_file() and not diff_values(load_json(path), json.loads(json.dumps(payload))):
             return
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -76,7 +77,7 @@ def league_week_caps(repo_root: Path, league_id: str) -> dict[int, int]:
     for path in sorted((repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons").glob("*/league.json")):
         if not path.parent.name.isdigit():
             continue
-        structure = _load(path).get("WeekStructure") or {}
+        structure = load_json(path).get("WeekStructure") or {}
         last = structure.get("FinalLeagueWeek") or structure.get("ExpectedLastLeagueWeek")
         if isinstance(last, int):
             season = int(path.parent.name)
@@ -179,12 +180,12 @@ def population_players(repo_root: Path) -> list[dict[str, Any]]:
 
 def publish(repo_root: Path, writer: Writer) -> None:
     root = repo_root / DATA_DERIVED_ROOT / PRODUCT
-    seasons = {int(p.stem): _load(p) for p in sorted(root.glob("*.json")) if p.stem.isdigit()} if root.is_dir() else {}
+    seasons = {int(p.stem): load_json(p) for p in sorted(root.glob("*.json")) if p.stem.isdigit()} if root.is_dir() else {}
     if not seasons:
         raise InjuryHistoryError(f"{PRODUCT} product is not materialized")
     league_id = default_league_id(data_meta_root(repo_root))
     players = population_players(repo_root)
-    bridge = sleeper_to_canonical(_load(repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"))
+    bridge = sleeper_to_canonical(load_json(repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"))
     writer.put(APP_FILE, build_document(seasons, players, bridge, league_week_caps(repo_root, league_id)), TIMESTAMP_KEY)
 
 
@@ -203,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         publish(args.repo_root, writer)
     except (InjuryHistoryError, OSError, json.JSONDecodeError) as error:
-        _warn("PlayerInjuryHistory not published", f"{type(error).__name__}: {error}")
+        warn("PlayerInjuryHistory not published", f"{type(error).__name__}: {error}")
         writer.finish()
         return 1 if args.fail_on_error else 0
     changed = writer.finish()

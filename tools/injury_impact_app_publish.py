@@ -33,7 +33,7 @@ from historical_fantasy_scoring import read_json  # noqa: E402
 from derived_data_lib.team_injury_impact import PRODUCT, TeamInjuryImpactError  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, load_season_inputs, manifest, manifest_seasons  # noqa: E402
-from matchup_context_app_publish import Writer, _warn  # noqa: E402
+from app_delivery import Writer, warn  # noqa: E402
 from players_population import sized_headshot  # noqa: E402
 
 EXPECTED_ERRORS = (TeamInjuryImpactError, StandingsSourceError, LeagueMetadataError)
@@ -113,7 +113,7 @@ def render(repo_root: Path, league_id: str) -> dict[str, Any]:
         if not path.is_file():
             if season == current:
                 raise TeamInjuryImpactError(f"team-injury-impact product missing for {league_id} {season}; materialize it first")
-            _warn(f"InjuryImpact {season} not published", "team-injury-impact product missing; materialize it first")
+            warn(f"InjuryImpact {season} not published", "team-injury-impact product missing; materialize it first")
             continue
         document = json.loads(path.read_text(encoding="utf-8"))
         identity = {t["CanonicalLeagueRosterID"]: t for t in load_season_inputs(repo_root, league_id, season, current).teams}
@@ -143,7 +143,7 @@ def run_write(args: argparse.Namespace) -> int:
         for league_id in leagues(args.league):
             writer.put("InjuryImpact.json", render(args.repo_root, league_id), "InjuryImpact")
     except EXPECTED_ERRORS as error:
-        _warn("InjuryImpact not published", f"{type(error).__name__}: {error}")
+        warn("InjuryImpact not published", f"{type(error).__name__}: {error}")
         writer.finish()
         return 1 if args.fail_on_error else 0
     changed = writer.finish()

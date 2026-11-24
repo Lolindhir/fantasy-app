@@ -18,6 +18,8 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 import matchup_context_app_publish as publish  # noqa: E402
+import app_delivery  # noqa: E402
+from app_delivery import Writer, history_matchup_seasons  # noqa: E402
 from derived_data_lib.matchup_context import MatchupContextError  # noqa: E402
 from matchup_context_materialize import CONTEXT_HISTORY, CURRENT, MATCHUPS  # noqa: E402
 
@@ -53,7 +55,7 @@ class RepoCase(unittest.TestCase):
 
 class WriterTests(RepoCase):
     def test_changed_file_is_written_and_stamped_only_for_current_keys(self):
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         writer.put("Matchups.json", {"Season": 2026}, "Matchups")
         writer.put("past_seasons/Matchups/Matchups_2025.json", {"Season": 2025})
         changed = writer.finish()
@@ -63,7 +65,7 @@ class WriterTests(RepoCase):
 
     def test_semantic_no_op_keeps_file_and_timestamp(self):
         write_json(self.data / "Matchups.json", {"Season": 2026, "Score": 1})
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         writer.put("Matchups.json", {"Season": 2026, "Score": 1.0}, "Matchups")
         self.assertEqual([], writer.finish())
         self.assertEqual("old", self.stamps()["Matchups"])
@@ -73,7 +75,7 @@ class CurrentTests(RepoCase):
     def test_missing_current_document_keeps_previous_files(self):
         write_json(self.data / "FantasyGameContext.json", {"Week": 7})
         self.product(2026, MATCHUPS, {"Season": 2026})
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         publish.write_current(self.root, LEAGUE, writer, NOW)
         writer.finish()
         self.assertEqual({"Week": 7}, json.loads((self.data / "FantasyGameContext.json").read_text(encoding="utf-8")))
@@ -82,7 +84,7 @@ class CurrentTests(RepoCase):
     def test_current_document_is_rendered_into_the_app_files(self):
         self.product(2026, MATCHUPS, {"Season": 2026})
         self.product(2026, CURRENT, {"FantasyGameContext": {"Week": 8}, "MatchupProjections": {"Week": 8, "P": 1}})
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         publish.write_current(self.root, LEAGUE, writer, NOW)
         writer.finish()
         self.assertEqual({"Week": 8}, json.loads((self.data / "FantasyGameContext.json").read_text(encoding="utf-8")))
@@ -92,7 +94,7 @@ class CurrentTests(RepoCase):
         history = {"Season": "2026", "ScoringState": "partial", "Weeks": [{"Week": 1}]}
         self.product(2026, MATCHUPS, {"Season": 2026})
         self.product(2026, CONTEXT_HISTORY, history)
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         publish.write_current(self.root, LEAGUE, writer, NOW)
         writer.finish()
         self.assertEqual(history, json.loads((self.data / "FantasyGameContextHistory.json").read_text(encoding="utf-8")))
@@ -101,7 +103,7 @@ class CurrentTests(RepoCase):
     def test_missing_finished_weeks_document_warns_and_keeps_file(self):
         write_json(self.data / "FantasyGameContextHistory.json", {"Old": True})
         self.product(2026, MATCHUPS, {"Season": 2026})
-        writer = publish.Writer(self.root, NOW)
+        writer = Writer(self.root, NOW)
         publish.write_current(self.root, LEAGUE, writer, NOW)
         self.assertEqual({"Old": True}, json.loads((self.data / "FantasyGameContextHistory.json").read_text(encoding="utf-8")))
 
@@ -120,8 +122,8 @@ class HistoryTests(RepoCase):
     def test_matchup_history_seasons_are_complete_earlier_seasons(self):
         for season, status in ((2024, "complete"), (2025, "complete"), (2026, "in_season"), (2023, "drafting")):
             self.make_season(season, status)
-        with mock.patch.object(publish, "DATA_SOURCE_ROOT", "data-source"):
-            self.assertEqual([2024, 2025], publish.history_matchup_seasons(self.root, LEAGUE, 2026))
+        with mock.patch.object(app_delivery, "DATA_SOURCE_ROOT", "data-source"):
+            self.assertEqual([2024, 2025], history_matchup_seasons(self.root, LEAGUE, 2026))
 
     def test_context_history_seasons_are_previous_plus_existing_files(self):
         write_json(self.data / "past_seasons" / "FantasyGameContext" / "FantasyGameContext_2023.json", {})
@@ -135,8 +137,8 @@ class HistoryTests(RepoCase):
             self.make_season(season, "complete")
         self.product(2025, MATCHUPS, {"Season": 2025})
         self.product(2025, CONTEXT_HISTORY, {"Season": 2025})
-        with mock.patch.object(publish, "DATA_SOURCE_ROOT", "data-source"):
-            writer = publish.Writer(self.root, NOW)
+        with mock.patch.object(app_delivery, "DATA_SOURCE_ROOT", "data-source"):
+            writer = Writer(self.root, NOW)
             publish.write_history(self.root, LEAGUE, writer, NOW)
             writer.finish()
         self.assertEqual({"Old": True}, json.loads((self.data / "past_seasons" / "Matchups" / "Matchups_2024.json").read_text(encoding="utf-8")))

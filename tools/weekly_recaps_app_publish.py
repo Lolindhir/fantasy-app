@@ -31,7 +31,7 @@ from data_roots import data_derived_dir  # noqa: E402
 from derived_data_lib.weekly_recaps import WeeklyRecapsError, player_award_history  # noqa: E402
 from league_metadata import list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest, manifest_seasons  # noqa: E402
-from matchup_context_app_publish import Writer, _warn, history_matchup_seasons  # noqa: E402
+from app_delivery import Writer, history_matchup_seasons, warn  # noqa: E402
 from weekly_recaps_materialize import read_model  # noqa: E402
 
 EXPECTED_ERRORS = (WeeklyRecapsError, LifecycleError, StandingsSourceError)
@@ -58,7 +58,7 @@ def write_history(repo_root: Path, league_id: str, writer: Writer) -> dict[int, 
         try:
             model = _model(repo_root, league_id, season)
         except EXPECTED_ERRORS as error:
-            _warn(f"Historical WeeklyRecaps {season} not published", f"{type(error).__name__}: {error}")
+            warn(f"Historical WeeklyRecaps {season} not published", f"{type(error).__name__}: {error}")
             continue
         writer.put(f"past_seasons/WeeklyRecaps/WeeklyRecaps_{season}.json", model)
         models[season] = model
@@ -117,7 +117,7 @@ def run_write(args: argparse.Namespace) -> int:
                 write_history(args.repo_root, league_id, writer)
             write_award_history(args.repo_root, league_id, writer)
     except EXPECTED_ERRORS as error:
-        _warn("WeeklyRecaps not published", f"{type(error).__name__}: {error}")
+        warn("WeeklyRecaps not published", f"{type(error).__name__}: {error}")
         writer.finish()
         return 1 if args.fail_on_error else 0
     changed = writer.finish()

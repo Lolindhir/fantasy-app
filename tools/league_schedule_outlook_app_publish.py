@@ -29,7 +29,7 @@ from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
 from derived_data_lib.league_schedule_outlook import PRODUCT  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
-from matchup_context_app_publish import Writer, _warn  # noqa: E402
+from app_delivery import Writer, warn  # noqa: E402
 
 INDEX_PRODUCT = "league-schedule-outlook-index"
 
@@ -97,7 +97,7 @@ def run_write(args: argparse.Namespace) -> int:
         for league_id in leagues(args.league):
             publish(args.repo_root, league_id, writer)
     except EXPECTED_ERRORS as error:
-        _warn("ScheduleOutlook not published", f"{type(error).__name__}: {error}")
+        warn("ScheduleOutlook not published", f"{type(error).__name__}: {error}")
         writer.finish()
         return 1 if args.fail_on_error else 0
     changed = writer.finish()

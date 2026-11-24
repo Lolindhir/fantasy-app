@@ -27,7 +27,7 @@ from derived_data_lib.matchup_context import MatchupContextError  # noqa: E402
 from derived_data_lib.rivalry import RivalryError  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError  # noqa: E402
-from matchup_context_app_publish import Writer, _load, _warn  # noqa: E402
+from app_delivery import Writer, load_json, warn  # noqa: E402
 
 EXPECTED_ERRORS = (RivalryError, MatchupContextError, LifecycleError, StandingsSourceError, LeagueMetadataError)
 
@@ -46,7 +46,7 @@ def publish(repo_root: Path, league_id: str, now: datetime, writer: Writer) -> N
     path = league_rivalry_path(out_root, league_id)
     if not path.is_file():
         raise RivalryError(f"league-rivalry product missing for {league_id}; materialize it first")
-    writer.put("Rivalry.json", _load(path), "Rivalry")
+    writer.put("Rivalry.json", load_json(path), "Rivalry")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -66,7 +66,7 @@ def run_write(args: argparse.Namespace) -> int:
         for league_id in leagues(args.league):
             publish(args.repo_root, league_id, now, writer)
     except EXPECTED_ERRORS as error:
-        _warn("Rivalry not published", f"{type(error).__name__}: {error}")
+        warn("Rivalry not published", f"{type(error).__name__}: {error}")
         writer.finish()
         return 1 if args.fail_on_error else 0
     changed = writer.finish()

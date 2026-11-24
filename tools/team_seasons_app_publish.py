@@ -24,7 +24,7 @@ from data_roots import data_derived_dir  # noqa: E402
 from derived_data import league_teams_path  # noqa: E402
 from derived_data_lib.league_teams import LeagueTeamsError  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
-from matchup_context_app_publish import Writer, _load, _warn  # noqa: E402
+from app_delivery import Writer, load_json, warn  # noqa: E402
 
 EXPECTED_ERRORS = (LeagueTeamsError, LeagueMetadataError)
 
@@ -42,9 +42,9 @@ def publish(repo_root: Path, league_id: str, writer: Writer) -> None:
     path = league_teams_path(data_derived_dir(repo_root), league_id)
     if not path.is_file():
         raise LeagueTeamsError(f"league-teams product missing for {league_id}; materialize it first")
-    writer.put("TeamSeasons.json", _load(path), "TeamSeasons")
+    writer.put("TeamSeasons.json", load_json(path), "TeamSeasons")
     stamps = writer.data / "Timestamps.json"
-    if "TeamSeasons" not in writer._stamped and stamps.is_file() and "TeamSeasons" not in _load(stamps):
+    if "TeamSeasons" not in writer._stamped and stamps.is_file() and "TeamSeasons" not in load_json(stamps):
         writer._stamped.append("TeamSeasons")  # first publication: the file may already equal the product, the freshness key must exist
 
 
@@ -64,7 +64,7 @@ def run_write(args: argparse.Namespace) -> int:
         for league_id in leagues(args.league):
             publish(args.repo_root, league_id, writer)
     except EXPECTED_ERRORS as error:
-        _warn("TeamSeasons not published", f"{type(error).__name__}: {error}")
+        warn("TeamSeasons not published", f"{type(error).__name__}: {error}")
         writer.finish()
         return 1 if args.fail_on_error else 0
     changed = writer.finish()

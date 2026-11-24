@@ -5,6 +5,12 @@ Statically scans every Python module of the Shared-Derived layer (tools/derived_
 imports, and follows top-level tools modules transitively. A forbidden consumer module anywhere in
 that closure is a layer violation. Limits: non-literal dynamic imports are flagged, PowerShell/Node/
 Angular layers are not covered here (see test_consumer_read_classification for file reads).
+
+Hardening (architecture cleanup before #1618): the closure of non-consumer modules reached from the roots is also
+scanned for public/data literals, and consumer generators must not import each other (shared helpers belong in the
+neutral tools/app_delivery.py). Remaining limits: consumer detection is name based (*_app_publish plus the explicit
+list), paths built from parts are not seen, Python only; there is no whole-repository graph. This is the logical layer
+check; the physical Canonical cutover is Issue #1618 and not part of it.
 """
 from __future__ import annotations
 
@@ -17,6 +23,11 @@ TOP = {p.stem for p in TOOLS.glob("*.py")}
 
 # Consumer generators / refreshers: delivery layer, never an input of Shared Derived code.
 CONSUMER_EXPLICIT = {"schedule_archive", "player_week_fantasy_refresh", "league_live_derived_refresh"}
+
+
+# Documented consumer-to-consumer edges (none may be added silently; a stale entry fails the test).
+# player_week_fantasy_refresh is the orchestrator that renders the PlayerWeekFantasy App file after its materialization.
+CONSUMER_EDGE_ALLOWLIST = {("player_week_fantasy_refresh", "player_week_fantasy_app_publish")}
 
 
 def is_consumer(module: str) -> bool:
@@ -87,6 +98,60 @@ def public_data_literals(tools: Path = TOOLS) -> list[str]:
                     and id(node) not in docstrings and "public/data" in node.value.replace("\\", "/")):
                 hits.append(f"{path.relative_to(tools).as_posix()}:{node.lineno}")
     return sorted(hits)
+
+
+def _literals_in(path: Path, tools: Path) -> list[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    docstrings = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            body = node.body
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
+                docstrings.add(id(body[0].value))
+    return [
+        f"{path.relative_to(tools).as_posix()}:{node.lineno}"
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        and id(node) not in docstrings and "public/data" in node.value.replace("\\", "/")
+    ]
+
+
+def derived_closure_files(tools: Path = TOOLS) -> list[Path]:
+    """Roots plus every non-consumer top-level module they reach transitively."""
+    top = {p.stem for p in tools.glob("*.py")}
+    files = {p: None for p in derived_roots(tools)}
+    stack = []
+    for path in list(files):
+        stack += sorted(imports_of(path.read_text(encoding="utf-8"), top)[0])
+    seen: set[str] = set()
+    while stack:
+        module = stack.pop()
+        if module in seen or is_consumer(module):
+            continue
+        seen.add(module)
+        path = tools / f"{module}.py"
+        files[path] = None
+        stack += sorted(imports_of(path.read_text(encoding="utf-8"), top)[0])
+    return sorted(files)
+
+
+def public_data_literals_transitive(tools: Path = TOOLS) -> list[str]:
+    hits: list[str] = []
+    for path in derived_closure_files(tools):
+        hits += _literals_in(path, tools)
+    return sorted(set(hits))
+
+
+def consumer_edges(tools: Path = TOOLS) -> set[tuple[str, str]]:
+    """Direct imports from one consumer generator into another."""
+    top = {p.stem for p in tools.glob("*.py")}
+    edges = set()
+    for path in tools.glob("*.py"):
+        if is_consumer(path.stem):
+            for dep in imports_of(path.read_text(encoding="utf-8"), top)[0]:
+                if is_consumer(dep) and dep != path.stem:
+                    edges.add((path.stem, dep))
+    return edges
 
 
 def violations(tools: Path = TOOLS) -> tuple[list[str], list[str]]:
@@ -169,8 +234,33 @@ class DerivedLayerImportGateTests(unittest.TestCase):
         self.assertIn("derived_data_lib/sub.py -> x_app_publish", bad)
         self.assertEqual(literals, ["derived_data_lib/doc.py:2"])
 
+    def test_derived_closure_has_no_public_data_path_literals(self):
+        self.assertEqual(public_data_literals_transitive(), [])
+
+    def test_consumer_generators_do_not_import_each_other(self):
+        self.assertEqual(sorted(consumer_edges() - CONSUMER_EDGE_ALLOWLIST), [])
+        self.assertEqual(sorted(CONSUMER_EDGE_ALLOWLIST - consumer_edges()), [], "stale allowlist entry")
+
+    def test_gate_is_red_for_transitive_literals_and_consumer_edges(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tools = Path(tmp)
+            (tools / "derived_data_lib").mkdir()
+            (tools / "derived_data.py").write_text("")
+            (tools / "helper.py").write_text("import inner\n")
+            (tools / "inner.py").write_text('P = "public/data/Players.json"\n')
+            (tools / "a_materialize.py").write_text("import helper\n")
+            (tools / "a_app_publish.py").write_text("")
+            (tools / "b_app_publish.py").write_text("from a_app_publish import Writer\n")
+            (tools / "c_app_publish.py").write_text("import subprocess\nsubprocess.run(['python', 'a_app_publish.py'])\n")
+            literals = public_data_literals_transitive(tools)
+            edges = consumer_edges(tools)
+        self.assertEqual(literals, ["inner.py:1"])
+        self.assertEqual(edges, {("b_app_publish", "a_app_publish"), ("c_app_publish", "a_app_publish")})
+
     def test_known_neutral_helpers_are_not_consumers(self):
-        for module in ("data_roots", "league_metadata", "players_population", "nfl_schedule_games"):
+        for module in ("data_roots", "league_metadata", "players_population", "nfl_schedule_games", "app_delivery"):
             self.assertFalse(is_consumer(module))
 
 
