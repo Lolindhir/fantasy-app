@@ -493,7 +493,7 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('.weekly-recap-awards')).toBeNull();
   });
 
-  it('retains the prior matchup week instead of hiding the surface while standings are stale', () => {
+  it('shows next pairings without interactive details while standings are stale', () => {
     const staleLeague = makeLeague();
     for (const team of staleLeague.Teams) {
       team.Placements.Current.Regular.Wins = 0;
@@ -508,14 +508,21 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
-    expect(fixture.componentInstance.week).toBe(1);
+    expect(fixture.componentInstance.week).toBe(2);
     expect(fixture.componentInstance.currentWeekSurfaceReady).toBeTrue();
+    expect(fixture.componentInstance.interactiveWeekReady).toBeFalse();
     expect(host.querySelector('.weekly-context-shell')).not.toBeNull();
     expect(host.querySelector('.matchups-shell')).not.toBeNull();
-    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 1 Matchups');
+    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 2 Matchups');
+    expect(host.querySelector('.matchup-rollover-note')).not.toBeNull();
+    expect(host.querySelector('.matchup-card')?.getAttribute('role')).toBeNull();
+    expect(host.querySelector('.matchup-card')?.getAttribute('tabindex')).toBeNull();
+    expect(host.querySelector('.matchup-primary-chevron')).toBeNull();
+    expect(host.querySelector('.matchup-progress-row')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-shell')).toBeNull();
   });
 
-  it('retains the completed context week while Matchups has already advanced', () => {
+  it('shows next pairings without stale lineup details when Matchups has advanced', () => {
     dataService.getFantasyGameContext.and.returnValue(of(makeFantasyGameContext(1)));
     dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows(1)));
 
@@ -525,14 +532,21 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
-    expect(fixture.componentInstance.week).toBe(1);
+    expect(fixture.componentInstance.week).toBe(2);
     expect(fixture.componentInstance.currentWeekSurfaceReady).toBeTrue();
+    expect(fixture.componentInstance.interactiveWeekReady).toBeFalse();
     expect(host.querySelector('.weekly-context-shell')).not.toBeNull();
     expect(host.querySelector('.matchups-shell')).not.toBeNull();
-    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 1 Matchups');
+    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 2 Matchups');
+    expect(host.querySelector('.matchup-rollover-note')).not.toBeNull();
+    expect(host.querySelector('.matchup-card')?.getAttribute('role')).toBeNull();
+    expect(host.querySelector('.matchup-card')?.getAttribute('tabindex')).toBeNull();
+    expect(host.querySelector('.matchup-primary-chevron')).toBeNull();
+    expect(host.querySelector('.matchup-progress-row')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-shell')).toBeNull();
   });
 
-  it('shows Week 2, Week-1 history and Week-1 standings while Week 3 context is not coherent', () => {
+  it('shows Week 3 pairings, Week-2 history, standings and recap before Week 3 context is ready', () => {
     const rolloverLeague = makeLeague();
     rolloverLeague.FinalScoredWeek = 2;
     for (const team of rolloverLeague.Teams) {
@@ -541,6 +555,12 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       team.Placements.Current.Regular.Ties = 0;
       team.Placements.Current.Regular.Record = '2-0';
     }
+
+    const season = rolloverLeague.Standings[0];
+    season.Weeks!.push({ Week: 2, Teams: season.Weeks![0].Teams.map(row => ({
+      ...row, Wins: row.Wins * 2, Losses: row.Losses * 2, Streak: row.Wins ? '2W' : '2L'
+    })) });
+    dataService.getWeeklyRecaps.and.returnValue(of({ ...recap, Weeks: [...recap.Weeks, { ...recap.Weeks[0], Week: 2 }] }));
 
     const rolloverMatchups = makeMatchups();
     rolloverMatchups.Weeks[1] = {
@@ -584,12 +604,16 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
-    expect(fixture.componentInstance.week).toBe(2);
-    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 2 Matchups');
-    expect(host.querySelector('.weekly-context-half--last .weekly-context-heading')?.textContent).toContain('Last Week · W1');
+    expect(fixture.componentInstance.week).toBe(3);
+    expect(fixture.componentInstance.interactiveWeekReady).toBeFalse();
+    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 3 Matchups');
+    expect(host.querySelector('.weekly-context-half--last .weekly-context-heading')?.textContent).toContain('Last Week · W2');
+    expect(host.querySelector('.weekly-recap-heading')?.textContent).toContain('Week 2 Recap');
+    expect(fixture.componentInstance.weeklyRecap?.week).toBe(2);
     const records = Array.from(host.querySelectorAll('.weekly-standing-record')).map(row => row.textContent?.trim());
-    expect(records.filter(record => record === '1-0').length).toBe(4);
-    expect(records.filter(record => record === '0-1').length).toBe(4);
+    expect(records.filter(record => record === '2-0').length).toBe(4);
+    expect(records.filter(record => record === '0-2').length).toBe(4);
+    expect(host.querySelector('.matchup-card')?.getAttribute('role')).toBeNull();
   });
 
   it('releases the current matchup surface when standings and week context are coherent', () => {
@@ -597,6 +621,9 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(fixture.componentInstance.currentWeekSurfaceReady).toBeTrue();
     expect(host.querySelector('.matchups-shell')).not.toBeNull();
     expect(host.querySelector('.matchup-card')).not.toBeNull();
+    expect(fixture.componentInstance.interactiveWeekReady).toBeTrue();
+    expect(host.querySelector('.matchup-card')?.getAttribute('role')).toBe('button');
+    expect(host.querySelector('.matchup-rollover-note')).toBeNull();
   });
 
   it('keeps dynamic league size for standings and completed mini-matchups', () => {
