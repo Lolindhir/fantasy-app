@@ -16,8 +16,10 @@ Second hardening (final review): the closure is additionally scanned with the sa
 classification (PY_DATA_DIR_RE: literals, DATA_DIR/PUBLIC_DATA names and paths built from parts such as
 `root / "public" / "data"`). The only known hit is the reviewed validation-shadow path in transaction_canonical_shadow.py
 (allowlist with stale check). tools/app_delivery.py is an explicit consumer helper: Derived code must not import it, and
-consumer generators may. Not covered: the own import closure of the orchestrators league_live_derived_refresh and
-player_week_fantasy_refresh (they are consumers by definition; their allowed edge is the allowlist below).
+consumer generators may. Third hardening: the orchestrators league_live_derived_refresh and
+player_week_fantasy_refresh write Derived products, so their own code and non-consumer import closure are scanned with
+the same public/data rule (consumer generators they call on purpose, see the allowlist below, are not followed). A
+dedicated producer-orchestrator category is a separate follow-up.
 """
 from __future__ import annotations
 
@@ -133,10 +135,10 @@ def _literals_in(path: Path, tools: Path) -> list[str]:
     ]
 
 
-def derived_closure_files(tools: Path = TOOLS) -> list[Path]:
+def derived_closure_files(tools: Path = TOOLS, roots: list[Path] | None = None) -> list[Path]:
     """Roots plus every non-consumer top-level module they reach transitively."""
     top = {p.stem for p in tools.glob("*.py")}
-    files = {p: None for p in derived_roots(tools)}
+    files = {p: None for p in (derived_roots(tools) if roots is None else roots)}
     stack = []
     for path in list(files):
         stack += sorted(imports_of(path.read_text(encoding="utf-8"), top)[0])
@@ -201,6 +203,24 @@ def public_data_path_hits(path: Path, tools: Path) -> list[str]:
 def public_data_path_hits_transitive(tools: Path = TOOLS) -> list[str]:
     hits: list[str] = []
     for path in derived_closure_files(tools):
+        hits += public_data_path_hits(path, tools)
+    return sorted(set(hits))
+
+
+ORCHESTRATORS = ("league_live_derived_refresh", "player_week_fantasy_refresh")
+# Reviewed public/data path uses inside the orchestrator closure: the same reviewed shadow path as for Derived.
+ORCHESTRATOR_PATH_ALLOWLIST: set[str] = set(PUBLIC_DATA_PATH_ALLOWLIST)
+
+
+def orchestrator_roots(tools: Path = TOOLS) -> list[Path]:
+    return [tools / f"{name}.py" for name in ORCHESTRATORS if (tools / f"{name}.py").exists()]
+
+
+def public_data_path_hits_orchestrators(tools: Path = TOOLS) -> list[str]:
+    """Orchestrators write Derived products; their own code and non-consumer closure must not read public/data.
+    Consumer generators they call on purpose (CONSUMER_EDGE_ALLOWLIST) are not followed."""
+    hits: list[str] = []
+    for path in derived_closure_files(tools, orchestrator_roots(tools)):
         hits += public_data_path_hits(path, tools)
     return sorted(set(hits))
 
@@ -354,6 +374,25 @@ class DerivedLayerImportGateTests(unittest.TestCase):
         self.assertEqual(unreviewed, [], "public/data path in the Derived closure: " + "; ".join(unreviewed))
         stale = PUBLIC_DATA_PATH_ALLOWLIST - {h.split(":")[0] for h in hits}
         self.assertEqual(sorted(stale), [], "stale allowlist entry")
+
+    def test_orchestrators_do_not_read_public_data(self):
+        hits = public_data_path_hits_orchestrators()
+        unreviewed = [h for h in hits if h.split(":")[0] not in ORCHESTRATOR_PATH_ALLOWLIST]
+        self.assertEqual(unreviewed, [], "public/data path in an orchestrator closure: " + "; ".join(unreviewed))
+        stale = ORCHESTRATOR_PATH_ALLOWLIST - {h.split(":")[0] for h in hits}
+        self.assertEqual(sorted(stale), [], "stale allowlist entry")
+        self.assertEqual(len(orchestrator_roots()), len(ORCHESTRATORS), "orchestrator renamed or removed")
+
+    def test_gate_is_red_for_orchestrator_public_data_paths_but_not_followed_consumers(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tools = Path(tmp)
+            (tools / "league_live_derived_refresh.py").write_text("import lib, thing_app_publish\n")
+            (tools / "lib.py").write_text('def f(root):\n    return root / "public" / "data"\n')
+            (tools / "thing_app_publish.py").write_text('X = "public/data/A.json"\n')
+            hits = public_data_path_hits_orchestrators(tools)
+        self.assertEqual([h.split(":")[0] for h in hits], ["lib.py"])
 
     def test_gate_is_red_for_paths_built_from_parts_and_data_dir_names(self):
         import tempfile
