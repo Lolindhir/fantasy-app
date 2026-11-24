@@ -37,16 +37,17 @@ describe('HallOfFamePageComponent', () => {
     fixture.detectChanges();
   });
 
-  it('shows the newest champion large with banner and ring, even when the team identity file is unavailable', () => {
+  it('shows a single champion as a normal tile with ring, without banner, even when the team identity file is unavailable', () => {
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelectorAll('.hof-featured').length).toBe(1);
-    expect(el.querySelector('.hof-featured app-achievement-banner')?.textContent).toContain('Aces');
-    expect(el.querySelector('.hof-featured__ring img')?.getAttribute('src')).toBe('assets/awards/rings/2025.png');
-    expect(el.querySelector('.hof-champions__grid')).toBeNull();
+    const tiles = el.querySelectorAll('.hof-champion');
+    expect(tiles.length).toBe(1);
+    expect(tiles[0].querySelector('app-achievement-banner')).toBeNull();
+    expect(tiles[0].textContent).toContain('Aces');
+    expect(el.querySelector('.hof-champion__ring')?.getAttribute('src')).toBe('assets/awards/rings/2025.png');
   });
 
   it('falls back to the generic ring when a season has no ring artwork', () => {
-    const img = fixture.nativeElement.querySelector('.hof-featured__ring img') as HTMLImageElement;
+    const img = fixture.nativeElement.querySelector('.hof-champion__ring') as HTMLImageElement;
     img.dispatchEvent(new Event('error'));
     fixture.detectChanges();
     expect(img.getAttribute('src')).toBe('assets/awards/ui/award-championship-ring.png');
@@ -90,18 +91,19 @@ describe('HallOfFamePageComponent with several champions', () => {
 
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach(c => (c.innerHTML = '')));
 
-  it('keeps the newest champion featured and lists earlier ones as compact tiles without banner', () => {
+  it('lists every champion, newest first, as the same compact tile without banner', () => {
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.hof-featured')?.textContent).toContain('Aces');
     const tiles = el.querySelectorAll('.hof-champion');
-    expect(tiles.length).toBe(1);
-    expect(tiles[0].querySelector('app-achievement-banner')).toBeNull();
-    expect(tiles[0].textContent).toContain('Kings');
-    expect(tiles[0].textContent).toContain('2024');
+    expect(tiles.length).toBe(2);
+    expect(el.querySelector('.hof-featured')).toBeNull();
+    expect(tiles[0].textContent).toContain('Aces');
+    expect(tiles[1].textContent).toContain('Kings');
+    expect(tiles[1].textContent).toContain('2024');
+    tiles.forEach(t => expect(t.querySelector('app-achievement-banner')).toBeNull());
   });
 
   it('opens the champion detail dialog from a tile', () => {
-    (fixture.nativeElement.querySelector('.hof-champion') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelectorAll('.hof-champion')[1] as HTMLButtonElement).click();
     fixture.detectChanges();
     const dialog = document.querySelector('app-hall-of-fame-champion-dialog');
     expect(dialog?.textContent).toContain('Kings');

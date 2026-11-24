@@ -2,26 +2,8 @@
   <section class="hof-champions" aria-label="League champions" *ngIf="vm.champions.length > 0">
     <h2>League Champions</h2>
 
-    <div class="hof-featured" *ngIf="vm.champions[0] as current">
-      <app-achievement-banner
-        class="hof-featured__banner"
-        [season]="current.season"
-        achievementLabel="Champion"
-        accent="gold"
-        [subjectName]="current.teamName"
-        [subjectAvatar]="current.teamAvatar"
-        [secondaryAvatar]="current.ownerAvatar"
-        [emblemSrc]="championEmblemSrc"
-        [achievementBadgeSrc]="current.isRegularSeasonChampion ? 'assets/awards/ui/award-regular-season.png' : null"
-      ></app-achievement-banner>
-      <figure class="hof-featured__ring">
-        <img [src]="ringSrc(current)" [alt]="current.season + ' championship ring'" (error)="onRingError(current)" />
-        <figcaption>{{ current.owner }}</figcaption>
-      </figure>
-    </div>
-
-    <ul class="hof-champions__grid" *ngIf="vm.champions.length > 1">
-      <li *ngFor="let champion of vm.champions.slice(1); trackBy: trackSeason">
+    <ul class="hof-champions__grid" >
+      <li *ngFor="let champion of vm.champions; trackBy: trackSeason">
         <button type="button" class="hof-champion" (click)="openChampion(champion)" [attr.aria-label]="champion.season + ' champion ' + champion.teamName + ', show details'">
           <img class="hof-champion__ring" [src]="ringSrc(champion)" alt="" (error)="onRingError(champion)" />
           <img class="hof-champion__logo" [src]="champion.teamAvatar" alt="" />
