@@ -7,6 +7,10 @@ export interface SeasonStatisticsTeam {
   Wins: number;
   Losses: number;
   Ties: number;
+  /** SchemaVersion 2 facts; absent in older files and null without a game. */
+  PointDifferential?: number | null;
+  PointsPerGame?: number | null;
+  PointsAgainstPerGame?: number | null;
   ExpectedWins: number | null;
   Luck: number | null;
   AllPlay: { Wins: number; Losses: number; Ties: number };

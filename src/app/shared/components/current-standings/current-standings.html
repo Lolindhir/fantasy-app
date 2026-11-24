@@ -120,6 +120,18 @@
         [id]="'standing-details-' + row.team.TeamID"
       >
         <ng-container *ngIf="teamStatistics(row) as stats">
+          <div class="standing-detailed-stat" *ngIf="stats.PointDifferential != null">
+            <span>Point Differential</span>
+            <strong>{{ stats.PointDifferential | number:'1.2-2':'en-US' }}</strong>
+          </div>
+          <div class="standing-detailed-stat" *ngIf="stats.PointsPerGame != null">
+            <span>Points per Game</span>
+            <strong>{{ stats.PointsPerGame | number:'1.2-2':'en-US' }}</strong>
+          </div>
+          <div class="standing-detailed-stat" *ngIf="stats.PointsAgainstPerGame != null">
+            <span>Points Against per Game</span>
+            <strong>{{ stats.PointsAgainstPerGame | number:'1.2-2':'en-US' }}</strong>
+          </div>
           <div class="standing-detailed-stat">
             <span>Expected Record</span>
             <strong>{{ formatExpectedRecord(stats) }}</strong>
@@ -143,6 +155,16 @@
           <div class="standing-detailed-stat">
             <span>All-Play Record</span>
             <strong>{{ formatAllPlay(stats) }}</strong>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="teamInjury(row) as injury">
+          <div class="standing-detailed-stat">
+            <span>Hurt / Week</span>
+            <strong [attr.title]="injury.isLowerBound ? 'Some injured players have no projection' : null">{{ injury.hurtDisplay }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Points Lost to Injuries</span>
+            <strong [attr.title]="injury.isLowerBound ? 'Some injured players have no projection' : null">{{ injury.totalDisplay }}</strong>
           </div>
         </ng-container>
         <div class="standing-detailed-trend standing-detailed-places" *ngIf="playoffTeamOdds(row) as odds">

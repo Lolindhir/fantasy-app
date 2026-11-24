@@ -64,18 +64,22 @@ definitions:
   LineupEfficiencyProjected: per game ProjectedStarterPoints (= PregameProjection) / ProjectedBestBallPoints in percent; season value is the mean
   LineupEfficiencyActual: EfficiencyPercent taken over from the team-week-performance product (hindsight), not recomputed; season value is the mean
   ProjectedBestBallStrength: season mean ProjectedBestBallPoints x season mean LineupEfficiencyProjected / 100. Despite the earlier wording this is NOT a lineup-independent roster strength; it is approximately the season mean of the pregame projection of the starters actually fielded (deviation below 0.2 points, checked 2026-11-20 in Issue #1588), hence inert and tied to our projection model; weekly progression carries it too; stored only, not shown in the App
+  PointDifferential: Points - PointsAgainst of the weeks in the product (SchemaVersion 2); plain arithmetic in the product assembler, no model rule
+  PointsPerGame: Points / Games (SchemaVersion 2); null without a game, never 0
+  PointsAgainstPerGame: PointsAgainst / Games (SchemaVersion 2); null without a game, never 0
   thresholds: 0.5 and 0.35 belong to season-stats-v1 (Thresholds in the document)
 
 contract:
-  version: 1
+  version: 2
+  versionNote: SchemaVersion 2 (Issue #1621) adds PointDifferential, PointsPerGame and PointsAgainstPerGame per team additively; files of SchemaVersion 1 stay readable and are replaced by the next materialization. No model change (season-stats-v1 stays immutable).
   rootShape: |
     {
-      "SchemaVersion": 1, "Product": "season-statistics", "CanonicalLeagueID": "<id>", "Season": <int>,
+      "SchemaVersion": 2, "Product": "season-statistics", "CanonicalLeagueID": "<id>", "Season": <int>,
       "Models": { "SeasonStats": "season-stats-v1", "TeamRange": "team-range-v1", "WinProb": "win-prob-v1" },
       "Thresholds": { "UnderdogWinProbability": 0.5, "UpsetWinProbability": 0.35 },
       "IsCompleted": <bool>, "RegularSeasonGames": <int>,
       "AsOf": { "LeagueScoredWeek": <int>, "CompletedWeeks": <int> },
-      "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "Owner", "TeamName", "Games", "Wins", "Losses", "Ties", "Points", "PointsAgainst",
+      "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "Owner", "TeamName", "Games", "Wins", "Losses", "Ties", "Points", "PointsAgainst", "PointDifferential", "PointsPerGame", "PointsAgainstPerGame",
                    "ExpectedWins", "AllPlay", "Luck", "RelativeScoringStrength", "StrengthOfSchedule", "PointsAgainstBurden",
                    "OpponentTiming", "ProjectionDelta", "ProjectionGames", "AboveAverageOpponents", "AboveAverageOpponentWins",
                    "KnownChanceGames", "UnderdogWins", "UpsetWins", "FavoriteLosses", "UpsetLosses",

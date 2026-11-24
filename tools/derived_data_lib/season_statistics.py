@@ -29,7 +29,7 @@ from .weekly_recaps import (
 )
 
 PRODUCT = "season-statistics"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 class SeasonStatisticsError(ValueError):
@@ -173,6 +173,22 @@ def build_weeks(
     return weeks
 
 
+def _point_figures(item: dict[str, Any], digits: int) -> dict[str, float | None]:
+    """Plain facts of the points (SchemaVersion 2): no model rule, only arithmetic on Points, PointsAgainst and Games; null without a game."""
+    games = item["Games"]
+    if not games:
+        return {"PointDifferential": None, "PointsPerGame": None, "PointsAgainstPerGame": None}
+
+    def rounded(value: float) -> float:
+        return round(value, digits) + 0.0  # + 0.0 turns -0.0 into 0.0
+
+    return {
+        "PointDifferential": rounded(item["Points"] - item["PointsAgainst"]),
+        "PointsPerGame": rounded(item["Points"] / games),
+        "PointsAgainstPerGame": rounded(item["PointsAgainst"] / games),
+    }
+
+
 def resolve(repo_root: Path, league_id: str, season: int, teams: list[dict[str, Any]], regular_season_games: int, is_completed: bool) -> dict[str, Any]:
     """The product document of one season; ``teams`` are the dicts of league_standings_sources.build_teams."""
     metadata = load_league_metadata(league_id, data_meta_root(repo_root))
@@ -197,6 +213,7 @@ def resolve(repo_root: Path, league_id: str, season: int, teams: list[dict[str, 
             "TeamID": item["TeamID"], "CanonicalLeagueRosterID": identity[item["TeamID"]]["CanonicalLeagueRosterID"],
             "Owner": identity[item["TeamID"]]["Owner"], "TeamName": identity[item["TeamID"]]["Team"],
             **{key: value for key, value in item.items() if key != "TeamID"},
+            **_point_figures(item, model.DIGITS),
         }
         for item in result["Teams"]
     ]
