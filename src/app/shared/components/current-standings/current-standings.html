@@ -120,6 +120,18 @@
         [id]="'standing-details-' + row.team.TeamID"
       >
         <ng-container *ngIf="teamStatistics(row) as stats">
+          <div class="standing-detailed-stat" *ngIf="stats.PointDifferential != null">
+            <span>Point Differential</span>
+            <strong>{{ stats.PointDifferential | number:'1.2-2':'en-US' }}</strong>
+          </div>
+          <div class="standing-detailed-stat" *ngIf="stats.PointsPerGame != null">
+            <span>Points per Game</span>
+            <strong>{{ stats.PointsPerGame | number:'1.2-2':'en-US' }}</strong>
+          </div>
+          <div class="standing-detailed-stat" *ngIf="stats.PointsAgainstPerGame != null">
+            <span>Points Against per Game</span>
+            <strong>{{ stats.PointsAgainstPerGame | number:'1.2-2':'en-US' }}</strong>
+          </div>
           <div class="standing-detailed-stat">
             <span>Expected Record</span>
             <strong>{{ formatExpectedRecord(stats) }}</strong>

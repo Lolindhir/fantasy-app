@@ -130,6 +130,31 @@ class AllPlayTests(unittest.TestCase):
         self.assertIsNone(result["BiggestUpset"])
 
 
+class PointFiguresTests(unittest.TestCase):
+    def test_point_figures_are_plain_arithmetic_on_the_totals(self) -> None:
+        figures = ss._point_figures({"Games": 3, "Points": 850.0, "PointsAgainst": 790.0}, v1.DIGITS)
+        self.assertEqual(figures["PointDifferential"], 60.0)
+        self.assertAlmostEqual(figures["PointsPerGame"], 283.3333, places=4)
+        self.assertAlmostEqual(figures["PointsAgainstPerGame"], 263.3333, places=4)
+
+    def test_no_game_gives_null_never_zero(self) -> None:
+        figures = ss._point_figures({"Games": 0, "Points": 0, "PointsAgainst": 0}, v1.DIGITS)
+        self.assertEqual(set(figures.values()), {None})
+
+    def test_negative_zero_is_normalized(self) -> None:
+        figures = ss._point_figures({"Games": 2, "Points": 10.0, "PointsAgainst": 10.0}, v1.DIGITS)
+        self.assertEqual(str(figures["PointDifferential"]), "0.0")
+
+    def test_persisted_products_carry_consistent_point_figures(self) -> None:
+        for path in (REPO / "data-derived" / "season-statistics").glob("*/*.json"):
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            if doc.get("SchemaVersion", 1) < 2:
+                continue  # older files are replaced by the next full materialization
+            for item in doc["Teams"]:
+                self.assertEqual({k: item[k] for k in ("PointDifferential", "PointsPerGame", "PointsAgainstPerGame")},
+                                 ss._point_figures(item, v1.DIGITS), path.name)
+
+
 class StrengthAndTimingTests(unittest.TestCase):
     def test_strength_schedule_burden_and_timing(self) -> None:
         weeks = [week(1, game(1, 120, 2, 80)), week(2, game(1, 100, 2, 100))]
