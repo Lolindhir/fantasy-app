@@ -16,7 +16,7 @@ For detailed Stoned Lack extraction guidance, also read:
 
 ## Source-specific handling
 
-- Treat Stoned Lack as a fantasy-first qualitative source.
+- Treat Stoned Lack as a fantasy-first qualitative source, primarily redraft in regular weekly content unless a specific take explicitly addresses Dynasty. Preserve the original horizon of each take and distinguish observed usage/role evidence from format-dependent recommendations. Apply the canonical interpretation rules in `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md` (Source format and decision horizon) during downstream analysis.
 - Use source takes as context, not as final Mighty Giants recommendations.
 - Preserve transcript wording in raw files.
 - Track strong conviction, player tiers, buy/sell/hold/fade/watchlist language and dynasty strategy notes carefully.
