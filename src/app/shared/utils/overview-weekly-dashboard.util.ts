@@ -120,10 +120,11 @@ export function isOverviewCurrentWeekSurfaceReady(
   if (!readModel || readModel.Season !== league.Season) return false;
 
   const activeWeek = readModel.Summary.ActiveOrNextWeek;
-  if (activeWeek === null) return false;
+  if (activeWeek === null || !findWeek(readModel, activeWeek)) return false;
 
   const lastCompletedWeek = readModel.Summary.LastCompletedWeek ?? 0;
-  if (!currentStandingsCoverCompletedWeek(league, lastCompletedWeek)) return false;
+  if (league.FinalScoredWeek < lastCompletedWeek
+    || !currentStandingsCoverCompletedWeek(league, lastCompletedWeek)) return false;
 
   if (!decisionWindows
     || decisionWindows.Season !== league.Season
@@ -136,40 +137,28 @@ export function isOverviewCurrentWeekSurfaceReady(
     && fantasyContext.Week === activeWeek;
 }
 
+/** Known schedule week, independent of lineup detail readiness. */
 export function resolveOverviewDisplayWeek(
   league: League,
-  readModel: MatchupsReadModel | null | undefined,
-  decisionWindows: DecisionWindowsReadModel | null | undefined,
-  fantasyContext: FantasyGameContextReadModel | null | undefined
+  readModel: MatchupsReadModel | null | undefined
 ): number | null {
   if (!readModel || readModel.Season !== league.Season) return null;
-
   const activeWeek = readModel.Summary.ActiveOrNextWeek;
-  if (activeWeek === null) return null;
-
-  if (isOverviewCurrentWeekSurfaceReady(league, readModel, decisionWindows, fantasyContext)) {
-    return activeWeek;
-  }
-
-  // Rollover is atomic in the Overview. If the source-owned Matchups model has
-  // already discovered N+1 but the rest of the weekly context has not caught up,
-  // keep presenting N rather than partially exposing N+1 or hiding the surface.
-  const retainedWeek = activeWeek - 1;
-  return retainedWeek > 0 && findWeek(readModel, retainedWeek)
-    ? retainedWeek
-    : activeWeek;
+  return findWeek(readModel, activeWeek)?.Week ?? null;
 }
 
 export function buildOverviewTopContext(
   league: League,
-  readModel: MatchupsReadModel | null | undefined,
-  displayWeek: number | null = readModel?.Summary.ActiveOrNextWeek ?? null
+  readModel: MatchupsReadModel | null | undefined
 ): OverviewTopContext {
-  const snapshot = buildOverviewStandingsSnapshot(league, readModel, displayWeek);
+  const currentModel = readModel?.Season === league.Season ? readModel : null;
+  // Results and the table are not dependent on the next lineup week. The
+  // matchup summary may request a newer table, but only validated canonical
+  // weekly snapshots can supply it (#1298).
+  const targetWeek = Math.max(league.FinalScoredWeek, currentModel?.Summary.LastCompletedWeek ?? 0);
+  const snapshot = buildOverviewStandingsSnapshot(league, targetWeek + 1);
   const standings = snapshot.rows;
-  const lastWeek = displayWeek === null
-    ? getLastCompletedWeek(readModel)
-    : getFinalWeek(readModel, displayWeek - 1);
+  const lastWeek = getLastCompletedWeek(currentModel);
   if (!lastWeek) {
     return {
       standings,
@@ -183,7 +172,6 @@ export function buildOverviewTopContext(
   const teamByID = new Map(league.Teams.map(team => [String(team.TeamID), team]));
   const historicalStandings = buildOverviewStandingsSnapshot(
     league,
-    readModel,
     lastWeek.Week,
     false,
     false
@@ -278,23 +266,13 @@ export function getLastCompletedWeek(
 
 function buildOverviewStandingsSnapshot(
   league: League,
-  readModel: MatchupsReadModel | null | undefined,
-  displayWeek: number | null,
+  displayWeek: number,
   useCurrentFallback = true,
   allowEarlierSnapshot = true
 ): OverviewStandingsSnapshot {
   const unavailable: OverviewStandingsSnapshot = { rows: [], asOfWeek: null, isFallback: false };
 
-  // Before any completed week, the separately generated current table remains
-  // the only permitted fallback. Never replay Matchups to fabricate standings.
-  if (!readModel || displayWeek === null) {
-    return {
-      ...unavailable,
-      rows: useCurrentFallback ? buildCurrentOverviewStandingRows(league) : []
-    };
-  }
-  if (readModel.Season !== league.Season) return unavailable;
-
+  // Never replay Matchups to fabricate standings.
   const playoffStartWeek = Number(league.PlayoffStartWeek);
   const completedWeek = Number.isFinite(playoffStartWeek) && playoffStartWeek > 0
     ? Math.min(displayWeek - 1, Math.max(0, playoffStartWeek - 1))
@@ -426,15 +404,6 @@ function buildCurrentOverviewStandingRows(league: League): OverviewStandingRow[]
 function formatStandingRecord(wins: number, losses: number, ties: number): string {
   const base = `${wins}-${losses}`;
   return ties > 0 ? `${base}-${ties}` : base;
-}
-
-function getFinalWeek(
-  readModel: MatchupsReadModel | null | undefined,
-  weekNumber: number
-): MatchupWeekReadModel | null {
-  if (!readModel || weekNumber <= 0) return null;
-  const week = findWeek(readModel, weekNumber);
-  return week?.CompletionState === 'final' ? week : null;
 }
 
 function currentStandingsCoverCompletedWeek(league: League, lastCompletedWeek: number): boolean {
