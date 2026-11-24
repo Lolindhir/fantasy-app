@@ -17,7 +17,7 @@ from .matchup_context import MatchupContextError, resolve_matchups
 from .models.registry import get_model
 
 PRODUCT = "league-rivalry"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 MODEL_KIND = "Rivalry"
 
 
@@ -82,6 +82,34 @@ def build_records(rows: list[dict[str, Any]], model: Any) -> list[dict[str, Any]
     return records
 
 
+def build_season_records(rows: list[dict[str, Any]], model: Any) -> list[dict[str, Any]]:
+    """Per season, team, opponent and filter record without the single games (they stay in ``Records``; Issue #1659).
+
+    Uses the same counting and summary as ``build_records`` on the games of one season, so the season records of a pair add up to its record over
+    all seasons. Display order only: Season, TeamID, filter, OpponentID.
+    """
+    by_season: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_season.setdefault(str(row["Game"]["Season"]), []).append(row)
+    out: list[dict[str, Any]] = []
+    for season in sorted(by_season, key=int):
+        for record in build_records(by_season[season], model):
+            out.append({
+                "Season": season,
+                "TeamID": record["TeamID"],
+                "OpponentID": record["OpponentID"],
+                "Filter": record["Filter"],
+                "Wins": record["Wins"],
+                "Losses": record["Losses"],
+                "Ties": record["Ties"],
+                "PointsFor": record["PointsFor"],
+                "PointsAgainst": record["PointsAgainst"],
+            })
+    order = {name: index for index, name in enumerate(model.FILTERS)}
+    out.sort(key=lambda r: (int(r["Season"]), r["TeamID"], order[r["Filter"]], r["OpponentID"]))
+    return out
+
+
 def resolve(repo_root: Path, league_id: str, at_utc: datetime) -> dict[str, Any]:
     """The league-rivalry document of one league over every manifest season; computed from the matchup context at ``at_utc``."""
     import league_standings_sources as sources
@@ -117,4 +145,5 @@ def resolve(repo_root: Path, league_id: str, at_utc: datetime) -> dict[str, Any]
         "Models": {str(season): {"Rivalry": chosen[season]} for season in seasons},
         "Seasons": season_summaries,
         "Records": build_records(rows, model),
+        "SeasonRecords": build_season_records(rows, model),
     }

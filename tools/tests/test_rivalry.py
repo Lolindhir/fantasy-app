@@ -207,6 +207,48 @@ class SeasonGamesTests(unittest.TestCase):
         self.assertNotIn((1, 3, "all"), records)
 
 
+class SeasonRecordsTests(unittest.TestCase):
+    def rows(self):
+        def season(label, a_points):
+            return {"Season": label, "Weeks": [
+                {"Week": 1, "Stage": "regular-season", "Matchups": [matchup(f"{label}r1", 1, a_points, 2, 90.0)]},
+                {"Week": 15, "Stage": "playoffs", "Matchups": [matchup(f"{label}p1", 1, 80.0, 2, 95.0, "championship")]},
+            ]}
+        rows = []
+        for label, points in (("2024", 100.0), ("2025", 85.0)):
+            part, _ = rivalry.season_games(season(label, points), v2, True)
+            rows.extend(part)
+        return rows
+
+    def test_season_records_add_up_to_the_all_season_record(self):
+        rows = self.rows()
+        totals = {(r["TeamID"], r["OpponentID"], r["Filter"]): r for r in rivalry.build_records(rows, v2)}
+        sums: dict[tuple, list[float]] = {}
+        for r in rivalry.build_season_records(rows, v2):
+            acc = sums.setdefault((r["TeamID"], r["OpponentID"], r["Filter"]), [0, 0, 0, 0.0, 0.0])
+            for i, key in enumerate(("Wins", "Losses", "Ties", "PointsFor", "PointsAgainst")):
+                acc[i] += r[key]
+        self.assertEqual(set(totals), set(sums))
+        for key, acc in sums.items():
+            t = totals[key]
+            self.assertEqual([t["Wins"], t["Losses"], t["Ties"]], acc[:3])
+            self.assertAlmostEqual(t["PointsFor"], acc[3], places=2)
+            self.assertAlmostEqual(t["PointsAgainst"], acc[4], places=2)
+
+    def test_season_records_are_per_season_and_carry_no_games(self):
+        records = rivalry.build_season_records(self.rows(), v2)
+        self.assertEqual({"2024", "2025"}, {r["Season"] for r in records})
+        self.assertTrue(all("Games" not in r for r in records))
+        only = {(r["Season"], r["TeamID"], r["OpponentID"], r["Filter"]): r for r in records}
+        def wl(season, flt):
+            r = only[(season, 1, 2, flt)]
+            return (r["Wins"], r["Losses"])
+        self.assertEqual((1, 1), wl("2024", "all"))
+        self.assertEqual((1, 0), wl("2024", "regular"))
+        self.assertEqual((0, 1), wl("2024", "playoffs"))
+        self.assertEqual((0, 2), wl("2025", "all"))
+
+
 class PersistedProductTests(unittest.TestCase):
     """Invariants of the committed product: symmetric records, points mirrored, every referenced game present."""
 
@@ -257,6 +299,19 @@ class PersistedProductTests(unittest.TestCase):
             self.assertTrue(any(game["Bracket"] == "consolation"
                                 for record in self.records.values() for game in record["Games"]),
                             "The v2 historical snapshot should include the known 2025 losers-bracket game")
+
+    def test_season_records_add_up_to_records_when_present(self):
+        season_records = self.doc.get("SeasonRecords")
+        if season_records is None:  # snapshot predates contract version 2; the existing writer republishes it
+            self.skipTest("persisted product has no SeasonRecords yet")
+        sums: dict[tuple, list[int]] = {}
+        for r in season_records:
+            acc = sums.setdefault((r["TeamID"], r["OpponentID"], r["Filter"]), [0, 0, 0])
+            acc[0] += r["Wins"]; acc[1] += r["Losses"]; acc[2] += r["Ties"]
+        self.assertEqual(set(self.records), set(sums))
+        for key, acc in sums.items():
+            rec = self.records[key]
+            self.assertEqual([rec["Wins"], rec["Losses"], rec["Ties"]], acc)
 
     def test_references_exist(self):
         for record in self.records.values():

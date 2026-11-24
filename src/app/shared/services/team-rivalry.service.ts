@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map, shareReplay } from 'rxjs';
 
-import type { RawRivalryGame, RawRivalryRecord, RivalryFilter, RivalryReadModel } from '../../core/models/rivalry.models';
+import type { RawRivalryGame, RawRivalrySeasonRecord, RawRivalryRecord, RivalryFilter, RivalryReadModel } from '../../core/models/rivalry.models';
 import { DataService } from '../../core/services/data.service';
 
 export interface RivalryRecordView {
@@ -43,6 +43,27 @@ export class RivalryLookup {
     const record = this.model.Records.find(candidate =>
       candidate.TeamID === teamId && candidate.OpponentID === opponentId && candidate.Filter === 'all' && candidate.Games.length > 0);
     return record ? this.toView(record) : null;
+  }
+
+  /** Seasons with generated season records, newest first; empty for files published before contract version 2. */
+  get recordSeasons(): string[] {
+    const seasons = new Set((this.model.SeasonRecords ?? []).map(record => record.Season));
+    return [...seasons].sort((a, b) => Number(b) - Number(a));
+  }
+
+  /** TeamIDs that appear in the generated records of one season. */
+  seasonTeamIds(season: string): number[] {
+    const ids = new Set<number>();
+    for (const record of this.model.SeasonRecords ?? []) {
+      if (record.Season === season) ids.add(record.TeamID);
+    }
+    return [...ids];
+  }
+
+  /** Generated record of one team against one opponent in one season; null when they did not meet under that filter. */
+  seasonPair(season: string, teamId: number, opponentId: number, filter: RivalryFilter): RawRivalrySeasonRecord | null {
+    return (this.model.SeasonRecords ?? []).find(record =>
+      record.Season === season && record.TeamID === teamId && record.OpponentID === opponentId && record.Filter === filter) ?? null;
   }
 
   /** Generated record of one team against one opponent for a filter; null when they never met under that filter. */
