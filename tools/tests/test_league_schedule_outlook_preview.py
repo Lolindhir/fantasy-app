@@ -152,8 +152,14 @@ class PreviewAdapterTests(unittest.TestCase):
         self.assertEqual(9, len(result["RegularSeason"]["UpcomingMatchups"]))
         self.assertTrue(all(t["RemainingGames"] == 3 for t in result["RegularSeason"]["Teams"]))
         self.assertEqual("schedule-outlook-v1", result["Models"]["ScheduleOutlook"])
-        with self.assertRaisesRegex(preview.ScheduleOutlookSourceError, "not LeagueScored final"):
-            preview.preview(TOOLS.parent, "nfl-reise", 2026, 11)
+
+    def test_preview_rejects_asof_after_controlled_league_scored_week(self):
+        # The historical smoke test above remains valid as the season advances.
+        # Explicitly control finality here rather than assuming a live week is open.
+        with mock.patch.object(preview, "resolve_week_finality", return_value={"LeagueScoredWeek": 10}) as finality:
+            with self.assertRaisesRegex(preview.ScheduleOutlookSourceError, r"As-of Week 11 is not LeagueScored final \(10\)"):
+                preview.preview(TOOLS.parent, "nfl-reise", 2026, 11)
+            finality.assert_called_once_with(TOOLS.parent, "nfl-reise", 2026)
 
     def test_repository_2025_week_0_does_not_need_a_stats_snapshot(self):
         result = preview.preview(TOOLS.parent, "nfl-reise", 2025, 0)
