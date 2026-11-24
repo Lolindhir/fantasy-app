@@ -16,8 +16,6 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 # Own materializer with consistency guard and its own tests; not part of the restore probe (Issue #1519; team-cap-outlook is a
 # current-season snapshot of the live rosters, Issue #1571; team-injury-impact depends on the current PlayerWeekFantasy partition, Issue #1584).
 OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook", "team-cap-outlook", "team-injury-impact"})
-# Documented before the first productive fill created the directory (Issue #1571).
-NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps", "nfl-player-availability", "league-teams"})
 
 
 def _readme_rows() -> dict[str, tuple[str, str, list[str]]]:
@@ -37,8 +35,8 @@ class DataDerivedInventoryTests(unittest.TestCase):
         dirs = {p.name for p in DERIVED.iterdir() if p.is_dir()}
         rows = set(_readme_rows())
         self.assertFalse(dirs - rows)
-        # A product may be documented before its first productive fill created the directory.
-        self.assertFalse(rows - dirs - NOT_YET_FILLED)
+        # Every documented product has been filled productively and has a directory.
+        self.assertFalse(rows - dirs)
 
     def test_contract_materializer_and_writer_workflows_exist(self):
         for product, (contract, materializer, writers) in _readme_rows().items():
