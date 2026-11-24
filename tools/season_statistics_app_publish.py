@@ -32,7 +32,7 @@ from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
 from derived_data_lib.season_statistics import SeasonStatisticsError  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
-from matchup_context_app_publish import Writer, _warn, history_matchup_seasons  # noqa: E402
+from app_delivery import Writer, history_matchup_seasons, warn  # noqa: E402
 from derived_data_lib.league_teams import team_abbreviation  # noqa: E402
 
 EXPECTED_ERRORS = (SeasonStatisticsError, LifecycleError, StandingsSourceError, LeagueMetadataError)
@@ -84,7 +84,7 @@ def publish(repo_root: Path, league_id: str, scope: str, writer: Writer) -> None
     if scope in ("history", "all"):
         for season in history:
             if season not in stored:
-                _warn(f"Historical SeasonStatistics {season} not published", "season-statistics product missing; materialize it first")
+                warn(f"Historical SeasonStatistics {season} not published", "season-statistics product missing; materialize it first")
                 continue
             writer.put(f"past_seasons/SeasonStatistics/SeasonStatistics_{season}.json", with_team_abbreviations(stored[season]))
 
@@ -106,7 +106,7 @@ def run_write(args: argparse.Namespace) -> int:
         for league_id in leagues(args.league):
             publish(args.repo_root, league_id, args.scope, writer)
     except EXPECTED_ERRORS as error:
-        _warn("SeasonStatistics not published", f"{type(error).__name__}: {error}")
+        warn("SeasonStatistics not published", f"{type(error).__name__}: {error}")
         writer.finish()
         return 1 if args.fail_on_error else 0
     changed = writer.finish()

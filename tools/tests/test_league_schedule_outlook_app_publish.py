@@ -15,7 +15,7 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 import league_schedule_outlook_app_publish as pub  # noqa: E402
-from matchup_context_app_publish import Writer  # noqa: E402
+from app_delivery import Writer  # noqa: E402
 
 LEAGUE, SEASON = "test-league", 2030
 

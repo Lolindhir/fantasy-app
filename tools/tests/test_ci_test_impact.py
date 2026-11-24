@@ -120,6 +120,10 @@ class RoutingTests(unittest.TestCase):
         selected = set(self.choose("tools/matchup_context.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
 
+    def test_neutral_app_delivery_helper_selects_derived_families_not_fail_closed(self):
+        selected = set(self.choose("tools/app_delivery.py")["selected"])
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
+
     def test_weekly_recaps_cli_selects_derived_families(self):
         selected = set(self.choose("tools/weekly_recaps.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)

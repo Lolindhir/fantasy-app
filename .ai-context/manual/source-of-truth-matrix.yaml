@@ -1176,6 +1176,10 @@ consumerReadClassification:
         legacy:DecisionWindows: validation-shadow
         legacy:Timestamps: validation-shadow
       note: 'CLI of the Decision Windows (ADR-074, Issue #1199 section 2). resolve reads only canonical data-source, the lifecycle function and data-meta. compare computes the Decision Windows at the DecisionWindows timestamp and compares them exactly with the published DecisionWindows.json (validation-shadow, never an input; only FirstObservedAtUtc, ObservedAtUtc and AsOfUtc are excluded, D2); Timestamps.json DecisionWindows only supplies the comparison instant.'
+    tools/app_delivery.py:
+      reads:
+        legacy:Timestamps: app-output-owner
+      note: 'Neutral helper of the App consumer generators (architecture cleanup before Issue #1618): the semantic no-op Writer, JSON helpers and the warning annotation that previously lived inside matchup_context_app_publish.py, so consumer generators no longer import each other. It reads the existing App files only to detect a semantic difference and refreshes the Timestamps.json keys of the file it wrote (app-output-owner: the writer owns its own output and freshness timestamp, never an input). No domain rule, no product read.'
     tools/matchup_context_app_publish.py:
       reads:
         legacy:past_seasons: app-output-owner

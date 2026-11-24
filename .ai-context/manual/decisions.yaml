@@ -3152,8 +3152,8 @@ decisions:
       sources, the upstream products (standings, player-week-fantasy, team-week-performance, season-statistics, player-valuation,
       nfl-games), data-meta model choices or the model versions; the periodic historical pass is the weekly update-transactions run,
       the current pass is League Live. New write prefixes (data-derived/matchup-context, data-derived/weekly-recaps,
-      data-derived/team-cap-outlook) are added only to the existing writers league-live.yml (current season, fail-soft where the
-      App file already tolerates it) and update-transactions.yml (history); no new workflow, scheduler target, credential or
+      data-derived/team-cap-outlook) are added only to the existing writers league-live.yml (current season; the team-cap-outlook
+      steps are fail-closed in the command chain, the other new products fail-soft where noted) and update-transactions.yml (history); no new workflow, scheduler target, credential or
       permission. Rollback: remove the prefix and the materializer call; the App files fall back to the computed functions.
     rationale: >-
       A persisted product gives every consumer the same neutral values per league with history, removes the feedback loop of
