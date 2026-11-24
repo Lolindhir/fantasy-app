@@ -1,0 +1,34 @@
+<div class="hof-page" *ngIf="vm$ | async as vm">
+  <section class="hof-champions" aria-label="League champions" *ngIf="vm.champions.length > 0">
+    <h2>League Champions</h2>
+
+    <ul class="hof-champions__grid">
+      <li *ngFor="let champion of vm.champions; trackBy: trackSeason" class="hof-champion">
+        <app-achievement-banner
+          class="hof-champion__banner"
+          [season]="champion.season"
+          achievementLabel="Champion"
+          accent="gold"
+          [subjectName]="champion.teamName"
+          [subjectAvatar]="champion.teamAvatar"
+          [secondaryAvatar]="champion.ownerAvatar"
+          [emblemSrc]="championEmblemSrc"
+          [achievementBadgeSrc]="champion.isRegularSeasonChampion ? 'assets/awards/ui/award-regular-season.png' : null"
+        ></app-achievement-banner>
+        <figure class="hof-champion__ring">
+          <img [src]="ringSrc(champion)" [alt]="champion.season + ' championship ring'" (error)="onRingError(champion)" />
+          <figcaption>{{ champion.owner }}</figcaption>
+        </figure>
+      </li>
+    </ul>
+  </section>
+
+  <app-hall-of-fame heading="League Legacy" crest="🏛️" [highlights]="vm.sections.legacy"></app-hall-of-fame>
+  <app-hall-of-fame heading="All-Time Bests" crest="⭐" [highlights]="vm.sections.bests"></app-hall-of-fame>
+  <app-hall-of-fame heading="Player Legends" crest="🎖️" [highlights]="vm.sections.playerLegends"></app-hall-of-fame>
+
+  <app-all-time-overview
+    [overallStandings]="vm.allTime.overallStandings"
+    [regularSeasonStandings]="vm.allTime.regularSeasonStandings"
+  ></app-all-time-overview>
+</div>

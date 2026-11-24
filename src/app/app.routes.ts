@@ -15,6 +15,7 @@ export const routes: Routes = [
   { path: 'teams', loadComponent: () => import('./features/teams/teams-page/teams-page').then(m => m.TeamsPageComponent) },
   { path: 'teams/legacy', component: TeamListComponent },
   { path: 'stats', loadComponent: () => import('./features/stats/stats-page').then(m => m.StatsPageComponent) },
+  { path: 'hall-of-fame', loadComponent: () => import('./features/hall-of-fame/hall-of-fame-page').then(m => m.HallOfFamePageComponent) },
   { path: 'standings', loadComponent: () => import('./features/standings/standings-page').then(m => m.StandingsPageComponent) },
   { path: 'players', component: PlayersPageComponent },
   { path: 'drafts', component: DraftsPageComponent },

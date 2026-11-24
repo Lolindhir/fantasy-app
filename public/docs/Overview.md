@@ -33,6 +33,7 @@ Hier findest du unsere **Sonderregeln und eigenen Berechnungen** auf einen Blick
 ## 📊 Rankings & Auswertungen
 - Fantasy-Leistung bildet die Grundlage unserer Spieler- und Positionsrankings.
 - Standings, Wochenrückblicke und weitere Statistiken machen die Entwicklung unserer Liga nachvollziehbar.
+- Die **Hall of Fame** hält fest, was bleibt: die Meister jeder Saison, Rekorde der Liga und die All-Time-Tabelle.
 - Der **Injury Impact** in den Stats zeigt, wie viele erwartete Punkte ein Team durch verletzte Spieler verloren hat. Er ist eine Auswertung im Nachhinein, keine Regel; unsichere Werte sind als Untergrenze gekennzeichnet.
 
 ## 🤝 Unsere Idee dahinter
