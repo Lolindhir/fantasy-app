@@ -43,6 +43,7 @@ import {
 } from '../../utils/matchups-overview-view.util';
 import {
   buildOverviewTopContext,
+  isOverviewCurrentWeekSurfaceReady,
   orderOverviewCurrentMatchups,
   resolveOverviewDisplayWeek,
   resolveOverviewWeeklyPhase,
@@ -262,13 +263,7 @@ export class LeagueMatchupsComponent {
   }
 
   get week(): number | null {
-    const state = this.fantasyContextStateSignal();
-    return resolveOverviewDisplayWeek(
-      this.league,
-      this.currentMatchupsReadModel(),
-      state.decisionWindows,
-      state.context
-    );
+    return resolveOverviewDisplayWeek(this.league, this.currentMatchupsReadModel());
   }
 
   get currentWeekSurfaceReady(): boolean {
@@ -277,13 +272,20 @@ export class LeagueMatchupsComponent {
     return week !== null && !!readModel?.Weeks.find(candidate => candidate.Week === week);
   }
 
+  get interactiveWeekReady(): boolean {
+    const state = this.fantasyContextStateSignal();
+    return isOverviewCurrentWeekSurfaceReady(
+      this.league, this.currentMatchupsReadModel(), state.decisionWindows, state.context
+    );
+  }
+
   get overviewPhase(): OverviewWeeklyPhase {
     return resolveOverviewWeeklyPhase(this.currentMatchupsReadModel(), this.nowSignal(), this.week);
   }
 
   get topContext(): OverviewTopContext | null {
     if (!this.hasOverviewContextData) return null;
-    return buildOverviewTopContext(this.league, this.currentMatchupsReadModel(), this.week);
+    return buildOverviewTopContext(this.league, this.currentMatchupsReadModel());
   }
 
   get weeklyRecap(): OverviewRecapSelection | null {
@@ -342,7 +344,7 @@ export class LeagueMatchupsComponent {
   }
 
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
-    return isFantasyGameContextForLeagueWeek(context, this.league.Season, this.week) ? context : null;
+    return this.interactiveWeekReady && isFantasyGameContextForLeagueWeek(context, this.league.Season, this.week) ? context : null;
   }
 
   matchupContext(
@@ -438,11 +440,12 @@ export class LeagueMatchupsComponent {
   }
 
   openMatchupDetailFromOverview(matchup: LeagueMatchupView): void {
-    if (this.latestFantasyContextState) this.openMatchupDetail(matchup, this.latestFantasyContextState);
+    if (this.interactiveWeekReady && this.latestFantasyContextState) this.openMatchupDetail(matchup, this.latestFantasyContextState);
   }
 
   matchupAriaLabel(matchup: LeagueMatchupView): string {
-    return `Open ${this.teamShortName(matchup.left.team)} versus ${this.teamShortName(matchup.right.team)} matchup details`;
+    const pairing = `${this.teamShortName(matchup.left.team)} versus ${this.teamShortName(matchup.right.team)}`;
+    return this.interactiveWeekReady ? `Open ${pairing} matchup details` : pairing;
   }
 
   teamShortName(team: FantasyTeam): string {
@@ -659,7 +662,7 @@ export class LeagueMatchupsComponent {
 
   private currentDecisionWindows(): DecisionWindowsReadModel | null {
     const decisionWindows = this.latestFantasyContextState?.decisionWindows ?? null;
-    return decisionWindows
+    return this.interactiveWeekReady && decisionWindows
       && decisionWindows.Season === this.league.Season
       && decisionWindows.LineupWeek === this.week
       ? decisionWindows
