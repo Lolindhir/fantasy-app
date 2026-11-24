@@ -179,7 +179,7 @@ describe('Overview weekly dashboard presentation', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
     attachCanonicalWeek(league, 1, [[1, 1, 1, 0], [2, 1, 1, 0], [3, 3, 0, 1], [4, 4, 0, 1]]);
     league.Standings[0].Weeks![0].Teams[0].Streak = '1T';
-    const result = buildOverviewTopContext(league, readModel(1), 2);
+    const result = buildOverviewTopContext(league, readModel(1, 2));
     expect(result.standings.map(row => row.displayPlace)).toEqual([1, 1, 3, 4]);
     expect(result.standings.map(row => row.streak)).toEqual(['1T', '1W', '1W', '1W']);
     expect(result.standings[0].points).toBe(200);
@@ -193,7 +193,7 @@ describe('Overview weekly dashboard presentation', () => {
     league.Teams[0].Placements.Current.Regular.Wins = 8;
     league.Teams[0].Placements.Current.Regular.PlaceDelta = 2;
 
-    const context = buildOverviewTopContext(league, readModel(8), 9);
+    const context = buildOverviewTopContext(league, readModel(8, 9));
     expect(context.standingsAsOfWeek).toBe(7);
     expect(context.standingsIsFallback).toBeTrue();
     expect(context.standings.map(row => [row.team.TeamID, row.record])).toEqual([
@@ -208,12 +208,12 @@ describe('Overview weekly dashboard presentation', () => {
     attachCanonicalWeek(league, 8, [[3, 1, 7, 1], [2, 2, 6, 2], [1, 3, 4, 4], [4, 4, 3, 5]]);
     const week8 = league.Standings[0].Weeks!.find(row => row.Week === 8)!;
     week8.Teams[0].Streak = ''; // A partially published snapshot is not accepted.
-    const incomplete = buildOverviewTopContext(league, readModel(8), 9);
+    const incomplete = buildOverviewTopContext(league, readModel(8, 9));
     expect(incomplete.standingsAsOfWeek).toBe(7);
     expect(incomplete.standingsIsFallback).toBeTrue();
 
     week8.Teams[0].Streak = '1W';
-    const complete = buildOverviewTopContext(league, readModel(8), 9);
+    const complete = buildOverviewTopContext(league, readModel(8, 9));
     expect(complete.standingsAsOfWeek).toBe(8);
     expect(complete.standingsIsFallback).toBeFalse();
     expect(complete.standings.map(row => row.record)).toEqual(['7-1', '6-2', '4-4', '3-5']);
@@ -224,7 +224,7 @@ describe('Overview weekly dashboard presentation', () => {
     league.PlayoffStartWeek = 14;
     attachCanonicalWeek(league, 13, [[1, 1, 13, 0], [2, 2, 12, 1], [3, 3, 11, 2], [4, 4, 10, 3]]);
 
-    const context = buildOverviewTopContext(league, readModel(14), 15);
+    const context = buildOverviewTopContext(league, readModel(14, 15));
     expect(context.standingsAsOfWeek).toBe(13);
     expect(context.standingsIsFallback).toBeFalse();
     expect(context.standings.length).toBe(4);
@@ -233,7 +233,7 @@ describe('Overview weekly dashboard presentation', () => {
   it('never substitutes unconfirmed future snapshots for a missing as-of week', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
     attachCanonicalWeek(league, 3, [[1, 1, 3, 0], [2, 2, 2, 1], [3, 3, 1, 2], [4, 4, 0, 3]]);
-    const result = buildOverviewTopContext(league, readModel(1), 2);
+    const result = buildOverviewTopContext(league, readModel(1, 2));
     expect(result.standings).toEqual([]);
     expect(result.standingsAsOfWeek).toBeNull();
     expect(result.standingsIsFallback).toBeFalse();
@@ -558,7 +558,7 @@ describe('Overview weekly dashboard presentation', () => {
     }
 
     it('shows the generator PlaceDelta for the snapshot that is the current table', () => {
-      const context = buildOverviewTopContext(movementLeague(), readModel(1), 2);
+      const context = buildOverviewTopContext(movementLeague(), readModel(1, 2));
 
       expect(context.standings.map(row => [row.team.TeamID, row.displayPlace, row.placeDelta])).toEqual([
         [3, 1, 2],
@@ -604,7 +604,7 @@ describe('Overview weekly dashboard presentation', () => {
         team.Placements.Current.Regular.Losses = 0;
       }
 
-      const context = buildOverviewTopContext(league, readModel(1), 2);
+      const context = buildOverviewTopContext(league, readModel(1, 2));
 
       expect(context.standings.map(row => row.placeDelta)).toEqual([null, null, null, null]);
     });
@@ -613,7 +613,7 @@ describe('Overview weekly dashboard presentation', () => {
       const league = movementLeague();
       league.Teams.find(team => team.TeamID === 3)!.Placements.Current.Regular.Place = 2;
 
-      const context = buildOverviewTopContext(league, readModel(1), 2);
+      const context = buildOverviewTopContext(league, readModel(1, 2));
 
       expect(context.standings.find(row => row.team.TeamID === 3)?.placeDelta).toBeNull();
     });
