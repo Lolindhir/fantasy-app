@@ -41,7 +41,7 @@ export interface HallOfFameChampionDialogData {
   `,
   styles: [`
     .champ-dialog { display: grid; justify-items: center; gap: 12px; padding-top: 12px; }
-    .champ-dialog__ring { width: 180px; height: 180px; object-fit: contain; }
+    .champ-dialog__ring { width: 225px; height: 225px; object-fit: contain; }
     .champ-dialog__banner { width: 110px; }
     .champ-dialog__owner { display: inline-flex; align-items: center; gap: 8px; font-size: 1.05rem; font-weight: 600; color: #000; }
     .champ-dialog__owner-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
