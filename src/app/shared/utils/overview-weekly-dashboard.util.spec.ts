@@ -179,7 +179,7 @@ describe('Overview weekly dashboard presentation', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
     attachCanonicalWeek(league, 1, [[1, 1, 1, 0], [2, 1, 1, 0], [3, 3, 0, 1], [4, 4, 0, 1]]);
     league.Standings[0].Weeks![0].Teams[0].Streak = '1T';
-    const result = buildOverviewTopContext(league, readModel(1, 2), 2);
+    const result = buildOverviewTopContext(league, readModel(1), 2);
     expect(result.standings.map(row => row.displayPlace)).toEqual([1, 1, 3, 4]);
     expect(result.standings.map(row => row.streak)).toEqual(['1T', '1W', '1W', '1W']);
     expect(result.standings[0].points).toBe(200);
@@ -193,7 +193,7 @@ describe('Overview weekly dashboard presentation', () => {
     league.Teams[0].Placements.Current.Regular.Wins = 8;
     league.Teams[0].Placements.Current.Regular.PlaceDelta = 2;
 
-    const context = buildOverviewTopContext(league, readModel(8, 9), 9);
+    const context = buildOverviewTopContext(league, readModel(8), 9);
     expect(context.standingsAsOfWeek).toBe(7);
     expect(context.standingsIsFallback).toBeTrue();
     expect(context.standings.map(row => [row.team.TeamID, row.record])).toEqual([
@@ -208,12 +208,12 @@ describe('Overview weekly dashboard presentation', () => {
     attachCanonicalWeek(league, 8, [[3, 1, 7, 1], [2, 2, 6, 2], [1, 3, 4, 4], [4, 4, 3, 5]]);
     const week8 = league.Standings[0].Weeks!.find(row => row.Week === 8)!;
     week8.Teams[0].Streak = ''; // A partially published snapshot is not accepted.
-    const incomplete = buildOverviewTopContext(league, readModel(8, 9), 9);
+    const incomplete = buildOverviewTopContext(league, readModel(8), 9);
     expect(incomplete.standingsAsOfWeek).toBe(7);
     expect(incomplete.standingsIsFallback).toBeTrue();
 
     week8.Teams[0].Streak = '1W';
-    const complete = buildOverviewTopContext(league, readModel(8, 9), 9);
+    const complete = buildOverviewTopContext(league, readModel(8), 9);
     expect(complete.standingsAsOfWeek).toBe(8);
     expect(complete.standingsIsFallback).toBeFalse();
     expect(complete.standings.map(row => row.record)).toEqual(['7-1', '6-2', '4-4', '3-5']);
@@ -224,16 +224,16 @@ describe('Overview weekly dashboard presentation', () => {
     league.PlayoffStartWeek = 14;
     attachCanonicalWeek(league, 13, [[1, 1, 13, 0], [2, 2, 12, 1], [3, 3, 11, 2], [4, 4, 10, 3]]);
 
-    const context = buildOverviewTopContext(league, readModel(14, 15), 15);
+    const context = buildOverviewTopContext(league, readModel(14), 15);
     expect(context.standingsAsOfWeek).toBe(13);
     expect(context.standingsIsFallback).toBeFalse();
     expect(context.standings.length).toBe(4);
   });
 
-  it('never substitutes future snapshots or invents a current table for a missing as-of week', () => {
-    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 3);
+  it('never substitutes unconfirmed future snapshots for a missing as-of week', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
     attachCanonicalWeek(league, 3, [[1, 1, 3, 0], [2, 2, 2, 1], [3, 3, 1, 2], [4, 4, 0, 3]]);
-    const result = buildOverviewTopContext(league, readModel(1, 2), 2);
+    const result = buildOverviewTopContext(league, readModel(1), 2);
     expect(result.standings).toEqual([]);
     expect(result.standingsAsOfWeek).toBeNull();
     expect(result.standingsIsFallback).toBeFalse();
@@ -242,19 +242,19 @@ describe('Overview weekly dashboard presentation', () => {
   it('fails closed for missing, incomplete or invalid canonical weekly standings', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
     const model = readModel(1, 2);
-    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+    expect(buildOverviewTopContext(league, model).standings).toEqual([]);
     attachCanonicalWeek(league, 1, [[1, 1, 1, 0], [2, 2, 1, 0], [3, 3, 0, 1], [4, 4, 0, 1]]);
     league.Standings[0].Weeks![0].Teams[2].Streak = '';
-    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+    expect(buildOverviewTopContext(league, model).standings).toEqual([]);
     league.Standings[0].Weeks![0].Teams[2].Streak = '1L';
     league.Standings[0].Weeks![0].Teams.pop();
-    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+    expect(buildOverviewTopContext(league, model).standings).toEqual([]);
   });
 
   it('does not treat absent generated current points as zero in a fallback', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 0);
     league.Teams[0].Placements.Current.Regular.Points = undefined as unknown as number;
-    expect(buildOverviewTopContext(league, null, null).standings).toEqual([]);
+    expect(buildOverviewTopContext(league, null).standings).toEqual([]);
   });
 
   it('keeps Week 1 fail-closed when no LastCompletedWeek exists', () => {
@@ -288,6 +288,7 @@ describe('Overview weekly dashboard presentation', () => {
       Summary: { LastCompletedWeek: 1, ActiveOrNextWeek: null }
     };
 
+    attachCanonicalWeek(league, 1, teams.map(team => [team.TeamID, team.TeamID, 1, 0] as const));
     const context = buildOverviewTopContext(league, model);
     expect(context.standings.length).toBe(8);
     expect(context.lastMatchups.length).toBe(4);
@@ -335,7 +336,7 @@ describe('Overview weekly dashboard presentation', () => {
     )).toBeFalse();
   });
 
-  it('retains the previous display week until the next week is fully coherent', () => {
+  it('advances known pairings and confirmed results while lineup context is still on the completed week', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     for (const team of teams) {
       team.Placements.Current.Regular.Wins = 2;
@@ -358,22 +359,22 @@ describe('Overview weekly dashboard presentation', () => {
       Matchups: [matchup('m-5', 1, 3), matchup('m-6', 2, 4)]
     });
 
-    expect(resolveOverviewDisplayWeek(
-      league,
-      model,
+    expect(resolveOverviewDisplayWeek(league, model)).toBe(3);
+    expect(isOverviewCurrentWeekSurfaceReady(
+      league, model,
       { Season: '2026', LineupWeek: 2 } as DecisionWindowsReadModel,
       { Season: '2026', Week: 2 } as FantasyGameContextReadModel
-    )).toBe(2);
+    )).toBeFalse();
 
     attachCanonicalWeek(league, 1, [[3, 1, 1, 0], [1, 2, 1, 0], [4, 3, 0, 1], [2, 4, 0, 1]]);
-    const context = buildOverviewTopContext(league, model, 2);
-    expect(context.lastCompletedWeek).toBe(1);
+    attachCanonicalWeek(league, 2, [[1, 1, 2, 0], [3, 2, 1, 1], [2, 3, 1, 1], [4, 4, 0, 2]]);
+    const context = buildOverviewTopContext(league, model);
+    expect(context.lastCompletedWeek).toBe(2);
+    expect(context.standingsAsOfWeek).toBe(2);
     expect(context.standings.map(row => [row.team.TeamID, row.record])).toEqual([
-      [3, '1-0'],
-      [1, '1-0'],
-      [4, '0-1'],
-      [2, '0-1']
+      [1, '2-0'], [3, '1-1'], [2, '1-1'], [4, '0-2']
     ]);
+    expect(selectOverviewRecap(recaps(), '2026', context.lastCompletedWeek, 'recap')).toBeNull();
   });
 
   it('preserves Last Week matchup ordering and participant orientation from the standings before that week', () => {
@@ -469,7 +470,7 @@ describe('Overview weekly dashboard presentation', () => {
 
     attachCanonicalWeek(league, 1, [[2, 1, 1, 0], [6, 2, 1, 0], [3, 3, 1, 0], [1, 4, 0, 1], [4, 5, 0, 1], [5, 6, 0, 1]]);
     attachCanonicalWeek(league, 2, [[2, 1, 2, 0], [3, 2, 2, 0], [6, 3, 1, 1], [1, 4, 1, 1], [4, 5, 0, 2], [5, 6, 0, 2]]);
-    const context = buildOverviewTopContext(league, model, 3);
+    const context = buildOverviewTopContext(league, model);
 
     expect(context.lastCompletedWeek).toBe(2);
     expect(context.lastMatchups.map(row => row.matchupID)).toEqual([
@@ -482,7 +483,7 @@ describe('Overview weekly dashboard presentation', () => {
     expect(context.lastMatchups[0].participants.map(participant => participant.isWinner)).toEqual([false, true]);
   });
 
-  it('atomically releases the next display week when standings and both context models agree', () => {
+  it('releases next-week details when standings and both context models agree', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     for (const team of teams) {
       team.Placements.Current.Regular.Wins = 2;
@@ -505,15 +506,15 @@ describe('Overview weekly dashboard presentation', () => {
       Matchups: [matchup('m-5', 1, 3), matchup('m-6', 2, 4)]
     });
 
-    expect(resolveOverviewDisplayWeek(
-      league,
-      model,
+    expect(resolveOverviewDisplayWeek(league, model)).toBe(3);
+    expect(isOverviewCurrentWeekSurfaceReady(
+      league, model,
       { Season: '2026', LineupWeek: 3 } as DecisionWindowsReadModel,
       { Season: '2026', Week: 3 } as FantasyGameContextReadModel
-    )).toBe(3);
+    )).toBeTrue();
 
     attachCanonicalWeek(league, 2, [[1, 1, 2, 0], [2, 2, 2, 0], [3, 3, 2, 0], [4, 4, 2, 0]]);
-    const context = buildOverviewTopContext(league, model, 3);
+    const context = buildOverviewTopContext(league, model);
     expect(context.lastCompletedWeek).toBe(2);
     expect(context.standings.every(row => row.wins + row.losses + row.ties === 2)).toBeTrue();
   });
@@ -557,7 +558,7 @@ describe('Overview weekly dashboard presentation', () => {
     }
 
     it('shows the generator PlaceDelta for the snapshot that is the current table', () => {
-      const context = buildOverviewTopContext(movementLeague(), readModel(1, 2), 2);
+      const context = buildOverviewTopContext(movementLeague(), readModel(1), 2);
 
       expect(context.standings.map(row => [row.team.TeamID, row.displayPlace, row.placeDelta])).toEqual([
         [3, 1, 2],
@@ -567,88 +568,32 @@ describe('Overview weekly dashboard presentation', () => {
       ]);
     });
 
-    it('shows historical W4 movement during a retained W5 even after League reached W5', () => {
-      const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
-      const currentPlaces = new Map([[1, 3], [2, 2], [3, 1], [4, 4]]);
-      const latestDeltas = new Map([[1, -1], [2, 1], [3, 0], [4, 0]]);
-      for (const team of teams) {
-        const regular = team.Placements.Current.Regular;
-        regular.Place = currentPlaces.get(team.TeamID)!;
-        regular.Wins = 3;
-        regular.Losses = 2;
-        regular.PlaceDelta = latestDeltas.get(team.TeamID)!;
-      }
-      const league = makeLeague(teams, 5);
-      league.PlayoffStartWeek = 14;
-      attachCanonicalWeek(league, 4, [[3, 1, 4, 0], [1, 2, 4, 0], [2, 3, 4, 0], [4, 4, 4, 0]]);
-      attachCanonicalWeek(league, 5, [[3, 1, 5, 0], [2, 2, 5, 0], [1, 3, 5, 0], [4, 4, 5, 0]]);
-
-      const pairs = [
-        [[1, 2], [3, 4]],
-        [[3, 1], [2, 4]],
-        [[1, 4], [2, 3]],
-        [[1, 2], [3, 4]],
-        [[3, 1], [2, 4]],
-        [[1, 3], [2, 4]]
-      ];
-      const model: MatchupsReadModel = {
-        SchemaVersion: 1,
-        Season: '2026',
-        Weeks: pairs.map((weekPairs, index) => ({
-          Week: index + 1,
-          Stage: 'regular-season' as const,
-          FirstKickoffUtc: '2026-09-10T00:00:00Z',
-          CompletionState: (index < 5 ? 'final' : 'open') as 'final' | 'open',
-          Matchups: weekPairs.map(([a, b], matchIndex) =>
-            matchup(`w${index + 1}-m${matchIndex}`, a, b, index < 5 ? 'final' : 'open'))
-        })),
-        Summary: { LastCompletedWeek: 5, ActiveOrNextWeek: 6 }
-      };
-
-      const displayWeek = resolveOverviewDisplayWeek(
-        league, model,
-        { Season: '2026', LineupWeek: 5 } as DecisionWindowsReadModel,
-        { Season: '2026', Week: 5 } as FantasyGameContextReadModel
-      );
-      expect(displayWeek).toBe(5);
-      const before = buildOverviewTopContext(league, model, displayWeek);
-      expect(before.standings.map(row => row.team.TeamID)).toEqual([3, 1, 2, 4]);
-      expect(before.standings.every(row => row.placeDelta === null)).toBeTrue();
-
-      const week4Deltas = new Map([[1, 1], [2, -1], [3, 0], [4, 0]]);
-      for (const row of before.standings) {
-        const regular = row.team.Placements.Current.Regular;
-        const oldPlace = row.displayPlace + week4Deltas.get(row.team.TeamID)!;
-        regular.WeeklyMovements = [
-          {
-            Week: 4,
-            Place: row.displayPlace,
-            PreviousWeekPlace: oldPlace,
-            PlaceDelta: oldPlace - row.displayPlace
-          },
-          {
-            Week: 5,
-            Place: regular.Place,
-            PreviousWeekPlace: regular.Place + latestDeltas.get(row.team.TeamID)!,
-            PlaceDelta: latestDeltas.get(row.team.TeamID)!
-          }
+    it('shows latest canonical movement even while lineup context has not advanced', () => {
+      const league = movementLeague();
+      league.FinalScoredWeek = 2;
+      attachCanonicalWeek(league, 2, [[1, 1, 2, 0], [3, 2, 1, 1], [2, 3, 1, 1], [4, 4, 0, 2]]);
+      for (const team of league.Teams) {
+        const current = team.Placements.Current.Regular;
+        const row = league.Standings[0].Weeks!.find(entry => entry.Week === 2)!.Teams.find(entry => entry.TeamID === team.TeamID)!;
+        const previous = current.Place;
+        current.Place = row.Place;
+        current.Wins = row.Wins;
+        current.Losses = row.Losses;
+        current.PlaceDelta = previous - row.Place;
+        current.WeeklyMovements = [
+          { Week: 2, Place: row.Place, PreviousWeekPlace: previous, PlaceDelta: previous - row.Place }
         ];
       }
-
-      const held = buildOverviewTopContext(league, model, displayWeek);
-      expect(held.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual([
-        [3, 0], [1, 1], [2, -1], [4, 0]
+      // A delayed Matchups delivery must not roll the already-confirmed table back.
+      const model = readModel(1, 2);
+      const latest = buildOverviewTopContext(league, model);
+      expect(latest.standingsAsOfWeek).toBe(2);
+      expect(latest.lastCompletedWeek).toBe(1);
+      expect(latest.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual([
+        [1, 1], [3, -1], [2, 1], [4, -1]
       ]);
-      const released = buildOverviewTopContext(league, model, 6);
-      expect(released.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual([
-        [3, 0], [2, 1], [1, -1], [4, 0]
-      ]);
-      // A missing week, or a mismatched generated place, must remain neutral.
-      teams[0].Placements.Current.Regular.WeeklyMovements = [];
-      teams[1].Placements.Current.Regular.WeeklyMovements![0].Place = 99;
-      const guarded = buildOverviewTopContext(league, model, 5);
-      expect(guarded.standings.find(row => row.team.TeamID === 1)?.placeDelta).toBeNull();
-      expect(guarded.standings.find(row => row.team.TeamID === 2)?.placeDelta).toBeNull();
+      league.Teams[0].Placements.Current.Regular.WeeklyMovements = [];
+      expect(buildOverviewTopContext(league, model).standings[0].placeDelta).toBeNull();
     });
 
     it('does not leak movement into a retained display week that is older than the current table', () => {
@@ -659,7 +604,7 @@ describe('Overview weekly dashboard presentation', () => {
         team.Placements.Current.Regular.Losses = 0;
       }
 
-      const context = buildOverviewTopContext(league, readModel(1, 2), 2);
+      const context = buildOverviewTopContext(league, readModel(1), 2);
 
       expect(context.standings.map(row => row.placeDelta)).toEqual([null, null, null, null]);
     });
@@ -668,13 +613,13 @@ describe('Overview weekly dashboard presentation', () => {
       const league = movementLeague();
       league.Teams.find(team => team.TeamID === 3)!.Placements.Current.Regular.Place = 2;
 
-      const context = buildOverviewTopContext(league, readModel(1, 2), 2);
+      const context = buildOverviewTopContext(league, readModel(1), 2);
 
       expect(context.standings.find(row => row.team.TeamID === 3)?.placeDelta).toBeNull();
     });
 
-    it('passes PlaceDelta through the current-table fallback without recomputing it', () => {
-      const context = buildOverviewTopContext(movementLeague(), null, null);
+    it('shows canonical movement even before Matchups has loaded', () => {
+      const context = buildOverviewTopContext(movementLeague(), null);
 
       expect(context.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual(
         jasmine.arrayContaining([[3, 2], [1, 0], [4, -1], [2, null]])
