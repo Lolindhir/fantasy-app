@@ -60,8 +60,8 @@ export class HallOfFamePageComponent {
   openChampion(champion: HallOfFameChampion): void {
     this.dialog.open(HallOfFameChampionDialogComponent, {
       data: { champion, emblemSrc: this.championEmblemSrc, ringSrc: this.ringSrc(champion) },
-      width: '400px',
-      maxWidth: '94vw',
+      width: '320px',
+      maxWidth: '92vw',
       autoFocus: 'dialog'
     });
   }
