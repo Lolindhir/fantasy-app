@@ -667,7 +667,7 @@ playerWeekFantasy:
     - Fantasy Operations
   matchupProjections:
     output: public/data/MatchupProjections.json
-    owner: tools/matchup_projection.py
+    owner: tools/derived_data_lib/matchup_projection.py (pure computation, Issue #1645; delivered through the matchup-context product)
     inputs: computed FantasyGameContext (matchup-context function) and the Sleeper-keyed view of the PlayerWeekFantasy product (tools/derived_data_lib/player_week_fantasy_view.py) (same Season+Week); no public/data read since Issue #1199 section 3 step 6
     rule: team projection and range arithmetic lives in published data, not in Angular
   migrationRule: >
@@ -1274,10 +1274,6 @@ consumerReadClassification:
         network: source-layer-acquisition
         provider:sleeper: source-layer-acquisition
       note: 'Provider acquisition owned by the data-source layer (raw evidence under data-source/providers).'
-    tools/matchup_projection.py:
-      reads:
-        legacy:MatchupProjections: app-output-owner
-      note: 'Matchup projection takes the computed FantasyGameContext (matchup-context function, ADR-075), the Sleeper-keyed view of the PlayerWeekFantasy product (derived_data_lib/player_week_fantasy_view.py) and the shared Decision Windows function (scoring availability, ADR-074); it reads nothing from public/data and writes MatchupProjections.json with the team-range model chosen in data-meta.'
     tools/nfl_source_data_lib/mapping_history.py:
       reads:
         legacy:past_seasons: historical-static-reference
@@ -1952,8 +1948,9 @@ productiveEdgeAudit: {
       "owner": "tools/derived_data_lib/models/team_range/v1.py",
       "product": "public/data/MatchupProjections.json",
       "consumers": [
-        "tools/matchup_projection.py",
-        "tools/player_week_fantasy_refresh.py"
+        "tools/derived_data_lib/matchup_projection.py",
+        "tools/matchup_context_materialize.py",
+        "tools/matchup_context_app_publish.py"
       ],
       "identity": [
         "CanonicalLeagueID",
@@ -1964,8 +1961,8 @@ productiveEdgeAudit: {
         "TeamRangeModelID"
       ],
       "evidenceFiles": [
-        "tools/matchup_projection.py",
-        "tools/player_week_fantasy_refresh.py",
+        "tools/derived_data_lib/matchup_projection.py",
+        "tools/matchup_context_materialize.py",
         "tools/derived_data_lib/models/team_range/v1.py"
       ],
       "unavailable": "No matchup context skips output; failed decision windows only suppress availability enrichment"
@@ -2375,7 +2372,7 @@ sourceFamilyCoverageAudit: {
         "matchup-projections-central-model-delivery"
       ],
       "evidenceFiles": [
-        "tools/matchup_projection.py"
+        "tools/derived_data_lib/matchup_projection.py"
       ],
       "remaining": "A bounded model/materialization edge is code-evidenced; production workflow reachability, complete consumer coverage, refresh and historical restoration remain unverified."
     },
@@ -2597,8 +2594,8 @@ sourceFamilyCoverageAudit: {
           "contains": "writer.put(\"MatchupProjections.json\""
         },
         {
-          "file": "tools/matchup_projection.py",
-          "contains": "OUTPUT_PATH = Path(\"public/data/MatchupProjections.json\")"
+          "file": "tools/derived_data_lib/matchup_projection.py",
+          "contains": "def compute_matchup_projections("
         },
         {
           "file": "src/app/core/services/data-api.service.ts",

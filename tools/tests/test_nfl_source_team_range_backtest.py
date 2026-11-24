@@ -18,7 +18,7 @@ from historical_team_range_backtest import (  # noqa: E402
     coverage,
     last_fantasy_week,
 )
-from matchup_projection import z_for_level  # noqa: E402
+from derived_data_lib.models.team_range.v1 import z_for_level  # noqa: E402
 
 Z90 = z_for_level(0.9)
 

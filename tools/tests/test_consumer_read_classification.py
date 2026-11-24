@@ -614,7 +614,7 @@ class ConsumerReadClassificationTest(unittest.TestCase):
             "nfl-games": ("nfl-games-canonical-materialization", "tools/nfl_games_materialize.py", "build_nfl_games(*inputs)"),
             "team-week-performance": ("team-week-performance-canonical-materialization", "tools/team_week_performance_materialize.py", "load_verified_week_inputs("),
             "fantasy-game-context-and-matchups": ("matchup-context-canonical-app-delivery", "tools/matchup_context_app_publish.py", "_product(repo_root, league_id, season, MATCHUPS)"),
-            "matchup-projections": ("matchup-projections-central-model-delivery", "tools/player_week_fantasy_refresh.py", "publish_matchup_projections("),
+            "matchup-projections": ("matchup-projections-central-model-delivery", "tools/matchup_context_materialize.py", "compute_matchup_projections("),
         }
         for name, (edge, path, code_witness) in witnesses.items():
             with self.subTest(name=name):

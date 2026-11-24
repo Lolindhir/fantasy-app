@@ -14,14 +14,14 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-import matchup_projection  # noqa: E402
+from derived_data_lib import matchup_projection  # noqa: E402
 from derived_data_lib.models.team_range import v1 as team_range_v1  # noqa: E402
-from matchup_projection import (  # noqa: E402
+from derived_data_lib.matchup_projection import (  # noqa: E402
     AXIS_PADDING,
     METHOD_ID,
     build_matchup_projections,
     player_sigma,
-    publish_matchup_projections,
+    compute_matchup_projections,
     team_ranges,
     z_for_level,
 )
@@ -520,24 +520,23 @@ class TeamRangeModelTests(unittest.TestCase):
             self.assertNotIn(forbidden, source)
 
 
-class PublicationTests(unittest.TestCase):
+class ComputationTests(unittest.TestCase):
+    """compute_matchup_projections is a pure function: nothing is written (Issue #1645)."""
+
     AT = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
 
-    def _publish(self, root: Path, context: dict, model: dict, *, windows=None) -> dict:
-        """Publish with a stand-in data-meta (team-range-v1 chosen for the season) and stand-in Decision Windows."""
+    def _compute(self, root: Path, context: dict, model: dict, *, windows=None):
+        """Compute with a stand-in data-meta (team-range-v1 chosen for the season) and stand-in Decision Windows."""
         metadata = {"CanonicalLeagueID": "league-a", "Seasons": {"2026": {"Models": {"TeamRange": "team-range-v1", "WinProb": "win-prob-v1"}}}}
-        with mock.patch("matchup_projection.load_league_metadata", return_value=metadata), mock.patch(
-            "matchup_projection._decision_windows", return_value=windows
+        with mock.patch("derived_data_lib.matchup_projection.load_league_metadata", return_value=metadata), mock.patch(
+            "derived_data_lib.matchup_projection._decision_windows", return_value=windows
         ):
-            return publish_matchup_projections(root, context, model, league_id="league-a", at_utc=self.AT)
+            return compute_matchup_projections(root, context, model, league_id="league-a", at_utc=self.AT)
 
     def _windows(self, *, week: int, state: str) -> dict:
         return {"Season": 2026, "LineupWeek": week, "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": state}]}
 
-    def _payload(self, root: Path) -> dict:
-        return json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
-
-    def test_publication_uses_existing_shared_derived_season_statistics(self) -> None:
+    def test_computation_uses_existing_shared_derived_season_statistics(self) -> None:
         root = Path(tempfile.mkdtemp())
         stats_path = root / "data-derived/season-statistics/league-a/2026.json"
         stats_path.parent.mkdir(parents=True, exist_ok=True)
@@ -548,109 +547,74 @@ class PublicationTests(unittest.TestCase):
         }), encoding="utf-8")
         model = default_model()
         model["Records"][3]["Projection"] = projection(0, status="insufficient-history")
-        first = self._publish(root, default_context(), model)
-        second = self._publish(root, default_context(), model)
-        self.assertTrue(first["Changed"])
-        self.assertFalse(second["Changed"])
-        team = self._payload(root)["Matchups"][0]["Teams"][0]
+        team = self._compute(root, default_context(), model)["Matchups"][0]["Teams"][0]
         self.assertIsNone(team["ProjectedFinalScore"])
         self.assertEqual(team["DisplayProjectedScore"], 187.0)
 
-    def test_publication_estimated_chance_is_persisted_and_idempotent(self) -> None:
+    def test_estimated_chance_is_computed_and_nothing_is_written(self) -> None:
         root = Path(tempfile.mkdtemp())
         context, player, stats = MatchupProjectionTests.display_win_test_fixture()
         target = root / "data-derived/season-statistics/league-a/2026.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(stats), encoding="utf-8")
+        before = sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
 
-        first = self._publish(root, context, player)
-        second = self._publish(root, context, player)
-        self.assertEqual(first["Status"], "published")
-        self.assertTrue(first["Changed"])
-        self.assertFalse(second["Changed"])
-        payload = self._payload(root)
+        payload = self._compute(root, context, player)
+        again = self._compute(root, context, player)
+
+        self.assertEqual(payload, again)
+        self.assertEqual(before, sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()))
         self.assertEqual(payload["BestBallFallbackVolatilityMethod"], matchup_projection.FALLBACK_VOLATILITY_METHOD)
         teams = payload["Matchups"][0]["Teams"]
         self.assertIsNone(teams[0]["WinProbability"])
         self.assertIsNotNone(teams[0]["DisplayWinProbability"])
         self.assertEqual(sum(t["DisplayWinProbability"] for t in teams), 100)
 
-    def test_publication_writes_once_and_is_a_semantic_no_op_afterwards(self) -> None:
-        root = Path(tempfile.mkdtemp())
-
-        first = self._publish(root, default_context(), default_model())
-        second = self._publish(root, default_context(), default_model())
-
-        self.assertEqual(first["Status"], "published")
-        self.assertTrue(first["Changed"])
-        self.assertFalse(second["Changed"])
-        self.assertEqual(first["AvailableTeamCount"], 2)
-        self.assertEqual(self._payload(root)["Week"], 3)
-
-    def test_week_mismatch_keeps_the_existing_publication(self) -> None:
+    def test_week_mismatch_returns_none(self) -> None:
         model = default_model()
         model["Week"] = 2
-        root = Path(tempfile.mkdtemp())
-        existing = root / "public/data/MatchupProjections.json"
-        existing.parent.mkdir(parents=True)
-        existing.write_text("previous", encoding="utf-8")
+        self.assertIsNone(self._compute(Path(tempfile.mkdtemp()), default_context(), model))
 
-        result = self._publish(root, default_context(), model)
+    def test_applies_availability_of_the_same_week(self) -> None:
+        payload = self._compute(Path(tempfile.mkdtemp()), default_context(), default_model(), windows=self._windows(week=3, state="out"))
+        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], ["p1"])
 
-        self.assertEqual(result["Status"], "skipped-week-mismatch")
-        self.assertEqual(existing.read_text(encoding="utf-8"), "previous")
-
-    def test_publication_applies_availability_of_the_same_week(self) -> None:
-        root = Path(tempfile.mkdtemp())
-
-        self._publish(root, default_context(), default_model(), windows=self._windows(week=3, state="out"))
-
-        self.assertEqual(self._payload(root)["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], ["p1"])
-
-    def test_publication_ignores_availability_of_another_week(self) -> None:
-        root = Path(tempfile.mkdtemp())
-
-        self._publish(root, default_context(), default_model(), windows=self._windows(week=2, state="out"))
-
-        self.assertEqual(self._payload(root)["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
+    def test_ignores_availability_of_another_week(self) -> None:
+        payload = self._compute(Path(tempfile.mkdtemp()), default_context(), default_model(), windows=self._windows(week=2, state="out"))
+        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
 
     def test_function_failure_keeps_projections_without_availability(self) -> None:
-        root = Path(tempfile.mkdtemp())
-
-        result = self._publish(root, default_context(), default_model(), windows=None)
-
-        self.assertEqual("published", result["Status"])
-        self.assertEqual(self._payload(root)["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
+        payload = self._compute(Path(tempfile.mkdtemp()), default_context(), default_model(), windows=None)
+        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
 
     def test_decision_windows_are_resolved_for_the_context_season_at_the_given_instant(self) -> None:
-        with mock.patch("matchup_projection.resolve_decision_windows", return_value={"Season": 2026}) as resolve:
+        with mock.patch("derived_data_lib.matchup_projection.resolve_decision_windows", return_value={"Season": 2026}) as resolve:
             matchup_projection._decision_windows(Path("."), "league-a", 2026, self.AT)
         resolve.assert_called_once_with(Path("."), "league-a", 2026, self.AT)
 
     def test_decision_windows_failure_is_reported_and_yields_none(self) -> None:
-        with mock.patch("matchup_projection.resolve_decision_windows", side_effect=ValueError("boom")):
+        with mock.patch("derived_data_lib.matchup_projection.resolve_decision_windows", side_effect=ValueError("boom")):
             self.assertIsNone(matchup_projection._decision_windows(Path("."), "league-a", 2026, self.AT))
 
     def test_the_method_comes_from_the_season_model_and_the_numbers_are_unchanged(self) -> None:
-        root = Path(tempfile.mkdtemp())
-        self._publish(root, default_context(), default_model())
+        computed = self._compute(Path(tempfile.mkdtemp()), default_context(), default_model())
         direct = build_matchup_projections(default_context(), default_model())
 
-        self.assertEqual(self._payload(root), direct)
+        self.assertEqual(computed, direct)
         self.assertEqual(direct["Method"]["Id"], METHOD_ID)
         self.assertEqual(team_range_v1.MODEL_ID, "team-range-v1")
 
     def test_an_unknown_model_choice_fails_closed(self) -> None:
-        root = Path(tempfile.mkdtemp())
         metadata = {"CanonicalLeagueID": "league-a", "Seasons": {"2026": {"Models": {"TeamRange": "team-range-v9"}}}}
-        with mock.patch("matchup_projection.load_league_metadata", return_value=metadata):
+        with mock.patch("derived_data_lib.matchup_projection.load_league_metadata", return_value=metadata):
             with self.assertRaises(ValueError):
-                publish_matchup_projections(root, default_context(), default_model(), league_id="league-a", at_utc=self.AT)
+                compute_matchup_projections(Path(tempfile.mkdtemp()), default_context(), default_model(), league_id="league-a", at_utc=self.AT)
 
-    def test_the_projections_read_nothing_from_public_data(self) -> None:
-        self.assertNotIn("public/data/FantasyGame", Path(matchup_projection.__file__).read_text(encoding="utf-8"))
-        self.assertNotIn("public/data/PlayerWeek", Path(matchup_projection.__file__).read_text(encoding="utf-8"))
-
+    def test_the_projections_read_nothing_from_public_data_and_write_nothing(self) -> None:
+        source = Path(matchup_projection.__file__).read_text(encoding="utf-8")
+        for forbidden in ("write_text", "write_json", "open(", "OUTPUT_PATH"):
+            self.assertNotIn(forbidden, source)
+        self.assertFalse((TOOLS / "matchup_projection.py").exists(), "the computation lives in derived_data_lib")
 
 
 class HybridExpectedPreviewTests(unittest.TestCase):
@@ -876,19 +840,18 @@ class HybridExpectedPreviewTests(unittest.TestCase):
         self.assertAlmostEqual(preview["ExpectedPoints"], 87.2)
         self.assertEqual(preview["ExcludedPlayerCounts"]["missing-projection"], 1)
 
-    def test_publishing_preview_is_semantic_noop_when_clock_moves_without_new_lock(self) -> None:
+    def test_preview_is_part_of_the_computed_document_and_deterministic(self) -> None:
         context, player, windows, stats = self.fixture()
         root = Path(tempfile.mkdtemp())
         target = root / "data-derived/season-statistics/league-a/2026.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(stats), encoding="utf-8")
-        publisher = PublicationTests()
-        first = publisher._publish(root, context, player, windows=windows)
-        second = publisher._publish(root, context, player, windows=windows)
-        self.assertTrue(first["Changed"])
-        self.assertFalse(second["Changed"])
-        payload = publisher._payload(root)
-        self.assertEqual(payload["Matchups"][0]["Teams"][0]["HybridExpected"]["State"], "available")
+        computation = ComputationTests()
+        first = computation._compute(root, context, player, windows=windows)
+        second = computation._compute(root, context, player, windows=windows)
+        self.assertEqual(first, second)
+        self.assertEqual(first["Matchups"][0]["Teams"][0]["HybridExpected"]["State"], "available")
+
 
 if __name__ == "__main__":
     unittest.main()

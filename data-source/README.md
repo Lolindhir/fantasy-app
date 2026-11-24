@@ -11,14 +11,19 @@ external provider
 data-source/providers/<provider>/   provider-shaped raw input + provenance
       |
       v
-data-source/nfl/                    provider-independent canonical NFL data
+data-source/nfl/ (and leagues/)     provider-independent canonical NFL and League data
       |
       v
-public/requests/**                  app generators / downstream consumers
+data-derived/**                     Shared Derived products (consumer-neutral, ADR-037/038)
+      |
+      v
+consumer generators                 tools/*_app_publish.py, public/requests/** (League.json etc.)
       |
       v
 public/data/**                      generated app read models
 ```
+
+Products come before consumers: App generators and Fantasy Management read Shared Derived products (or canonical facts through the owning pure functions), never each other's outputs.
 
 The provider layer preserves the successfully validated input used by normalization. The canonical layer must not expose provider-specific download paths or field names as its contract. Registering a source does not automatically make it an app provider or change `public/data/**`.
 
@@ -70,7 +75,7 @@ Current active datasets:
 - `nflverse.draft-picks` — immutable season history
 - `nflverse.combine` — immutable season history
 
-Additional schedules, finality, player stats, snap counts, rosters, weekly rosters and Sleeper player snapshots are being added under Issue #184 before any app-generator migration.
+Further datasets (schedules, finality, player stats, snap counts, rosters, weekly rosters, Sleeper snapshots, injuries, participation and others) are registered in `registry.json`, which is the authoritative list; the list above is only the initial set.
 
 The durable architecture is documented in `.ai-context/manual/nfl-source-data.yaml` and ADR-029.
 

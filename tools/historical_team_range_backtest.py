@@ -3,7 +3,7 @@
 
 For every historical team-week the production PlayerWeekFantasy model is rebuilt as
 if the week were about to start (only earlier weeks and seasons enter the model).
-The team value and range use the same functions as tools/matchup_projection.py, so
+The team value and range use the same functions as tools/derived_data_lib/matchup_projection.py, so
 the backtest validates the production formula, not a copy of it. The realized
 team score is the league-scored matchup total of the actual starters.
 
@@ -27,7 +27,7 @@ TOOLS = Path(__file__).resolve().parent
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from matchup_projection import player_sigma, team_ranges, z_for_level  # noqa: E402
+from derived_data_lib.models.team_range.v1 import player_sigma, team_ranges, z_for_level  # noqa: E402
 from player_week_fantasy import PRIMARY_INTERVAL_LEVEL, PUBLISHED_INTERVAL_LEVELS  # noqa: E402
 from data_roots import DATA_SOURCE_ROOT
 

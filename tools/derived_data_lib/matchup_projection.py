@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Publish team-level matchup projections and ranges into the App delivery layer.
+"""Team-level matchup projections and ranges: pure Shared-Derived computation (Issue #1645).
 
 Inputs are the computed FantasyGameContext (matchup-context function, ADR-075: current starters, game status, final points),
 the App adaptation of the Shared Derived PlayerWeekFantasy product (player projections and ranges) and the shared Decision
 Windows function (scoring availability per player, ADR-074). Nothing is read from public/data. The projection method is the
 team-range model chosen per season in data-meta (team-range-v1, tools/derived_data_lib/models/team_range); this module only
-collects the starters, joins the projections and writes MatchupProjections.json. No arithmetic belongs in the frontend.
+collects the starters and joins the projections. It writes nothing: the document is a section of the matchup-context product
+(tools/matchup_context_materialize.py) and rendered into the App file by tools/matchup_context_app_publish.py. No arithmetic belongs in the frontend.
 """
 from __future__ import annotations
 
@@ -43,7 +44,6 @@ from data_roots import DATA_DERIVED_ROOT
 SCHEMA_VERSION = 3
 AXIS_STEP = 20
 AXIS_PADDING = 10
-OUTPUT_PATH = Path("public/data/MatchupProjections.json")
 FALLBACK_METHOD = "season-bestball-actual-efficiency-v1"
 FALLBACK_VOLATILITY_METHOD = "season-final-score-sample-sd-v1"
 DISPLAY_CHANCE_ESTIMATE = "season-bestball-efficiency-estimate"
@@ -383,15 +383,6 @@ def build_matchup_projections(
     }
 
 
-def write_json_if_changed(path: Path, payload: Mapping[str, Any]) -> bool:
-    text = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
-    if path.exists() and path.read_text(encoding="utf-8") == text:
-        return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
-    return True
-
-
 def _decision_windows(root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any] | None:
     """Current Decision Windows from the shared function (ADR-074); None when it cannot be computed.
 
@@ -419,13 +410,6 @@ def _availability_from_windows(windows: Mapping[str, Any] | None, context: Mappi
         for item in windows.get("ScoringAvailabilityObservations") or []
         if item.get("PlayerID") is not None and isinstance(item.get("State"), str)
     }
-
-
-def _availability_by_player(root: Path, league_id: str, context: Mapping[str, Any], at_utc: datetime) -> dict[str, str]:
-    """Compatibility wrapper; the publisher resolves Decision Windows only once."""
-    return _availability_from_windows(
-        _decision_windows(root, league_id, int(context["Season"]), at_utc), context
-    )
 
 
 def compute_matchup_projections(
@@ -459,35 +443,3 @@ def compute_matchup_projections(
         if "target different weeks" in str(exc):
             return None
         raise
-
-
-def publish_matchup_projections(
-    repo_root: Path,
-    context: Mapping[str, Any],
-    player_model: Mapping[str, Any],
-    *,
-    league_id: str,
-    at_utc: datetime,
-) -> dict[str, Any]:
-    """Build from the FantasyGameContext function result and the PlayerWeekFantasy App model and write on change.
-
-    A context/player-model week mismatch skips publication and keeps the existing file: the consumer ignores a snapshot that
-    targets another week. Since Issue #1571 the productive path is the matchup-context product (tools/matchup_context_materialize.py)
-    rendered by tools/matchup_context_app_publish.py; this direct writer remains for tests and manual repair.
-    """
-
-    root = repo_root.resolve()
-    payload = compute_matchup_projections(root, context, player_model, league_id=league_id, at_utc=at_utc)
-    if payload is None:
-        return {"Status": "skipped-week-mismatch", "Detail": "FantasyGameContext and PlayerWeekFantasy target different weeks"}
-    changed = write_json_if_changed(root / OUTPUT_PATH, payload)
-    teams = [team for matchup in payload["Matchups"] for team in matchup["Teams"]]
-    return {
-        "Status": "published",
-        "Changed": changed,
-        "Season": payload["Season"],
-        "Week": payload["Week"],
-        "MatchupCount": len(payload["Matchups"]),
-        "AvailableTeamCount": sum(1 for team in teams if team["State"] == "available"),
-        "TeamCount": len(teams),
-    }

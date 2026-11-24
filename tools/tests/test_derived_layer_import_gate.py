@@ -170,7 +170,7 @@ class DerivedLayerImportGateTests(unittest.TestCase):
         self.assertEqual(literals, ["derived_data_lib/doc.py:2"])
 
     def test_known_neutral_helpers_are_not_consumers(self):
-        for module in ("data_roots", "league_metadata", "players_population", "matchup_projection", "nfl_schedule_games"):
+        for module in ("data_roots", "league_metadata", "players_population", "nfl_schedule_games"):
             self.assertFalse(is_consumer(module))
 
 

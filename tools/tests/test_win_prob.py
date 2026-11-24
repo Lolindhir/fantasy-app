@@ -78,7 +78,7 @@ class FormulaTests(unittest.TestCase):
 
 class MatchupProjectionsTests(unittest.TestCase):
     def test_published_chance_equals_the_formula_of_the_published_projection(self) -> None:
-        import matchup_projection as mp
+        from derived_data_lib import matchup_projection as mp
 
         context = {
             "Season": 2026, "Week": 3,
@@ -112,7 +112,7 @@ class MatchupProjectionsTests(unittest.TestCase):
         self.assertTrue(all(team["WinProbabilityIsDeterministic"] is None for team in payload["Matchups"][0]["Teams"]))
 
     def test_open_matchup_keeps_subpercent_tail_and_all_final_matchup_is_deterministic(self) -> None:
-        import matchup_projection as mp
+        from derived_data_lib import matchup_projection as mp
 
         context = {
             "Season": 2026, "Week": 10,

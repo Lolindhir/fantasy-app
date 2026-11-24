@@ -669,12 +669,12 @@ dataFlow:
     to: public/data/League.json
     purpose: Provide disable_adds, disable_trades, trade_review_days, trade_deadline and playoff settings for generated move openness, Status and Phase rules.
 
-  - from: already-loaded League, Team, Player and Schedule facts in RequestLeague.ps1
+  - from: canonical League and NFL facts (data-source) through the computed function tools/derived_data_lib/decision_windows.py (ADR-074)
     to: public/data/DecisionWindows.json
     purpose: >
-      Build the current exact-kickoff Decision Window read model without duplicate
-      provider requests. Sleeper settings.leg owns current lineup-week evidence;
-      stable current TeamID fields join players to Schedule games.
+      Build the current exact-kickoff Decision Window read model (written by RequestLeague.ps1 from the
+      function result) without provider requests. The lifecycle LineupWeek (Sleeper settings.leg from
+      canonical league.json) owns current lineup-week evidence; Players.json and Schedule.json are no inputs.
 
   - from: ESPN Fantasy kona_player_info injuryStatus
     to: data-source/nfl/player-availability/espn.json
@@ -826,10 +826,10 @@ sharedDerivedData:
         currentConsumer: src/app/core/services/data.service.ts::getFantasyGameContext
         consumerJoin: Season+Week match and unique non-null App/Sleeper PlayerID; otherwise raw FantasyGameContext is preserved
         matchupProjectionsConsumer: src/app/core/services/data.service.ts joins MatchupProjections.json by FantasyMatchupID (Season+Week match); no arithmetic in the frontend
-      schedulingState: refreshed for the current App week by tools/player_week_fantasy_refresh.py inside the APP Data League workflow
+      schedulingState: PlayerWeekFantasy is refreshed for the current App week by tools/player_week_fantasy_refresh.py inside the League Live workflow; MatchupProjections.json is rendered from the matchup-context product (Issue #1571, #1645)
       matchupProjections:
         output: public/data/MatchupProjections.json
-        implementation: tools/matchup_projection.py
+        implementation: tools/derived_data_lib/matchup_projection.py (pure computation, Issue #1645; persisted as a section of the matchup-context product by tools/matchup_context_materialize.py and rendered by tools/matchup_context_app_publish.py)
         inputs:
           - computed matchup context (tools/derived_data_lib/matchup_context.py, ADR-075)
           - persisted PlayerWeekFantasy product through the Sleeper-keyed view tools/derived_data_lib/player_week_fantasy_view.py (no App file is an input, Issue #1263 F2)

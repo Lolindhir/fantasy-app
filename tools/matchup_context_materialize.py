@@ -2,7 +2,7 @@
 """Materializer of the matchup-context Shared Derived product (ADR-089, amends ADR-075; Issue #1571).
 
 The pure function tools/derived_data_lib/matchup_context.py (plus fantasy_game_context.py and the team-range/win-prob projection
-of tools/matchup_projection.py) stays the single implementation. This module persists its results per league and season; the App
+of tools/derived_data_lib/matchup_projection.py) stays the single implementation. This module persists its results per league and season; the App
 files (Matchups.json, FantasyGameContext.json, FantasyGameContextHistory.json, MatchupProjections.json, past_seasons files) are
 rendered from the persisted documents by tools/matchup_context_app_publish.py with an unchanged App contract.
 
@@ -41,7 +41,7 @@ from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
 from derived_data_lib.matchup_context import MatchupContextError, resolve_matchups  # noqa: E402
 from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest, manifest_seasons  # noqa: E402
-from matchup_projection import compute_matchup_projections  # noqa: E402
+from derived_data_lib.matchup_projection import compute_matchup_projections  # noqa: E402
 from derived_data_lib.player_week_fantasy_view import load_sleeper_keyed_view  # noqa: E402
 
 PRODUCT = "matchup-context"

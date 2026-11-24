@@ -64,11 +64,21 @@ class PublisherTests(unittest.TestCase):
                 d = Path(tmp) / "data-source" / "leagues" / "x" / "seasons" / str(season)
                 d.mkdir(parents=True)
                 (d / "league.json").write_text(json.dumps({"WeekStructure": ws}))
-            caps = publisher.league_week_caps(Path(tmp))
+            caps = publisher.league_week_caps(Path(tmp), "x")
         self.assertEqual(caps, {2024: 17, 2026: 16})
         self.assertIsNone(publisher._cap_for(2015, caps))
         self.assertEqual(publisher._cap_for(2027, caps), 16)
         self.assertIsNone(publisher._cap_for(2015, {}))
+
+    def test_week_caps_belong_to_the_selected_league_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for league, season, last in (("a", 2025, 14), ("b", 2025, 17), ("b", 2026, 18)):
+                d = Path(tmp) / "data-source" / "leagues" / league / "seasons" / str(season)
+                d.mkdir(parents=True)
+                (d / "league.json").write_text(json.dumps({"WeekStructure": {"ExpectedLastLeagueWeek": last}}))
+            self.assertEqual(publisher.league_week_caps(Path(tmp), "a"), {2025: 14})
+            self.assertEqual(publisher.league_week_caps(Path(tmp), "b"), {2025: 17, 2026: 18})
+            self.assertEqual(publisher.league_week_caps(Path(tmp), "missing"), {})
 
     def test_state_is_copied_not_derived(self):
         seasons = {2024: season_doc(2024, [record("NFLP-a", 1, "unknown")])}
@@ -96,11 +106,11 @@ class PublisherTests(unittest.TestCase):
             (ident / "players.json").write_text(json.dumps({"Players": [{"CanonicalPlayerID": "NFLP-a", "IDs": {"Sleeper": "S1"}}]}))
             now = datetime(2026, 1, 1, tzinfo=timezone.utc)
             first = publisher.CompactWriter(root, now)
-            with patch.object(publisher, "population_players", return_value=[{"ID": "S1"}]):
+            with patch.object(publisher, "population_players", return_value=[{"ID": "S1"}]), patch.object(publisher, "default_league_id", return_value="L1"):
                 publisher.publish(root, first)
             self.assertIn("public/data/PlayerInjuryHistory.json", first.finish())
             second = publisher.CompactWriter(root, now)
-            with patch.object(publisher, "population_players", return_value=[{"ID": "S1"}]):
+            with patch.object(publisher, "population_players", return_value=[{"ID": "S1"}]), patch.object(publisher, "default_league_id", return_value="L1"):
                 publisher.publish(root, second)
             self.assertEqual(second.finish(), [])
 
