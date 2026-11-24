@@ -4,7 +4,7 @@
       <div class="weekly-context-heading">
         <span>Standings</span>
         <span
-          *ngIf="context.standingsIsFallback && context.standingsAsOfWeek !== null"
+          *ngIf="(context.standingsIsFallback || !interactiveWeekReady) && context.standingsAsOfWeek !== null"
           class="weekly-context-asof"
           role="note"
           [attr.aria-label]="'Latest confirmed standings: through Week ' + context.standingsAsOfWeek"
