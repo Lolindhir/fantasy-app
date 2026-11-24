@@ -42,7 +42,7 @@
   <ng-template #detailedStandings>
     <div class="standing-detailed-heading">
       <h2>{{ title }}</h2>
-
+      <a class="standing-detailed-more" routerLink="/stats">More stats</a>
     </div>
 
     <ng-container *ngFor="let row of rows">
@@ -119,44 +119,6 @@
         class="standing-detailed-details"
         [id]="'standing-details-' + row.team.TeamID"
       >
-        <div class="standing-detailed-stat">
-          <span>Point Differential</span>
-          <strong>{{ pointDifferential(row) | number:'1.2-2':'en-US' }}</strong>
-        </div>
-        <div class="standing-detailed-stat">
-          <span>Points per Game</span>
-          <strong>{{ pointsPerGame(row) | number:'1.2-2':'en-US' }}</strong>
-        </div>
-        <div class="standing-detailed-stat">
-          <span>Points Against per Game</span>
-          <strong>{{ pointsAgainstPerGame(row) | number:'1.2-2':'en-US' }}</strong>
-        </div>
-        <ng-container *ngIf="teamStatistics(row) as stats">
-          <div class="standing-detailed-stat">
-            <span>Expected Record</span>
-            <strong>{{ formatExpectedRecord(stats) }}</strong>
-          </div>
-          <div class="standing-detailed-stat">
-            <span>Luck</span>
-            <strong class="standing-detailed-luck" [ngClass]="'standing-detailed-luck--' + signClass(stats.Luck)">{{ formatSigned(stats.Luck) }}</strong>
-          </div>
-          <div class="standing-detailed-stat">
-            <span>Opponent Timing</span>
-            <strong>{{ formatSigned(stats.OpponentTiming) }}</strong>
-          </div>
-          <div class="standing-detailed-stat">
-            <span>Underdog Wins</span>
-            <strong>{{ stats.UnderdogWins }}</strong>
-          </div>
-          <div class="standing-detailed-stat">
-            <span>Upset Losses</span>
-            <strong>{{ stats.UpsetLosses }}</strong>
-          </div>
-          <div class="standing-detailed-stat">
-            <span>All-Play Record</span>
-            <strong>{{ formatAllPlay(stats) }}</strong>
-          </div>
-        </ng-container>
         <div class="standing-detailed-trend standing-detailed-places" *ngIf="playoffTeamOdds(row) as odds">
           <div class="standing-detailed-trend-heading">
             <strong>Final Place Chances</strong>
