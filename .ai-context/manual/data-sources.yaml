@@ -375,6 +375,15 @@ dataSources:
       TeamID, Place, Wins/Losses/Ties, Points, PointsAgainst and as-of Streak.
       League.json embeds this same section via Get-LeagueStandingsProduct so the
       Angular Overview consumes those weekly facts rather than replaying Matchups.
+      Since Issue #1680 (superseding #675), the Overview table selects the latest
+      validated regular-season snapshot independently of the next lineup week.
+      A delayed Matchups delivery must not roll back the confirmed standings.
+      Last Week follows the latest final Matchups week and the recap uses only
+      that exact week's published WeeklyRecaps facts. ActiveOrNextWeek identifies
+      known upcoming matchups immediately; matching DecisionWindows and
+      FantasyGameContext and completed-week standings evidence gate interactive
+      details, not the schedule or recap. Missing or older context is never used
+      to fabricate next-week projections, progress, scoring windows or Must Watch.
       If a requested historical week is missing or malformed, no numbers or
       rankings may be inferred from the current table. No new writer, delivery
       file or scheduler is introduced by this read-model extension (Issue #1263).
