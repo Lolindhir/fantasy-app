@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+.hof-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (min-width: 768px) {
+  .hof-page {
+    max-width: 900px;
+    margin: auto;
+  }
+}
+
+.hof-champions h2 {
+  margin: 0 0 10px;
+}
+
+/* One card per season: the banner and the season ring side by side, wrapping on narrow screens. */
+.hof-champions__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hof-champion {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 10px 6px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 11px;
+  background: #fff;
+}
+
+/* Same banner scale as the Trophy Room: 70 percent on phones. */
+.hof-champion__banner {
+  width: 118px;
+  zoom: 1;
+}
+
+@media (max-width: 700px) {
+  .hof-champion__banner {
+    zoom: 0.8;
+  }
+}
+
+.hof-champion__ring {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin: 0;
+}
+
+.hof-champion__ring img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.hof-champion__ring figcaption {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.78rem;
+  color: #6b7280;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

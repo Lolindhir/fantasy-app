@@ -1,12 +1,9 @@
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, distinctUntilChanged, forkJoin, map, of } from 'rxjs';
+import { distinctUntilChanged, map } from 'rxjs';
 
-import { DataService } from '../../core/services/data.service';
-import { HallOfFameComponent } from '../../shared/components/hall-of-fame/hall-of-fame';
-import { buildHallOfFameHighlights } from '../../shared/utils/hall-of-fame-view.util';
 
 import { SeasonTabComponent } from './tabs/season-tab/season-tab';
 import { HeadToHeadTabComponent } from './tabs/head-to-head-tab/head-to-head-tab';
@@ -32,24 +29,13 @@ export const STATS_TABS: readonly StatsTab[] = [
 @Component({
   selector: 'app-stats-page',
   standalone: true,
-  imports: [AsyncPipe, NgFor, NgIf, HallOfFameComponent, SeasonTabComponent, HeadToHeadTabComponent, PlayerAwardsTabComponent, WeeklyTabComponent],
+  imports: [NgFor, NgIf, SeasonTabComponent, HeadToHeadTabComponent, PlayerAwardsTabComponent, WeeklyTabComponent],
   templateUrl: './stats-page.html',
   styleUrl: './stats-page.scss'
 })
 export class StatsPageComponent implements OnInit {
   readonly tabs = STATS_TABS;
   selectedTab = STATS_TABS[0].id;
-
-  private readonly dataService = inject(DataService);
-
-  /** Hall of Fame tiles above the tabs; an unavailable file never blocks the page. */
-  readonly hallOfFame$ = forkJoin({
-    data: this.dataService.getLeagueWithPlayers(),
-    stats: this.dataService.getAllSeasonStatistics(),
-    awards: this.dataService.getPlayerAwardHistory().pipe(catchError(() => of(null)))
-  }).pipe(
-    map(({ data: { league, teams }, stats, awards }) => buildHallOfFameHighlights(league, teams, stats.current, stats.bySeason, awards))
-  );
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -69,7 +55,7 @@ export class StatsPageComponent implements OnInit {
 
   selectTab(id: string): void {
     // Keep the tab bar where it is on screen: a shorter tab body would otherwise clamp the
-    // scroll position and make the page jump up to the Hall of Fame.
+    // scroll position and make the page jump.
     const before = this.tabBar?.nativeElement.getBoundingClientRect().top;
     // Never let the page get shorter than it is now, so the scroll position stays valid.
     const body = this.tabBody?.nativeElement;

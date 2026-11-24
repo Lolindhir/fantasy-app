@@ -1,7 +1,7 @@
-<section class="hof" *ngIf="highlights && highlights.length > 0" aria-label="Hall of Fame">
+<section class="hof" *ngIf="highlights && highlights.length > 0" [attr.aria-label]="heading">
   <header class="hof__head">
-    <span class="hof__crest" aria-hidden="true">🏛️</span>
-    <h2 class="hof__title">Hall of Fame</h2>
+    <span class="hof__crest" aria-hidden="true">{{ crest }}</span>
+    <h2 class="hof__title">{{ heading }}</h2>
   </header>
 
   <ul class="hof__grid">
