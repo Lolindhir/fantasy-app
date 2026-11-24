@@ -4,7 +4,7 @@
       <div class="weekly-context-heading">
         <span>Standings</span>
         <span
-          *ngIf="context.standingsIsFallback && context.standingsAsOfWeek !== null"
+          *ngIf="(context.standingsIsFallback || !interactiveWeekReady) && context.standingsAsOfWeek !== null"
           class="weekly-context-asof"
           role="note"
           [attr.aria-label]="'Latest confirmed standings: through Week ' + context.standingsAsOfWeek"
@@ -98,6 +98,7 @@
       <div class="matchups-heading">
         <div>
           <h2>Week {{ week }} Matchups</h2>
+          <p *ngIf="!interactiveWeekReady" class="matchup-rollover-note" role="status">Waiting for updated lineup and matchup details.</p>
         </div>
       </div>
 
@@ -105,12 +106,13 @@
         <article
           *ngFor="let matchup of matchupRows"
           class="matchup-card"
-          role="button"
-          tabindex="0"
+          [class.matchup-card--preview]="!interactiveWeekReady"
+          [attr.role]="interactiveWeekReady ? 'button' : null"
+          [attr.tabindex]="interactiveWeekReady ? 0 : null"
           [attr.aria-label]="matchupAriaLabel(matchup)"
           (click)="openMatchupDetailFromOverview(matchup)"
           (keydown.enter)="openMatchupDetailFromOverview(matchup)"
-          (keydown.space)="$event.preventDefault(); openMatchupDetailFromOverview(matchup)"
+          (keydown.space)="interactiveWeekReady && $event.preventDefault(); openMatchupDetailFromOverview(matchup)"
         >
           <div class="matchup-primary">
             <div class="matchup-scoreboard">
@@ -181,7 +183,7 @@
                 <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.right.context }"></ng-container>
               </div>
 
-              <mat-icon class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
+              <mat-icon *ngIf="interactiveWeekReady" class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
             </div>
 
             <ng-container *ngIf="fantasyContextState$ | async as chanceState">
@@ -203,7 +205,7 @@
 
             <ng-container *ngIf="fantasyContextState$ | async as contextState">
               <div
-                *ngIf="contextState.decisionWindows?.Season === league.Season && contextState.decisionWindows?.LineupWeek === week"
+                *ngIf="interactiveWeekReady && contextState.decisionWindows?.Season === league.Season && contextState.decisionWindows?.LineupWeek === week"
                 class="matchup-progress-row"
               >
                 <div class="matchup-progress-side matchup-progress-side--left">
