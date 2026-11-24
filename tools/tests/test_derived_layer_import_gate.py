@@ -11,10 +11,19 @@ scanned for public/data literals, and consumer generators must not import each o
 neutral tools/app_delivery.py). Remaining limits: consumer detection is name based (*_app_publish plus the explicit
 list), paths built from parts are not seen, Python only; there is no whole-repository graph. This is the logical layer
 check; the physical Canonical cutover is Issue #1618 and not part of it.
+
+Second hardening (final review): the closure is additionally scanned with the same public/data path rule as the K1 read
+classification (PY_DATA_DIR_RE: literals, DATA_DIR/PUBLIC_DATA names and paths built from parts such as
+`root / "public" / "data"`). The only known hit is the reviewed validation-shadow path in transaction_canonical_shadow.py
+(allowlist with stale check). tools/app_delivery.py is an explicit consumer helper: Derived code must not import it, and
+consumer generators may. Not covered: the own import closure of the orchestrators league_live_derived_refresh and
+player_week_fantasy_refresh (they are consumers by definition; their allowed edge is the allowlist below).
 """
 from __future__ import annotations
 
 import ast
+import re
+import sys
 import unittest
 from pathlib import Path
 
@@ -23,6 +32,14 @@ TOP = {p.stem for p in TOOLS.glob("*.py")}
 
 # Consumer generators / refreshers: delivery layer, never an input of Shared Derived code.
 CONSUMER_EXPLICIT = {"schedule_archive", "player_week_fantasy_refresh", "league_live_derived_refresh"}
+# Shared helper of the consumer generators (writer, load helpers): consumer layer, forbidden for Derived code.
+# Consumer generators importing it is the intended direction and is not a consumer-to-consumer edge.
+CONSUMER_HELPERS = {"app_delivery"}
+
+# Same rule as PY_DATA_DIR_RE of test_consumer_read_classification.py (checked for equality below).
+PY_DATA_DIR_RE = re.compile(r"public[\"']?\s*[,/]\s*[\"']?data|DATA_DIR|PUBLIC_DATA|public/data")
+# Reviewed exceptions: pure validation-shadow read classified as validation-shadow in the K1 registry.
+PUBLIC_DATA_PATH_ALLOWLIST = {"transaction_canonical_shadow.py"}
 
 
 # Documented consumer-to-consumer edges (none may be added silently; a stale entry fails the test).
@@ -31,7 +48,7 @@ CONSUMER_EDGE_ALLOWLIST = {("player_week_fantasy_refresh", "player_week_fantasy_
 
 
 def is_consumer(module: str) -> bool:
-    return module.endswith("_app_publish") or module in CONSUMER_EXPLICIT
+    return module.endswith("_app_publish") or module in CONSUMER_EXPLICIT or module in CONSUMER_HELPERS
 
 
 def derived_roots(tools: Path = TOOLS) -> list[Path]:
@@ -142,6 +159,52 @@ def public_data_literals_transitive(tools: Path = TOOLS) -> list[str]:
     return sorted(set(hits))
 
 
+def _flatten_div(node: ast.AST) -> list[ast.AST]:
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+        return _flatten_div(node.left) + _flatten_div(node.right)
+    return [node]
+
+
+def _adjacent_public_data(parts: list[ast.AST]) -> bool:
+    values = [p.value if isinstance(p, ast.Constant) and isinstance(p.value, str) else None for p in parts]
+    return any(a == "public" and b == "data" for a, b in zip(values, values[1:]))
+
+
+def public_data_path_hits(path: Path, tools: Path) -> list[str]:
+    """Executable public/data path uses by the K1 rule: literals, DATA_DIR-like names, paths built from parts."""
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    docstrings = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            body = node.body
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
+                docstrings.add(id(body[0].value))
+    rel = path.relative_to(tools).as_posix()
+    hits = []
+    for node in ast.walk(tree):
+        text = None
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings:
+            text = node.value.replace("\\", "/")
+        elif isinstance(node, ast.Name):
+            text = node.id
+        elif isinstance(node, ast.Attribute):
+            text = node.attr
+        if text is not None and PY_DATA_DIR_RE.search(text):
+            hits.append(f"{rel}:{node.lineno}")
+        elif isinstance(node, ast.BinOp) and _adjacent_public_data(_flatten_div(node)):
+            hits.append(f"{rel}:{node.lineno}")
+        elif isinstance(node, ast.Call) and _adjacent_public_data(list(node.args)):
+            hits.append(f"{rel}:{node.lineno}")
+    return sorted(set(hits))
+
+
+def public_data_path_hits_transitive(tools: Path = TOOLS) -> list[str]:
+    hits: list[str] = []
+    for path in derived_closure_files(tools):
+        hits += public_data_path_hits(path, tools)
+    return sorted(set(hits))
+
+
 def consumer_edges(tools: Path = TOOLS) -> set[tuple[str, str]]:
     """Direct imports from one consumer generator into another."""
     top = {p.stem for p in tools.glob("*.py")}
@@ -149,7 +212,7 @@ def consumer_edges(tools: Path = TOOLS) -> set[tuple[str, str]]:
     for path in tools.glob("*.py"):
         if is_consumer(path.stem):
             for dep in imports_of(path.read_text(encoding="utf-8"), top)[0]:
-                if is_consumer(dep) and dep != path.stem:
+                if is_consumer(dep) and dep != path.stem and dep not in CONSUMER_HELPERS:
                     edges.add((path.stem, dep))
     return edges
 
@@ -260,8 +323,52 @@ class DerivedLayerImportGateTests(unittest.TestCase):
         self.assertEqual(edges, {("b_app_publish", "a_app_publish"), ("c_app_publish", "a_app_publish")})
 
     def test_known_neutral_helpers_are_not_consumers(self):
-        for module in ("data_roots", "league_metadata", "players_population", "nfl_schedule_games", "app_delivery"):
+        for module in ("data_roots", "league_metadata", "players_population", "nfl_schedule_games"):
             self.assertFalse(is_consumer(module))
+
+    def test_app_delivery_is_an_explicit_consumer_helper(self):
+        self.assertTrue(is_consumer("app_delivery"))
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tools = Path(tmp)
+            (tools / "derived_data_lib").mkdir()
+            (tools / "derived_data.py").write_text("")
+            (tools / "app_delivery.py").write_text("")
+            (tools / "a_app_publish.py").write_text("from app_delivery import Writer\n")
+            (tools / "derived_data_lib" / "bad.py").write_text("import app_delivery\n")
+            bad, _ = violations(tools)
+            edges = consumer_edges(tools)
+        self.assertEqual(bad, ["derived_data_lib/bad.py -> app_delivery"])
+        self.assertEqual(edges, set())
+
+    def test_public_data_regex_matches_k1_rule(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import test_consumer_read_classification as k1
+
+        self.assertEqual(PY_DATA_DIR_RE.pattern, k1.PY_DATA_DIR_RE.pattern)
+
+    def test_derived_closure_has_no_unreviewed_public_data_paths(self):
+        hits = public_data_path_hits_transitive()
+        unreviewed = [h for h in hits if h.split(":")[0] not in PUBLIC_DATA_PATH_ALLOWLIST]
+        self.assertEqual(unreviewed, [], "public/data path in the Derived closure: " + "; ".join(unreviewed))
+        stale = PUBLIC_DATA_PATH_ALLOWLIST - {h.split(":")[0] for h in hits}
+        self.assertEqual(sorted(stale), [], "stale allowlist entry")
+
+    def test_gate_is_red_for_paths_built_from_parts_and_data_dir_names(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tools = Path(tmp)
+            (tools / "derived_data_lib").mkdir()
+            (tools / "derived_data.py").write_text("")
+            (tools / "helper.py").write_text('def f(root):\n    return root / "public" / "data" / "X.json"\n')
+            (tools / "joined.py").write_text('def f(root):\n    return root.joinpath("public", "data")\n')
+            (tools / "named.py").write_text("from cfg import DATA_DIR\nX = DATA_DIR\n")
+            (tools / "clean.py").write_text('"""public/data in a docstring"""\nX = 1\n')
+            (tools / "a_materialize.py").write_text("import helper, joined, named, clean\n")
+            hits = public_data_path_hits_transitive(tools)
+        self.assertEqual(sorted(h.split(":")[0] for h in hits), ["helper.py", "joined.py", "named.py"])
 
 
 if __name__ == "__main__":

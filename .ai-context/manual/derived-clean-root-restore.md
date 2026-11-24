@@ -12,14 +12,14 @@ FantasyRelevance slot bridge).
 
 ## Products
 
-The 13 products listed in `PRODUCTS` of `tools/derived_clean_root_audit.py` (per league: PlayerValuation,
+The 14 products listed in `PRODUCTS` of `tools/derived_clean_root_audit.py` (per league: PlayerValuation,
 LeagueTransactions, LeagueDrafts, PlayerWeekFantasy, TeamWeekPerformance, SeasonStatistics, LeagueStandings,
-LeagueRivalry, MatchupContext, WeeklyRecaps; global: NFL Games, NFL Injuries, NFL Player Availability). They are
+LeagueRivalry, LeagueTeams, MatchupContext, WeeklyRecaps; global: NFL Games, NFL Injuries, NFL Player Availability). They are
 built with the productive generators (`derived_data.py`, `historical_pwf_batch.py`,
 `team_week_performance_materialize.py --all-finalized --require-pwf`, `nfl_games_materialize.py` and the
 product materializers); there is no second implementation.
 
-`data-derived/README.md` registers 16 products. Three are deliberately **outside** the probe
+`data-derived/README.md` registers 17 products. Three are deliberately **outside** the probe
 (`OUTSIDE_RESTORE_PROBE` in `tools/tests/test_data_derived_inventory.py`): `league-schedule-outlook` (own
 materializer with consistency guard, Issue #1519), `team-cap-outlook` (current-season snapshot of the live rosters,
 Issue #1571) and `team-injury-impact` (depends on the current PlayerWeekFantasy partition, Issue #1584). Their
