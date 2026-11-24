@@ -19,11 +19,29 @@
   margin: 0 0 10px;
 }
 
-/* One card per season: the banner and the season ring side by side, wrapping on narrow screens. */
+/* Newest champion: large, with banner and ring. */
+.hof-featured {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.hof-featured__banner { width: 140px; }
+.hof-featured__ring { display: grid; justify-items: center; gap: 4px; margin: 0; }
+.hof-featured__ring img { width: 96px; height: 96px; object-fit: contain; }
+.hof-featured__ring figcaption { font-size: 0.85rem; color: #6b7280; }
+
+/* Earlier champions: dense wrapping tiles without banner. */
 .hof-champions__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -32,43 +50,29 @@
 .hof-champion {
   display: grid;
   justify-items: center;
-  gap: 8px;
-  padding: 10px 6px 8px;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 4px 6px;
   border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: 11px;
   background: #fff;
+  font: inherit;
+  cursor: pointer;
 }
 
-/* Same banner scale as the Trophy Room: 70 percent on phones. */
-.hof-champion__banner {
-  width: 118px;
-  zoom: 1;
-}
+.hof-champion:hover { background: #f8fafc; }
+.hof-champion:focus-visible { outline: 2px solid var(--mat-sys-primary, #4f46e5); outline-offset: 2px; }
+.hof-champion__ring { width: 44px; height: 44px; object-fit: contain; }
+.hof-champion__logo { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
 
-@media (max-width: 700px) {
-  .hof-champion__banner {
-    zoom: 0.8;
-  }
-}
-
-.hof-champion__ring {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  margin: 0;
-}
-
-.hof-champion__ring img {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-}
-
-.hof-champion__ring figcaption {
+.hof-champion__name {
   max-width: 100%;
   overflow: hidden;
-  font-size: 0.78rem;
-  color: #6b7280;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.hof-champion__season { font-size: 0.68rem; color: #6b7280; }
