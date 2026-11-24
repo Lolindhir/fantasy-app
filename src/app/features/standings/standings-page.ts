@@ -4,6 +4,7 @@ import { catchError, map } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
 
 import { statisticsByTeam } from '../../shared/utils/season-statistics-view.util';
+import { buildInjuryImpactByTeam } from '../../shared/utils/injury-impact-view.util';
 import { DataService } from '../../core/services/data.service';
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { PlayoffPictureComponent } from '../../shared/components/playoff-picture/playoff-picture';
@@ -30,8 +31,8 @@ import {
 export class StandingsPageComponent {
   private dataService = inject(DataService);
 
-  vm$ = forkJoin({ data: this.dataService.getLeagueWithPlayers(), outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null))), stats: this.dataService.getSeasonStatistics().pipe(catchError(() => of(null))) }).pipe(
-    map(({ data: { league, teams }, outlook, stats }) => {
+  vm$ = forkJoin({ data: this.dataService.getLeagueWithPlayers(), outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null))), stats: this.dataService.getSeasonStatistics().pipe(catchError(() => of(null))), injury: this.dataService.getInjuryImpact() }).pipe(
+    map(({ data: { league, teams }, outlook, stats, injury }) => {
       const configuredPlayoffTeams = league.Settings?.['playoff_teams'];
       const playoffTeams = typeof configuredPlayoffTeams === 'number'
         && Number.isInteger(configuredPlayoffTeams)
@@ -44,6 +45,7 @@ export class StandingsPageComponent {
         league,
         teams,
         currentStatistics: stats && String(stats.Season) === String(league.Season) ? statisticsByTeam(stats.Teams) : null,
+        currentInjuryImpact: buildInjuryImpactByTeam((injury?.Seasons ?? []).find(item => String(item.Season) === String(league.Season))),
         currentStandings: buildCurrentStandings(league, teams),
         playoffTeams,
         playoffOdds: resolvePlayoffOdds(outlook, league.Season),

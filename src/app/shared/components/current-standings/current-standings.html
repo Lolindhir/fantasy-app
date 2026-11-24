@@ -145,6 +145,16 @@
             <strong>{{ formatAllPlay(stats) }}</strong>
           </div>
         </ng-container>
+        <ng-container *ngIf="teamInjury(row) as injury">
+          <div class="standing-detailed-stat">
+            <span>Hurt / Week</span>
+            <strong [attr.title]="injury.isLowerBound ? 'Some injured players have no projection' : null">{{ injury.hurtDisplay }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Points Lost to Injuries</span>
+            <strong [attr.title]="injury.isLowerBound ? 'Some injured players have no projection' : null">{{ injury.totalDisplay }}</strong>
+          </div>
+        </ng-container>
         <div class="standing-detailed-trend standing-detailed-places" *ngIf="playoffTeamOdds(row) as odds">
           <div class="standing-detailed-trend-heading">
             <strong>Final Place Chances</strong>
