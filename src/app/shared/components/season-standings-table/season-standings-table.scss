@@ -1,3 +1,14 @@
 :host {
   display: block;
 }
+
+/* No expander column: the archive shows only what the league-standings product delivers. */
+.current-standings--detailed {
+  --standing-detail-grid: 24px minmax(0, 1fr) 87px;
+}
+
+@media (min-width: 768px) {
+  .current-standings--detailed {
+    --standing-detail-grid: 45px minmax(0, 1fr) 125px;
+  }
+}

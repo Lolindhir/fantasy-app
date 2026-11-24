@@ -5,9 +5,7 @@ import {
   standingPlacementTrend,
   standingMovementLabel,
   standingMovementText,
-  standingPerGame,
   standingPlayoffCutline,
-  standingPointDifferential
 } from './current-standings-display.util';
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 
@@ -174,13 +172,5 @@ describe('Current standings detailed presentation helpers', () => {
     expect(standingPlayoffCutline(fifth, 5, 6)).toBeFalse();
     expect(standingPlayoffCutline(fifth, 6, 6)).toBeFalse();
     expect(standingPlayoffCutline(fifth, null, 6)).toBeFalse();
-  });
-
-  it('formats point differences and per-game metrics without inventing pre-season values', () => {
-    const row = sampleRow('WWL');
-    expect(standingPointDifferential(row)).toBe(60);
-    expect(standingPerGame(row, row.team.Points)).toBeCloseTo(850 / 3, 6);
-    expect(standingPerGame(row, row.team.PointsAgainst)).toBeCloseTo(790 / 3, 6);
-    expect(standingPerGame(sampleRow(''), 0)).toBeNull();
   });
 });

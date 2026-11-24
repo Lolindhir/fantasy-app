@@ -379,11 +379,13 @@ frontendStructure:
 
     - path: src/app/features/standings/standings-page.ts
       responsibility: >
-        Routed Standings page for Hall of Fame / League Legacy, all-time overall
-        and regular-season standings, current standings and season archive. It
-        loads league/team data through DataService, builds frontend standing and
-        legacy view models with league-standings-view.util.ts and delegates
-        rendering to shared components.
+        Routed Standings page for current standings (with a "More stats" link to
+        /stats), the playoff picture and the season archive (results, podium, awards
+        and a non-expandable regular-season table of the league-standings product).
+        Hall of Fame content and all-time standings live on /hall-of-fame, statistics
+        on /stats. It loads league/team data through DataService, builds frontend
+        standing view models with league-standings-view.util.ts and delegates
+        rendering to shared components; it computes no statistics.
 
     - path: src/app/features/drafts/drafts-page.ts
       responsibility: >
@@ -453,8 +455,7 @@ frontendStructure:
         feature page. DraftPickPillComponent owns the generic draft-pick token shape;
         DraftPickContextTriggerComponent and DraftPickContextPopoverComponent own the
         app-wide clickable draft-pick context interaction used by Drafts and Team
-        Detail without depending on Drafts feature ViewModels. LeagueLegacySummaryComponent
-        renders Hall-of-Fame highlight cards; CurrentStandingsComponent renders current
+        Detail without depending on Drafts feature ViewModels. CurrentStandingsComponent renders current
         standing rows; AllTimeStandingsComponent renders all-time overall placement
         rows; AllTimeRegularSeasonStandingsComponent wraps the shared compact
         RegularSeasonStandingsListComponent for all-time regular-season rows;
@@ -469,7 +470,6 @@ frontendStructure:
         - src/app/shared/components/team-detail-dialog/team-detail-dialog.ts
         - src/app/shared/components/player-list/player-list.ts
         - src/app/shared/components/player-detail-dialog/player-detail-dialog.ts
-        - src/app/shared/components/league-legacy-summary/league-legacy-summary.ts
         - src/app/shared/components/current-standings/current-standings.ts
         - src/app/shared/components/all-time-standings/all-time-standings.ts
         - src/app/shared/components/all-time-regular-season-standings/all-time-regular-season-standings.ts

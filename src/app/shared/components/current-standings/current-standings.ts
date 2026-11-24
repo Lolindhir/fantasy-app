@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { PlayoffOddsPillComponent } from '../playoff-odds-pill/playoff-odds-pill';
 import { PlayoffPlaceBarsComponent } from '../playoff-place-bars/playoff-place-bars';
 import type { PlayoffOddsTeamView, PlayoffOddsView } from '../../utils/schedule-outlook-view.util';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
-import type { SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
-import { formatAllPlay, formatDecimal, formatExpectedRecord, formatSigned, signClass } from '../../utils/season-statistics-view.util';
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 import {
   standingCanonicalDelta,
@@ -14,9 +13,7 @@ import {
   type StandingPlacementTrend,
   standingMovementLabel,
   standingMovementText,
-  standingPerGame,
   standingPlayoffCutline,
-  standingPointDifferential,
   recentStandingResults,
   recentStandingResultsLabel,
   type StandingRecentResult
@@ -25,7 +22,7 @@ import {
 @Component({
   selector: 'app-current-standings',
   standalone: true,
-  imports: [CommonModule, TeamIdentityComponent, PlayoffOddsPillComponent, PlayoffPlaceBarsComponent],
+  imports: [CommonModule, RouterLink, TeamIdentityComponent, PlayoffOddsPillComponent, PlayoffPlaceBarsComponent],
   templateUrl: './current-standings.html',
   styleUrl: './current-standings.scss'
 })
@@ -35,9 +32,6 @@ export class CurrentStandingsComponent {
   /** Keep the existing compact Overview presentation unchanged. */
   @Input() variant: 'compact' | 'detailed' = 'compact';
   @Input() playoffTeams: number | null = null;
-  /** Generated season statistics by TeamID (Issue #506); absent while loading or unavailable. */
-  @Input() statistics: ReadonlyMap<string, SeasonStatisticsTeam> | null = null;
-
   /** Generated playoff status per TeamID (Issue #1588); null while unavailable or after the regular season. */
   @Input() playoffOdds: PlayoffOddsView | null = null;
 
@@ -84,30 +78,8 @@ export class CurrentStandingsComponent {
     return standingPlacementTrend(row, teamCount);
   }
 
-  pointDifferential(row: CurrentStandingRow): number {
-    return standingPointDifferential(row);
-  }
-
-  pointsPerGame(row: CurrentStandingRow): number | null {
-    return standingPerGame(row, row.team.Points);
-  }
-
-  pointsAgainstPerGame(row: CurrentStandingRow): number | null {
-    return standingPerGame(row, row.team.PointsAgainst);
-  }
-
   playoffTeamOdds(row: CurrentStandingRow): PlayoffOddsTeamView | null {
     return this.playoffOdds?.teams.get(Number(row.team.TeamID)) ?? null;
   }
 
-  teamStatistics(row: CurrentStandingRow): SeasonStatisticsTeam | null {
-    const stats = this.statistics?.get(String(row.team.TeamID)) ?? null;
-    return stats && stats.Games > 0 ? stats : null;
-  }
-
-  readonly formatSigned = formatSigned;
-  readonly formatDecimal = formatDecimal;
-  readonly formatExpectedRecord = formatExpectedRecord;
-  readonly formatAllPlay = formatAllPlay;
-  readonly signClass = signClass;
 }

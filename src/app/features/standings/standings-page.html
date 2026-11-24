@@ -1,17 +1,7 @@
 <div class="standings-page" *ngIf="vm$ | async as vm">
-  <app-league-legacy-summary
-    [highlights]="vm.highlights"
-  ></app-league-legacy-summary>
-
-  <app-all-time-overview
-    [overallStandings]="vm.legacy.overallStandings"
-    [regularSeasonStandings]="vm.legacy.regularSeasonStandings"
-  ></app-all-time-overview>
-
   <app-current-standings
     variant="detailed"
     [playoffTeams]="vm.playoffTeams"
-    [statistics]="vm.currentStatistics"
     [standings]="vm.currentStandings"
     [playoffOdds]="vm.playoffOdds"
   ></app-current-standings>
@@ -24,6 +14,5 @@
 
   <app-season-archive
     [history]="vm.seasonHistory"
-    [statistics]="vm.seasonStatistics"
   ></app-season-archive>
 </div>

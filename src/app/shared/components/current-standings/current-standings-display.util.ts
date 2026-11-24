@@ -137,12 +137,3 @@ export function standingPlayoffCutline(row: CurrentStandingRow, playoffTeams: nu
   return playoffTeams !== null && Number.isInteger(playoffTeams)
     && playoffTeams > 0 && playoffTeams < teamCount && row.displayPlace === playoffTeams + 1;
 }
-
-export function standingPointDifferential(row: CurrentStandingRow): number {
-  return row.team.Points - row.team.PointsAgainst;
-}
-
-export function standingPerGame(row: CurrentStandingRow, points: number): number | null {
-  const games = row.team.Wins + row.team.Losses + row.team.Ties;
-  return games > 0 && Number.isFinite(points) ? points / games : null;
-}
