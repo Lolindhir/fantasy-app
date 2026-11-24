@@ -374,7 +374,7 @@ If internal and external sources conflict:
 
 ## 15. Stoned Lack rules
 
-Stoned Lack is a source perspective, not a final projection.
+Stoned Lack is a source perspective, not a final projection. Its regular weekly content is primarily redraft unless a specific take explicitly addresses Dynasty. Apply the claim-level source format and decision horizon rules in `FANTASY_MANAGEMENT_SOURCES.md` (Source format and decision horizon): use redraft evidence for win-now decisions, but independently justify Dynasty adds, drops, trades and retention. Do not infer multi-season value from a redraft recommendation alone.
 
 Use Stoned Lack for:
 

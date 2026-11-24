@@ -251,6 +251,16 @@ Always:
 - do not store dynamic external values or signals as permanent truth
 - reconcile every source with the actual league format and Mighty Giants context
 
+### Source format and decision horizon
+
+Classify external claims at the claim level, not merely by provider: redraft (weekly, rest-of-season or playoff horizon), explicit dynasty (multi-season), NFL real-life/film analysis, or format-independent empirical observations. For mixed or unclear content, identify the applicable horizon and disclose uncertainty rather than assuming dynasty relevance.
+
+- Redraft recommendations are relevant evidence for current lineup decisions, injury coverage, streaming, playoff utility and short-term waiver priorities; they must not be discarded merely because the league is Dynasty.
+- Separate reported observations (usage, routes, targets, carries, role changes, competition, injuries and coaching decisions) from the source's interpretation and format-dependent action recommendation. Verify decision-relevant facts and use them as inputs across formats.
+- A redraft add/drop, sell/hold or rest-of-season ranking must not be transferred directly into a Dynasty roster, trade or retention decision. A redraft drop recommendation is not evidence by itself that long-term asset value is gone; conversely, a short-term add is not proof of lasting upside.
+- Independently assess multi-season role path, talent/draft capital, age, injury recovery, competition/contracts, dynasty market/liquidity, salary/cap, replacement level, roster opportunity cost and Mighty Giants' current window. Explicitly distinguish win-now utility from future asset value and disclose when they conflict.
+- Treat Stoned Lack's regular weekly, waiver, start/sit and rest-of-season content as primarily redraft unless the specific take explicitly addresses Dynasty. Explicit Dynasty takes remain relevant but require the same league-specific reconciliation. Apply this rule to all providers and mixed-format content, not just Stoned Lack.
+
 ### Automated external-source HTTP resilience
 
 Automated external-source fetchers that depend on HTTP or public HTML must treat temporary transport and provider throttling as an operational failure mode without weakening source validation.
