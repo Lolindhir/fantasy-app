@@ -610,10 +610,14 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(host.querySelector('.weekly-context-half--last .weekly-context-heading')?.textContent).toContain('Last Week · W2');
     expect(host.querySelector('.weekly-recap-heading')?.textContent).toContain('Week 2 Recap');
     expect(fixture.componentInstance.weeklyRecap?.week).toBe(2);
+    expect(host.querySelector('.weekly-context-asof--full')?.textContent).toContain('Through Week 2');
     const records = Array.from(host.querySelectorAll('.weekly-standing-record')).map(row => row.textContent?.trim());
     expect(records.filter(record => record === '2-0').length).toBe(4);
     expect(records.filter(record => record === '0-2').length).toBe(4);
     expect(host.querySelector('.matchup-card')?.getAttribute('role')).toBeNull();
+    const open = spyOn(fixture.componentInstance, 'openMatchupDetail');
+    host.querySelector<HTMLElement>('.matchup-card')!.click();
+    expect(open).not.toHaveBeenCalled();
   });
 
   it('releases the current matchup surface when standings and week context are coherent', () => {
