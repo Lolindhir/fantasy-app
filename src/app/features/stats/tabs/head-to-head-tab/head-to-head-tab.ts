@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, combineLatest, of } from 'rxjs';
 
 import type { FantasyTeam } from '../../../../core/models/league.models';
@@ -47,7 +47,6 @@ export class HeadToHeadTabComponent {
   private readonly teamDetail = inject(TeamDetailDialogService);
   private readonly teamSeasons = inject(TeamSeasonService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
 
   readonly filters: readonly FilterOption[] = [
     { id: 'all', label: 'All' },
@@ -135,12 +134,8 @@ export class HeadToHeadTabComponent {
   }
 
   selectSeason(value: string): void {
+    // Kept in memory only: reloading the page resets to All-Time.
     this.pickedSeason.set(value);
-    void this.router.navigate([], {
-      queryParams: { season: value === ALL_TIME ? null : value },
-      queryParamsHandling: 'merge',
-      replaceUrl: true
-    });
   }
 
   /** The row team's Rivals tab lists every opponent with its games. */
