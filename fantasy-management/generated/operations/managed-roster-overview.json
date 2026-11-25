@@ -2,12 +2,12 @@
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
   "generated_at": "2026-11-25T04:47:28.377332Z",
-  "input_fingerprint": "183b334269eb40ae048f0a773a77783d3d5c9555a13e43cea0c68ac013cdaca3",
+  "input_fingerprint": "c0b2b377804f1d01d093369c5bf56544ab72eb32143039d4a2fe175cd58135a1",
   "sources": [
     {
       "id": "canonical_league_settings",
       "path": "data-source/leagues/nfl-reise/seasons/2026/league.json",
-      "content_sha256": "a200fe353f216a1d80ce24fd458083c9bb813697bf69706664d9b4d7a18b6b99"
+      "content_sha256": "c17cc14d6eaea5780f33744da6452ca1123375080ea5192374a8670322363829"
     },
     {
       "id": "canonical_league_members",
@@ -17,7 +17,7 @@
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "d988416da3102fdbed145e50a4d7382bf58cba3991f4541610db21d16f450546"
+      "content_sha256": "b1cf6d73d0fd0b977028cfcdb438a38ec72dd5c3a330ca78c84d01490a86d855"
     },
     {
       "id": "roster_evaluation_state",
@@ -47,7 +47,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 2,
+    "unclassified_count": 3,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -256,21 +256,12 @@
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
       "decision_readiness": "review_required",
-      "active_unclassified_count": 2,
-      "current_active_candidate_count": 3,
+      "active_unclassified_count": 3,
+      "current_active_candidate_count": 2,
       "current_active_general_churn_count": 0,
-      "candidate_pool_count": 3,
+      "candidate_pool_count": 2,
       "guardrail_status": "review_required",
       "candidate_pool": [
-        {
-          "player_id": "12530",
-          "name": "Travis Hunter",
-          "position": "WR",
-          "security": "hold",
-          "current_area": "active",
-          "boundary_priority": 20,
-          "counts_as_general_churn": false
-        },
         {
           "player_id": "13274",
           "name": "Germie Bernard",
@@ -2127,6 +2118,67 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
+      "player_id": "12483",
+      "name": "Jack Bech",
+      "position": "WR",
+      "nfl_team": "LV",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.9,
+        "years_experience": 2,
+        "salary": 448089,
+        "salary_projected": 1519606,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 222,
+        "fantasypros_position_rank": "WR88",
+        "fantasycalc_overall_rank": 210,
+        "fantasycalc_value": 1038
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
       "player_id": "7526",
       "name": "Jaylen Waddle",
       "position": "WR",
@@ -2564,74 +2616,11 @@
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
-    },
-    {
-      "player_id": "12530",
-      "name": "Travis Hunter",
-      "position": "WR",
-      "nfl_team": "JAX",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": "prospect",
-      "roster_security": "hold",
-      "structural_function": "development",
-      "classification": {
-        "roster_role": "prospect",
-        "roster_security": "hold",
-        "boundary_priority": 20,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
-        "source_as_of": "2026-11-14",
-        "user_override": false,
-        "notes": [
-          "23-jähriger Top-Draft-Prospect mit außergewöhnlichem Ceiling; die über viele Wochen dominante CB-Nutzung reduziert aber den nachhaltig erwartbaren WR-Target-Pfad. Prospect/Hold ist eine mehrjährige Upside-Wette, keine Reaktion auf ein schwaches Einzelspiel."
-        ],
-        "evidence": [],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 23.5,
-        "years_experience": 2,
-        "salary": 2383472,
-        "salary_projected": 2008843,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 182,
-        "fantasypros_position_rank": "WR72",
-        "fantasycalc_overall_rank": 245,
-        "fantasycalc_value": 798
-      },
-      "coverage_role": "development",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": true,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
     }
   ],
   "quality": {
     "status": "warning",
-    "issue_count": 4,
+    "issue_count": 6,
     "issues": [
       {
         "severity": "warning",
@@ -2644,6 +2633,18 @@
         "kind": "active_unclassified_boundary_review_required",
         "player_id": "11625",
         "name": "Adonai Mitchell"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "12483",
+        "name": "Jack Bech"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "12483",
+        "name": "Jack Bech"
       },
       {
         "severity": "warning",

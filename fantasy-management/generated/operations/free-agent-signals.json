@@ -2,11 +2,11 @@
   "schema_version": 1,
   "dataset_id": "free-agent-signals",
   "generated_at": "2026-11-25T04:47:28.377332Z",
-  "input_fingerprint": "09c23fc69691c5e512365f85bc62c99e0cc775467df2c176f966f0c1e21aaa8e",
+  "input_fingerprint": "3f5b645e03938b9c4e2792b1dd55fd28dd7f1cc28201dee3386626a91db9bfee",
   "source": {
     "dataset_id": "player-signals",
     "path": "fantasy-management/generated/operations/player-signals.json",
-    "input_fingerprint": "3a445f96a444b51d097d30bea437a6267037641bd8a93894ac20024b85ef9044"
+    "input_fingerprint": "ea000497b0f6c1123a752535d8f5bffb4074a482916b9f860d07eaabb1dcb6b2"
   },
   "population": {
     "source_player_count": 966,
@@ -21,9 +21,9 @@
     "position_counts": {
       "K": 35,
       "QB": 94,
-      "RB": 159,
+      "RB": 158,
       "TE": 170,
-      "WR": 303
+      "WR": 304
     },
     "selection_rule": "configured fantasy positions with ownership.status == fantasy_free_agent in player-signals"
   },
@@ -179899,894 +179899,6 @@
           "status": "not_listed",
           "rank": null,
           "count": null
-        },
-        "absence_semantics": "not_listed means outside the provider top-N list, never zero activity"
-      }
-    },
-    {
-      "player_id": "5995",
-      "name": "Justice Hill",
-      "position": "RB",
-      "nfl_team": "BAL",
-      "nfl_team_source": "canonical_sleeper_team",
-      "population_reasons": [
-        "canonical_nfl_membership",
-        "canonical_nfl_recent_history",
-        "listed_in_external_source",
-        "present_in_external_signal"
-      ],
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 29,
-        "years_experience": 8,
-        "salary": 5667222,
-        "salary_projected": 6393292,
-        "is_free_agent_source_field": false,
-        "espn_id": "4038441"
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "role": {
-        "sleeper_depth_chart_position": "RB",
-        "sleeper_depth_chart_order": 2,
-        "coverage_status": "available",
-        "interpretation": "nominal_depth_chart_only_not_usage"
-      },
-      "source_signals": {
-        "fantasypros-dynasty-superflex-ppr": {
-          "source_id": "fantasypros-dynasty-superflex-ppr",
-          "source_kind": "expert_consensus",
-          "provider": "fantasypros",
-          "dataset_id": "dynasty-superflex-ppr",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "signals": {
-            "overall_rank": 268,
-            "percentile": 50.92,
-            "position_rank": "RB77",
-            "tier": "13"
-          },
-          "format_context": {
-            "horizon": "dynasty",
-            "scoring": "ppr",
-            "quarterback_mode": "superflex"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:24.058990Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        },
-        "fantasycalc-dynasty-superflex-ppr-8-team": {
-          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
-          "source_kind": "market_value",
-          "provider": "fantasycalc",
-          "dataset_id": "dynasty-superflex-ppr-8-team",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "sleeper_id",
-          "signals": {
-            "overall_rank": 233,
-            "percentile": 44.63,
-            "position_rank": 57,
-            "tier": "31",
-            "value": 915,
-            "trend_30_day": 603,
-            "roster_percent": 0.8739,
-            "trade_frequency": 0.0089
-          },
-          "format_context": {
-            "horizon": "dynasty",
-            "scoring": "ppr",
-            "quarterback_mode": "superflex",
-            "team_count": 8
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:28.377332Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        },
-        "ffc-redraft-ppr-8-team": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "source_kind": "adp",
-          "provider": "fantasy-football-calculator",
-          "dataset_id": "redraft-ppr-8-team",
-          "applicable": true,
-          "coverage_status": "not_listed",
-          "listed": false,
-          "join_method": "missing",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null
-          },
-          "format_context": {
-            "horizon": "redraft",
-            "scoring": "ppr",
-            "quarterback_mode": "one_qb",
-            "team_count": 8,
-            "actual_league_team_count": 6
-          },
-          "freshness": {
-            "source_timestamp": "2026-09-20T03:49:19.235854Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1584.97,
-            "status": "stale"
-          }
-        },
-        "ffc-redraft-2qb-10-team": {
-          "source_id": "ffc-redraft-2qb-10-team",
-          "source_kind": "adp",
-          "provider": "fantasy-football-calculator",
-          "dataset_id": "redraft-2qb-10-team",
-          "applicable": true,
-          "coverage_status": "not_listed",
-          "listed": false,
-          "join_method": "missing",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null
-          },
-          "format_context": {
-            "horizon": "redraft",
-            "scoring": "source_default",
-            "quarterback_mode": "two_qb",
-            "team_count": 10,
-            "actual_league_team_count": 6
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:21.834404Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-kicker-preseason": {
-          "source_id": "fftoday-redraft-kicker-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-kicker-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "bye": null,
-            "fgm": null,
-            "fga": null,
-            "fg_pct": null,
-            "epm": null,
-            "epa": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "K",
-            "scoring": "provider_default"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.383370Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-kicker-preseason": {
-          "source_id": "cbs-sports-redraft-kicker-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-kicker-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "games_played": null,
-            "fgm": null,
-            "fga": null,
-            "longest_field_goal": null,
-            "fg_1_19_made": null,
-            "fg_1_19_attempts": null,
-            "fg_20_29_made": null,
-            "fg_20_29_attempts": null,
-            "fg_30_39_made": null,
-            "fg_30_39_attempts": null,
-            "fg_40_49_made": null,
-            "fg_40_49_attempts": null,
-            "fg_50_plus_made": null,
-            "fg_50_plus_attempts": null,
-            "xpm": null,
-            "xpa": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "K",
-            "scoring": "provider_default",
-            "source_format": "nonppr"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:12.634491Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-qb-preseason": {
-          "source_id": "fftoday-redraft-qb-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-qb-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "pass_completions": null,
-            "pass_attempts": null,
-            "pass_yards": null,
-            "pass_touchdowns": null,
-            "interceptions": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "QB",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-qb-preseason": {
-          "source_id": "cbs-sports-redraft-qb-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-qb-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "pass_completions": null,
-            "pass_attempts": null,
-            "pass_yards": null,
-            "pass_touchdowns": null,
-            "interceptions": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "QB",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-rb-preseason": {
-          "source_id": "fftoday-redraft-rb-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-rb-preseason",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "signals": {
-            "rank": 51,
-            "percentile": 44.44,
-            "rush_attempts": 51,
-            "rush_yards": 241,
-            "rush_touchdowns": 2,
-            "receptions": 28,
-            "receiving_yards": 221,
-            "receiving_touchdowns": 1,
-            "projected_fantasy_points": 78.2,
-            "source_updated_date": "2026-09-06"
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "RB",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-rb-preseason": {
-          "source_id": "cbs-sports-redraft-rb-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-rb-preseason",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "signals": {
-            "rank": 54,
-            "percentile": 46.46,
-            "rush_attempts": 35,
-            "rush_yards": 206,
-            "rush_touchdowns": 1,
-            "targets": 21,
-            "receptions": 15,
-            "receiving_yards": 108,
-            "receiving_touchdowns": 0,
-            "fumbles_lost": 0,
-            "projected_fantasy_points": 30.2,
-            "projected_fantasy_points_per_game": 4.3
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "RB",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-wr-preseason": {
-          "source_id": "fftoday-redraft-wr-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-wr-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "WR",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-wr-preseason": {
-          "source_id": "cbs-sports-redraft-wr-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-wr-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "targets": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "WR",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-te-preseason": {
-          "source_id": "fftoday-redraft-te-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-te-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "TE",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-te-preseason": {
-          "source_id": "cbs-sports-redraft-te-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-te-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "targets": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "TE",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        }
-      },
-      "market": {
-        "fantasypros": {
-          "source_id": "fantasypros-dynasty-superflex-ppr",
-          "coverage_status": "listed",
-          "applicable": true,
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "overall_rank": 268,
-          "percentile": 50.92,
-          "position_rank": "RB77",
-          "tier": "13",
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:24.058990Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        },
-        "fantasycalc": {
-          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
-          "coverage_status": "listed",
-          "applicable": true,
-          "listed": true,
-          "join_method": "sleeper_id",
-          "overall_rank": 233,
-          "percentile": 44.63,
-          "position_rank": 57,
-          "tier": "31",
-          "value": 915,
-          "trend_30_day": 603,
-          "roster_percent": 0.8739,
-          "trade_frequency": 0.0089,
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:28.377332Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        }
-      },
-      "redraft_adp": {
-        "primary_format": "ppr_8_team",
-        "primary_source_id": "ffc-redraft-ppr-8-team",
-        "primary_applicability": "applicable",
-        "primary_listed": false,
-        "primary": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "coverage_status": "not_listed",
-          "applicable": true,
-          "listed": false,
-          "join_method": "missing",
-          "rank": null,
-          "percentile": null,
-          "adp": null,
-          "times_drafted": null,
-          "stdev": null,
-          "sample_total_drafts": null,
-          "sample_start_date": null,
-          "sample_end_date": null,
-          "freshness": {
-            "source_timestamp": "2026-09-20T03:49:19.235854Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1584.97,
-            "status": "stale"
-          }
-        },
-        "formats": {
-          "ppr_8_team": {
-            "source_id": "ffc-redraft-ppr-8-team",
-            "coverage_status": "not_listed",
-            "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null,
-            "freshness": {
-              "source_timestamp": "2026-09-20T03:49:19.235854Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 1584.97,
-              "status": "stale"
-            }
-          },
-          "two_qb_10_team": {
-            "source_id": "ffc-redraft-2qb-10-team",
-            "coverage_status": "not_listed",
-            "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null,
-            "freshness": {
-              "source_timestamp": "2026-11-22T04:22:21.834404Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 72.42,
-              "status": "stale"
-            }
-          }
-        },
-        "format_gap": null,
-        "ppr_8_team": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "coverage_status": "not_listed",
-          "applicable": true,
-          "listed": false,
-          "join_method": "missing",
-          "rank": null,
-          "percentile": null,
-          "adp": null,
-          "times_drafted": null,
-          "stdev": null,
-          "sample_total_drafts": null,
-          "sample_start_date": null,
-          "sample_end_date": null,
-          "freshness": {
-            "source_timestamp": "2026-09-20T03:49:19.235854Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1584.97,
-            "status": "stale"
-          }
-        },
-        "two_qb_10_team": {
-          "source_id": "ffc-redraft-2qb-10-team",
-          "coverage_status": "not_listed",
-          "applicable": true,
-          "listed": false,
-          "join_method": "missing",
-          "rank": null,
-          "percentile": null,
-          "adp": null,
-          "times_drafted": null,
-          "stdev": null,
-          "sample_total_drafts": null,
-          "sample_start_date": null,
-          "sample_end_date": null,
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:21.834404Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        }
-      },
-      "projections": {
-        "providers": {
-          "fftoday": {
-            "source_id": "fftoday-redraft-rb-preseason",
-            "coverage_status": "listed",
-            "applicable": true,
-            "listed": true,
-            "join_method": "normalized_name_position",
-            "rank": 51,
-            "percentile": 44.44,
-            "rush_attempts": 51,
-            "rush_yards": 241,
-            "rush_touchdowns": 2,
-            "receptions": 28,
-            "receiving_yards": 221,
-            "receiving_touchdowns": 1,
-            "projected_fantasy_points": 78.2,
-            "source_updated_date": "2026-09-06",
-            "league_scoring": {
-              "status": "reconciled_core",
-              "core_points": 92.2,
-              "policy": "Mighty Giants scoring applied only to source-projected components shared across active providers; missing stats are never imputed",
-              "included_components": [
-                {
-                  "signal": "rush_yards",
-                  "scoring_key": "rush_yd",
-                  "projected_stat": 241,
-                  "multiplier": 0.1,
-                  "points": 24.1
-                },
-                {
-                  "signal": "rush_touchdowns",
-                  "scoring_key": "rush_td",
-                  "projected_stat": 2,
-                  "multiplier": 6.0,
-                  "points": 12.0
-                },
-                {
-                  "signal": "receptions",
-                  "scoring_key": "rec",
-                  "projected_stat": 28,
-                  "multiplier": 1.0,
-                  "points": 28.0
-                },
-                {
-                  "signal": "receiving_yards",
-                  "scoring_key": "rec_yd",
-                  "projected_stat": 221,
-                  "multiplier": 0.1,
-                  "points": 22.1
-                },
-                {
-                  "signal": "receiving_touchdowns",
-                  "scoring_key": "rec_td",
-                  "projected_stat": 1,
-                  "multiplier": 6.0,
-                  "points": 6.0
-                }
-              ],
-              "excluded_nonzero_components": [
-                {
-                  "scoring_key": "rush_2pt",
-                  "multiplier": 2.0,
-                  "reason": "not projected comparably by both active providers"
-                },
-                {
-                  "scoring_key": "rec_2pt",
-                  "multiplier": 2.0,
-                  "reason": "not projected comparably by both active providers"
-                },
-                {
-                  "scoring_key": "fum_lost",
-                  "multiplier": -2.0,
-                  "reason": "not projected comparably by both active providers"
-                }
-              ]
-            },
-            "freshness": {
-              "source_timestamp": "2026-10-13T03:24:59.693367Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 1033.37,
-              "status": "stale"
-            }
-          },
-          "cbs_sports": {
-            "source_id": "cbs-sports-redraft-rb-preseason",
-            "coverage_status": "listed",
-            "applicable": true,
-            "listed": true,
-            "join_method": "normalized_name_position",
-            "rank": 54,
-            "percentile": 46.46,
-            "rush_attempts": 35,
-            "rush_yards": 206,
-            "rush_touchdowns": 1,
-            "targets": 21,
-            "receptions": 15,
-            "receiving_yards": 108,
-            "receiving_touchdowns": 0,
-            "fumbles_lost": 0,
-            "projected_fantasy_points": 30.2,
-            "projected_fantasy_points_per_game": 4.3,
-            "league_scoring": {
-              "status": "reconciled_core",
-              "core_points": 52.4,
-              "policy": "Mighty Giants scoring applied only to source-projected components shared across active providers; missing stats are never imputed",
-              "included_components": [
-                {
-                  "signal": "rush_yards",
-                  "scoring_key": "rush_yd",
-                  "projected_stat": 206,
-                  "multiplier": 0.1,
-                  "points": 20.6
-                },
-                {
-                  "signal": "rush_touchdowns",
-                  "scoring_key": "rush_td",
-                  "projected_stat": 1,
-                  "multiplier": 6.0,
-                  "points": 6.0
-                },
-                {
-                  "signal": "receptions",
-                  "scoring_key": "rec",
-                  "projected_stat": 15,
-                  "multiplier": 1.0,
-                  "points": 15.0
-                },
-                {
-                  "signal": "receiving_yards",
-                  "scoring_key": "rec_yd",
-                  "projected_stat": 108,
-                  "multiplier": 0.1,
-                  "points": 10.8
-                },
-                {
-                  "signal": "receiving_touchdowns",
-                  "scoring_key": "rec_td",
-                  "projected_stat": 0,
-                  "multiplier": 6.0,
-                  "points": 0.0
-                }
-              ],
-              "excluded_nonzero_components": [
-                {
-                  "scoring_key": "rush_2pt",
-                  "multiplier": 2.0,
-                  "reason": "not projected comparably by both active providers"
-                },
-                {
-                  "scoring_key": "rec_2pt",
-                  "multiplier": 2.0,
-                  "reason": "not projected comparably by both active providers"
-                },
-                {
-                  "scoring_key": "fum_lost",
-                  "multiplier": -2.0,
-                  "reason": "not projected comparably by both active providers"
-                }
-              ]
-            },
-            "freshness": {
-              "source_timestamp": "2026-11-22T04:22:13.110612Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 72.42,
-              "status": "stale"
-            }
-          }
-        },
-        "summary": {
-          "applicable_provider_count": 2,
-          "listed_provider_count": 2,
-          "consensus_percentile": 45.45,
-          "percentile_spread": 2.02,
-          "provider_fantasy_points_policy": "kept_separate_not_averaged"
-        }
-      },
-      "activity": {
-        "source_id": "sleeper-trending",
-        "provider": "sleeper",
-        "dataset_id": "nfl-roster-activity-24h-top100",
-        "source_timestamp": "2026-11-25T04:47:26.082306Z",
-        "comparison": {
-          "baseline": false,
-          "comparable": true,
-          "reason": "same_configuration_previous_snapshot_available",
-          "previous_generated_at": "2026-11-25T04:32:29.888649+00:00",
-          "material_event_eligible": true,
-          "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
-        },
-        "coverage_status": "listed_in_current_union",
-        "listed": true,
-        "add": {
-          "status": "listed",
-          "rank": 4,
-          "count": 510174
-        },
-        "drop": {
-          "status": "listed",
-          "rank": 91,
-          "count": 28440
         },
         "absence_semantics": "not_listed means outside the provider top-N list, never zero activity"
       }
@@ -462206,842 +461318,6 @@
       }
     },
     {
-      "player_id": "12483",
-      "name": "Jack Bech",
-      "position": "WR",
-      "nfl_team": "LV",
-      "nfl_team_source": "canonical_sleeper_team",
-      "population_reasons": [
-        "canonical_nfl_membership",
-        "canonical_nfl_recent_history",
-        "listed_in_external_source",
-        "present_in_external_signal"
-      ],
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 23.9,
-        "years_experience": 2,
-        "salary": 448089,
-        "salary_projected": 1519606,
-        "is_free_agent_source_field": false,
-        "espn_id": "4603186"
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "role": {
-        "sleeper_depth_chart_position": "SWR",
-        "sleeper_depth_chart_order": 2,
-        "coverage_status": "available",
-        "interpretation": "nominal_depth_chart_only_not_usage"
-      },
-      "source_signals": {
-        "fantasypros-dynasty-superflex-ppr": {
-          "source_id": "fantasypros-dynasty-superflex-ppr",
-          "source_kind": "expert_consensus",
-          "provider": "fantasypros",
-          "dataset_id": "dynasty-superflex-ppr",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "signals": {
-            "overall_rank": 222,
-            "percentile": 59.38,
-            "position_rank": "WR88",
-            "tier": "12"
-          },
-          "format_context": {
-            "horizon": "dynasty",
-            "scoring": "ppr",
-            "quarterback_mode": "superflex"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:24.058990Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        },
-        "fantasycalc-dynasty-superflex-ppr-8-team": {
-          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
-          "source_kind": "market_value",
-          "provider": "fantasycalc",
-          "dataset_id": "dynasty-superflex-ppr-8-team",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "sleeper_id",
-          "signals": {
-            "overall_rank": 210,
-            "percentile": 50.12,
-            "position_rank": 78,
-            "tier": "30",
-            "value": 1038,
-            "trend_30_day": 669,
-            "roster_percent": 0.7943,
-            "trade_frequency": 0.0069
-          },
-          "format_context": {
-            "horizon": "dynasty",
-            "scoring": "ppr",
-            "quarterback_mode": "superflex",
-            "team_count": 8
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:28.377332Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        },
-        "ffc-redraft-ppr-8-team": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "source_kind": "adp",
-          "provider": "fantasy-football-calculator",
-          "dataset_id": "redraft-ppr-8-team",
-          "applicable": true,
-          "coverage_status": "not_listed",
-          "listed": false,
-          "join_method": "missing",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null
-          },
-          "format_context": {
-            "horizon": "redraft",
-            "scoring": "ppr",
-            "quarterback_mode": "one_qb",
-            "team_count": 8,
-            "actual_league_team_count": 6
-          },
-          "freshness": {
-            "source_timestamp": "2026-09-20T03:49:19.235854Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1584.97,
-            "status": "stale"
-          }
-        },
-        "ffc-redraft-2qb-10-team": {
-          "source_id": "ffc-redraft-2qb-10-team",
-          "source_kind": "adp",
-          "provider": "fantasy-football-calculator",
-          "dataset_id": "redraft-2qb-10-team",
-          "applicable": true,
-          "coverage_status": "not_listed",
-          "listed": false,
-          "join_method": "missing",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null
-          },
-          "format_context": {
-            "horizon": "redraft",
-            "scoring": "source_default",
-            "quarterback_mode": "two_qb",
-            "team_count": 10,
-            "actual_league_team_count": 6
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:21.834404Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-kicker-preseason": {
-          "source_id": "fftoday-redraft-kicker-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-kicker-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "bye": null,
-            "fgm": null,
-            "fga": null,
-            "fg_pct": null,
-            "epm": null,
-            "epa": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "K",
-            "scoring": "provider_default"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.383370Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-kicker-preseason": {
-          "source_id": "cbs-sports-redraft-kicker-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-kicker-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "games_played": null,
-            "fgm": null,
-            "fga": null,
-            "longest_field_goal": null,
-            "fg_1_19_made": null,
-            "fg_1_19_attempts": null,
-            "fg_20_29_made": null,
-            "fg_20_29_attempts": null,
-            "fg_30_39_made": null,
-            "fg_30_39_attempts": null,
-            "fg_40_49_made": null,
-            "fg_40_49_attempts": null,
-            "fg_50_plus_made": null,
-            "fg_50_plus_attempts": null,
-            "xpm": null,
-            "xpa": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "K",
-            "scoring": "provider_default",
-            "source_format": "nonppr"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:12.634491Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-qb-preseason": {
-          "source_id": "fftoday-redraft-qb-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-qb-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "pass_completions": null,
-            "pass_attempts": null,
-            "pass_yards": null,
-            "pass_touchdowns": null,
-            "interceptions": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "QB",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-qb-preseason": {
-          "source_id": "cbs-sports-redraft-qb-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-qb-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "pass_completions": null,
-            "pass_attempts": null,
-            "pass_yards": null,
-            "pass_touchdowns": null,
-            "interceptions": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "QB",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-rb-preseason": {
-          "source_id": "fftoday-redraft-rb-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-rb-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "RB",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-rb-preseason": {
-          "source_id": "cbs-sports-redraft-rb-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-rb-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "targets": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "RB",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-wr-preseason": {
-          "source_id": "fftoday-redraft-wr-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-wr-preseason",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "signals": {
-            "rank": 93,
-            "percentile": 25.81,
-            "receptions": 29,
-            "receiving_yards": 336,
-            "receiving_touchdowns": 2,
-            "rush_attempts": 0,
-            "rush_yards": 0,
-            "rush_touchdowns": 0,
-            "projected_fantasy_points": 60.1,
-            "source_updated_date": "2026-09-06"
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "WR",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-wr-preseason": {
-          "source_id": "cbs-sports-redraft-wr-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-wr-preseason",
-          "applicable": true,
-          "coverage_status": "not_listed",
-          "listed": false,
-          "join_method": "missing",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "targets": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "WR",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        },
-        "fftoday-redraft-te-preseason": {
-          "source_id": "fftoday-redraft-te-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-te-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "TE",
-            "scoring": "provider_default",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-10-13T03:24:59.693367Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1033.37,
-            "status": "stale"
-          }
-        },
-        "cbs-sports-redraft-te-preseason": {
-          "source_id": "cbs-sports-redraft-te-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-te-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "targets": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "TE",
-            "scoring": "provider_default",
-            "source_format": "nonppr",
-            "league_scoring_reconciliation": "derived_core_stats"
-          },
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:13.110612Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        }
-      },
-      "market": {
-        "fantasypros": {
-          "source_id": "fantasypros-dynasty-superflex-ppr",
-          "coverage_status": "listed",
-          "applicable": true,
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "overall_rank": 222,
-          "percentile": 59.38,
-          "position_rank": "WR88",
-          "tier": "12",
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:24.058990Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        },
-        "fantasycalc": {
-          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
-          "coverage_status": "listed",
-          "applicable": true,
-          "listed": true,
-          "join_method": "sleeper_id",
-          "overall_rank": 210,
-          "percentile": 50.12,
-          "position_rank": 78,
-          "tier": "30",
-          "value": 1038,
-          "trend_30_day": 669,
-          "roster_percent": 0.7943,
-          "trade_frequency": 0.0069,
-          "freshness": {
-            "source_timestamp": "2026-11-25T04:47:28.377332Z",
-            "max_age_hours": 48,
-            "age_hours_at_materialization": 0.0,
-            "status": "current"
-          }
-        }
-      },
-      "redraft_adp": {
-        "primary_format": "ppr_8_team",
-        "primary_source_id": "ffc-redraft-ppr-8-team",
-        "primary_applicability": "applicable",
-        "primary_listed": false,
-        "primary": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "coverage_status": "not_listed",
-          "applicable": true,
-          "listed": false,
-          "join_method": "missing",
-          "rank": null,
-          "percentile": null,
-          "adp": null,
-          "times_drafted": null,
-          "stdev": null,
-          "sample_total_drafts": null,
-          "sample_start_date": null,
-          "sample_end_date": null,
-          "freshness": {
-            "source_timestamp": "2026-09-20T03:49:19.235854Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1584.97,
-            "status": "stale"
-          }
-        },
-        "formats": {
-          "ppr_8_team": {
-            "source_id": "ffc-redraft-ppr-8-team",
-            "coverage_status": "not_listed",
-            "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null,
-            "freshness": {
-              "source_timestamp": "2026-09-20T03:49:19.235854Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 1584.97,
-              "status": "stale"
-            }
-          },
-          "two_qb_10_team": {
-            "source_id": "ffc-redraft-2qb-10-team",
-            "coverage_status": "not_listed",
-            "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null,
-            "freshness": {
-              "source_timestamp": "2026-11-22T04:22:21.834404Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 72.42,
-              "status": "stale"
-            }
-          }
-        },
-        "format_gap": null,
-        "ppr_8_team": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "coverage_status": "not_listed",
-          "applicable": true,
-          "listed": false,
-          "join_method": "missing",
-          "rank": null,
-          "percentile": null,
-          "adp": null,
-          "times_drafted": null,
-          "stdev": null,
-          "sample_total_drafts": null,
-          "sample_start_date": null,
-          "sample_end_date": null,
-          "freshness": {
-            "source_timestamp": "2026-09-20T03:49:19.235854Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 1584.97,
-            "status": "stale"
-          }
-        },
-        "two_qb_10_team": {
-          "source_id": "ffc-redraft-2qb-10-team",
-          "coverage_status": "not_listed",
-          "applicable": true,
-          "listed": false,
-          "join_method": "missing",
-          "rank": null,
-          "percentile": null,
-          "adp": null,
-          "times_drafted": null,
-          "stdev": null,
-          "sample_total_drafts": null,
-          "sample_start_date": null,
-          "sample_end_date": null,
-          "freshness": {
-            "source_timestamp": "2026-11-22T04:22:21.834404Z",
-            "max_age_hours": 72,
-            "age_hours_at_materialization": 72.42,
-            "status": "stale"
-          }
-        }
-      },
-      "projections": {
-        "providers": {
-          "fftoday": {
-            "source_id": "fftoday-redraft-wr-preseason",
-            "coverage_status": "listed",
-            "applicable": true,
-            "listed": true,
-            "join_method": "normalized_name_position",
-            "rank": 93,
-            "percentile": 25.81,
-            "receptions": 29,
-            "receiving_yards": 336,
-            "receiving_touchdowns": 2,
-            "rush_attempts": 0,
-            "rush_yards": 0,
-            "rush_touchdowns": 0,
-            "projected_fantasy_points": 60.1,
-            "source_updated_date": "2026-09-06",
-            "league_scoring": {
-              "status": "reconciled_core",
-              "core_points": 74.6,
-              "policy": "Mighty Giants scoring applied only to source-projected components shared across active providers; missing stats are never imputed",
-              "included_components": [
-                {
-                  "signal": "receptions",
-                  "scoring_key": "rec",
-                  "projected_stat": 29,
-                  "multiplier": 1.0,
-                  "points": 29.0
-                },
-                {
-                  "signal": "receiving_yards",
-                  "scoring_key": "rec_yd",
-                  "projected_stat": 336,
-                  "multiplier": 0.1,
-                  "points": 33.6
-                },
-                {
-                  "signal": "receiving_touchdowns",
-                  "scoring_key": "rec_td",
-                  "projected_stat": 2,
-                  "multiplier": 6.0,
-                  "points": 12.0
-                },
-                {
-                  "signal": "rush_yards",
-                  "scoring_key": "rush_yd",
-                  "projected_stat": 0,
-                  "multiplier": 0.1,
-                  "points": 0.0
-                },
-                {
-                  "signal": "rush_touchdowns",
-                  "scoring_key": "rush_td",
-                  "projected_stat": 0,
-                  "multiplier": 6.0,
-                  "points": 0.0
-                }
-              ],
-              "excluded_nonzero_components": [
-                {
-                  "scoring_key": "rush_2pt",
-                  "multiplier": 2.0,
-                  "reason": "not projected comparably by both active providers"
-                },
-                {
-                  "scoring_key": "rec_2pt",
-                  "multiplier": 2.0,
-                  "reason": "not projected comparably by both active providers"
-                },
-                {
-                  "scoring_key": "fum_lost",
-                  "multiplier": -2.0,
-                  "reason": "not projected comparably by both active providers"
-                }
-              ]
-            },
-            "freshness": {
-              "source_timestamp": "2026-10-13T03:24:59.693367Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 1033.37,
-              "status": "stale"
-            }
-          },
-          "cbs_sports": {
-            "source_id": "cbs-sports-redraft-wr-preseason",
-            "coverage_status": "not_listed",
-            "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "targets": null,
-            "receptions": null,
-            "receiving_yards": null,
-            "receiving_touchdowns": null,
-            "rush_attempts": null,
-            "rush_yards": null,
-            "rush_touchdowns": null,
-            "fumbles_lost": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null,
-            "league_scoring": {
-              "status": "not_listed",
-              "core_points": null,
-              "policy": "no league score is inferred for an unlisted provider row",
-              "included_components": [],
-              "excluded_nonzero_components": []
-            },
-            "freshness": {
-              "source_timestamp": "2026-11-22T04:22:13.110612Z",
-              "max_age_hours": 72,
-              "age_hours_at_materialization": 72.42,
-              "status": "stale"
-            }
-          }
-        },
-        "summary": {
-          "applicable_provider_count": 2,
-          "listed_provider_count": 1,
-          "consensus_percentile": 25.81,
-          "percentile_spread": null,
-          "provider_fantasy_points_policy": "kept_separate_not_averaged"
-        }
-      },
-      "activity": {
-        "source_id": "sleeper-trending",
-        "provider": "sleeper",
-        "dataset_id": "nfl-roster-activity-24h-top100",
-        "source_timestamp": "2026-11-25T04:47:26.082306Z",
-        "comparison": {
-          "baseline": false,
-          "comparable": true,
-          "reason": "same_configuration_previous_snapshot_available",
-          "previous_generated_at": "2026-11-25T04:32:29.888649+00:00",
-          "material_event_eligible": true,
-          "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
-        },
-        "coverage_status": "listed_in_current_union",
-        "listed": true,
-        "add": {
-          "status": "listed",
-          "rank": 14,
-          "count": 228388
-        },
-        "drop": {
-          "status": "not_listed",
-          "rank": null,
-          "count": null
-        },
-        "absence_semantics": "not_listed means outside the provider top-N list, never zero activity"
-      }
-    },
-    {
       "player_id": "11616",
       "name": "Jacob Cowing",
       "position": "WR",
@@ -584240,6 +582516,841 @@
       }
     },
     {
+      "player_id": "12530",
+      "name": "Travis Hunter",
+      "position": "WR",
+      "nfl_team": "JAX",
+      "nfl_team_source": "canonical_sleeper_team",
+      "population_reasons": [
+        "canonical_nfl_membership",
+        "canonical_nfl_recent_history",
+        "listed_in_external_source"
+      ],
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.5,
+        "years_experience": 2,
+        "salary": 2383472,
+        "salary_projected": 2008843,
+        "is_free_agent_source_field": false,
+        "espn_id": "4685415"
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "role": {
+        "sleeper_depth_chart_position": "RCB",
+        "sleeper_depth_chart_order": 1,
+        "coverage_status": "available",
+        "interpretation": "nominal_depth_chart_only_not_usage"
+      },
+      "source_signals": {
+        "fantasypros-dynasty-superflex-ppr": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "source_kind": "expert_consensus",
+          "provider": "fantasypros",
+          "dataset_id": "dynasty-superflex-ppr",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "overall_rank": 182,
+            "percentile": 66.73,
+            "position_rank": "WR72",
+            "tier": "10"
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:24.058990Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fantasycalc-dynasty-superflex-ppr-8-team": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "source_kind": "market_value",
+          "provider": "fantasycalc",
+          "dataset_id": "dynasty-superflex-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "sleeper_id",
+          "signals": {
+            "overall_rank": 245,
+            "percentile": 41.77,
+            "position_rank": 90,
+            "tier": "32",
+            "value": 798,
+            "trend_30_day": -676,
+            "roster_percent": 0.9396,
+            "trade_frequency": 0.0017
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex",
+            "team_count": 8
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:28.377332Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "ffc-redraft-ppr-8-team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "ppr",
+            "quarterback_mode": "one_qb",
+            "team_count": 8,
+            "actual_league_team_count": 6
+          },
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1584.97,
+            "status": "stale"
+          }
+        },
+        "ffc-redraft-2qb-10-team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-2qb-10-team",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "source_default",
+            "quarterback_mode": "two_qb",
+            "team_count": 10,
+            "actual_league_team_count": 6
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:21.834404Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-kicker-preseason": {
+          "source_id": "fftoday-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "bye": null,
+            "fgm": null,
+            "fga": null,
+            "fg_pct": null,
+            "epm": null,
+            "epa": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.383370Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-kicker-preseason": {
+          "source_id": "cbs-sports-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "games_played": null,
+            "fgm": null,
+            "fga": null,
+            "longest_field_goal": null,
+            "fg_1_19_made": null,
+            "fg_1_19_attempts": null,
+            "fg_20_29_made": null,
+            "fg_20_29_attempts": null,
+            "fg_30_39_made": null,
+            "fg_30_39_attempts": null,
+            "fg_40_49_made": null,
+            "fg_40_49_attempts": null,
+            "fg_50_plus_made": null,
+            "fg_50_plus_attempts": null,
+            "xpm": null,
+            "xpa": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default",
+            "source_format": "nonppr"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:12.634491Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-qb-preseason": {
+          "source_id": "fftoday-redraft-qb-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-qb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "pass_completions": null,
+            "pass_attempts": null,
+            "pass_yards": null,
+            "pass_touchdowns": null,
+            "interceptions": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "QB",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-qb-preseason": {
+          "source_id": "cbs-sports-redraft-qb-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-qb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "pass_completions": null,
+            "pass_attempts": null,
+            "pass_yards": null,
+            "pass_touchdowns": null,
+            "interceptions": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "QB",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-rb-preseason": {
+          "source_id": "fftoday-redraft-rb-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-rb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "RB",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-rb-preseason": {
+          "source_id": "cbs-sports-redraft-rb-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-rb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "RB",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-wr-preseason": {
+          "source_id": "fftoday-redraft-wr-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-wr-preseason",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "rank": 82,
+            "percentile": 34.68,
+            "receptions": 34,
+            "receiving_yards": 391,
+            "receiving_touchdowns": 2,
+            "rush_attempts": 0,
+            "rush_yards": 0,
+            "rush_touchdowns": 0,
+            "projected_fantasy_points": 68.1,
+            "source_updated_date": "2026-09-06"
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "WR",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-wr-preseason": {
+          "source_id": "cbs-sports-redraft-wr-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-wr-preseason",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "WR",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-te-preseason": {
+          "source_id": "fftoday-redraft-te-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-te-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "TE",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-te-preseason": {
+          "source_id": "cbs-sports-redraft-te-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-te-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "TE",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        }
+      },
+      "market": {
+        "fantasypros": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 182,
+          "percentile": 66.73,
+          "position_rank": "WR72",
+          "tier": "10",
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:24.058990Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fantasycalc": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 245,
+          "percentile": 41.77,
+          "position_rank": 90,
+          "tier": "32",
+          "value": 798,
+          "trend_30_day": -676,
+          "roster_percent": 0.9396,
+          "trade_frequency": 0.0017,
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:28.377332Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_source_id": "ffc-redraft-ppr-8-team",
+        "primary_applicability": "applicable",
+        "primary_listed": false,
+        "primary": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null,
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1584.97,
+            "status": "stale"
+          }
+        },
+        "formats": {
+          "ppr_8_team": {
+            "source_id": "ffc-redraft-ppr-8-team",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null,
+            "freshness": {
+              "source_timestamp": "2026-09-20T03:49:19.235854Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 1584.97,
+              "status": "stale"
+            }
+          },
+          "two_qb_10_team": {
+            "source_id": "ffc-redraft-2qb-10-team",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null,
+            "freshness": {
+              "source_timestamp": "2026-11-22T04:22:21.834404Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 72.42,
+              "status": "stale"
+            }
+          }
+        },
+        "format_gap": null,
+        "ppr_8_team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null,
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1584.97,
+            "status": "stale"
+          }
+        },
+        "two_qb_10_team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null,
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:21.834404Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        }
+      },
+      "projections": {
+        "providers": {
+          "fftoday": {
+            "source_id": "fftoday-redraft-wr-preseason",
+            "coverage_status": "listed",
+            "applicable": true,
+            "listed": true,
+            "join_method": "normalized_name_position",
+            "rank": 82,
+            "percentile": 34.68,
+            "receptions": 34,
+            "receiving_yards": 391,
+            "receiving_touchdowns": 2,
+            "rush_attempts": 0,
+            "rush_yards": 0,
+            "rush_touchdowns": 0,
+            "projected_fantasy_points": 68.1,
+            "source_updated_date": "2026-09-06",
+            "league_scoring": {
+              "status": "reconciled_core",
+              "core_points": 85.1,
+              "policy": "Mighty Giants scoring applied only to source-projected components shared across active providers; missing stats are never imputed",
+              "included_components": [
+                {
+                  "signal": "receptions",
+                  "scoring_key": "rec",
+                  "projected_stat": 34,
+                  "multiplier": 1.0,
+                  "points": 34.0
+                },
+                {
+                  "signal": "receiving_yards",
+                  "scoring_key": "rec_yd",
+                  "projected_stat": 391,
+                  "multiplier": 0.1,
+                  "points": 39.1
+                },
+                {
+                  "signal": "receiving_touchdowns",
+                  "scoring_key": "rec_td",
+                  "projected_stat": 2,
+                  "multiplier": 6.0,
+                  "points": 12.0
+                },
+                {
+                  "signal": "rush_yards",
+                  "scoring_key": "rush_yd",
+                  "projected_stat": 0,
+                  "multiplier": 0.1,
+                  "points": 0.0
+                },
+                {
+                  "signal": "rush_touchdowns",
+                  "scoring_key": "rush_td",
+                  "projected_stat": 0,
+                  "multiplier": 6.0,
+                  "points": 0.0
+                }
+              ],
+              "excluded_nonzero_components": [
+                {
+                  "scoring_key": "rush_2pt",
+                  "multiplier": 2.0,
+                  "reason": "not projected comparably by both active providers"
+                },
+                {
+                  "scoring_key": "rec_2pt",
+                  "multiplier": 2.0,
+                  "reason": "not projected comparably by both active providers"
+                },
+                {
+                  "scoring_key": "fum_lost",
+                  "multiplier": -2.0,
+                  "reason": "not projected comparably by both active providers"
+                }
+              ]
+            },
+            "freshness": {
+              "source_timestamp": "2026-10-13T03:24:59.693367Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 1033.37,
+              "status": "stale"
+            }
+          },
+          "cbs_sports": {
+            "source_id": "cbs-sports-redraft-wr-preseason",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null,
+            "league_scoring": {
+              "status": "not_listed",
+              "core_points": null,
+              "policy": "no league score is inferred for an unlisted provider row",
+              "included_components": [],
+              "excluded_nonzero_components": []
+            },
+            "freshness": {
+              "source_timestamp": "2026-11-22T04:22:13.110612Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 72.42,
+              "status": "stale"
+            }
+          }
+        },
+        "summary": {
+          "applicable_provider_count": 2,
+          "listed_provider_count": 1,
+          "consensus_percentile": 34.68,
+          "percentile_spread": null,
+          "provider_fantasy_points_policy": "kept_separate_not_averaged"
+        }
+      },
+      "activity": {
+        "source_id": "sleeper-trending",
+        "provider": "sleeper",
+        "dataset_id": "nfl-roster-activity-24h-top100",
+        "source_timestamp": "2026-11-25T04:47:26.082306Z",
+        "comparison": {
+          "baseline": false,
+          "comparable": true,
+          "reason": "same_configuration_previous_snapshot_available",
+          "previous_generated_at": "2026-11-25T04:32:29.888649+00:00",
+          "material_event_eligible": true,
+          "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
+        },
+        "coverage_status": "not_listed_in_current_union",
+        "listed": false,
+        "add": {
+          "status": "not_listed",
+          "rank": null,
+          "count": null
+        },
+        "drop": {
+          "status": "not_listed",
+          "rank": null,
+          "count": null
+        },
+        "absence_semantics": "not_listed means outside the provider top-N list, never zero activity"
+      }
+    },
+    {
       "player_id": "14038",
       "name": "Trayvon Rudolph",
       "position": "WR",
@@ -607499,6 +606610,894 @@
           "status": "not_listed",
           "rank": null,
           "count": null
+        },
+        "absence_semantics": "not_listed means outside the provider top-N list, never zero activity"
+      }
+    },
+    {
+      "player_id": "11624",
+      "name": "Xavier Worthy",
+      "position": "WR",
+      "nfl_team": "KC",
+      "nfl_team_source": "canonical_sleeper_team",
+      "population_reasons": [
+        "canonical_nfl_membership",
+        "canonical_nfl_recent_history",
+        "listed_in_external_source",
+        "present_in_external_signal"
+      ],
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.6,
+        "years_experience": 3,
+        "salary": 7296837,
+        "salary_projected": 10065089,
+        "is_free_agent_source_field": false,
+        "espn_id": "4683062"
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "role": {
+        "sleeper_depth_chart_position": "RWR",
+        "sleeper_depth_chart_order": 3,
+        "coverage_status": "available",
+        "interpretation": "nominal_depth_chart_only_not_usage"
+      },
+      "source_signals": {
+        "fantasypros-dynasty-superflex-ppr": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "source_kind": "expert_consensus",
+          "provider": "fantasypros",
+          "dataset_id": "dynasty-superflex-ppr",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "overall_rank": 133,
+            "percentile": 75.74,
+            "position_rank": "WR58",
+            "tier": "9"
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:24.058990Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fantasycalc-dynasty-superflex-ppr-8-team": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "source_kind": "market_value",
+          "provider": "fantasycalc",
+          "dataset_id": "dynasty-superflex-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "sleeper_id",
+          "signals": {
+            "overall_rank": 184,
+            "percentile": 56.32,
+            "position_rank": 65,
+            "tier": "29",
+            "value": 1169,
+            "trend_30_day": -567,
+            "roster_percent": 0.9898,
+            "trade_frequency": 0.0061
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex",
+            "team_count": 8
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:28.377332Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "ffc-redraft-ppr-8-team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "rank": 47,
+            "percentile": 19.3,
+            "adp": 102.3,
+            "times_drafted": 6,
+            "stdev": 6.6,
+            "sample_total_drafts": 137,
+            "sample_start_date": "2026-09-12",
+            "sample_end_date": "2026-09-19"
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "ppr",
+            "quarterback_mode": "one_qb",
+            "team_count": 8,
+            "actual_league_team_count": 6
+          },
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1584.97,
+            "status": "stale"
+          }
+        },
+        "ffc-redraft-2qb-10-team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-2qb-10-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "rank": 97,
+            "percentile": 21.31,
+            "adp": 111.9,
+            "times_drafted": 10,
+            "stdev": 7.5,
+            "sample_total_drafts": 187,
+            "sample_start_date": "2026-09-08",
+            "sample_end_date": "2026-10-08"
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "source_default",
+            "quarterback_mode": "two_qb",
+            "team_count": 10,
+            "actual_league_team_count": 6
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:21.834404Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-kicker-preseason": {
+          "source_id": "fftoday-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "bye": null,
+            "fgm": null,
+            "fga": null,
+            "fg_pct": null,
+            "epm": null,
+            "epa": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.383370Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-kicker-preseason": {
+          "source_id": "cbs-sports-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "games_played": null,
+            "fgm": null,
+            "fga": null,
+            "longest_field_goal": null,
+            "fg_1_19_made": null,
+            "fg_1_19_attempts": null,
+            "fg_20_29_made": null,
+            "fg_20_29_attempts": null,
+            "fg_30_39_made": null,
+            "fg_30_39_attempts": null,
+            "fg_40_49_made": null,
+            "fg_40_49_attempts": null,
+            "fg_50_plus_made": null,
+            "fg_50_plus_attempts": null,
+            "xpm": null,
+            "xpa": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default",
+            "source_format": "nonppr"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:12.634491Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-qb-preseason": {
+          "source_id": "fftoday-redraft-qb-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-qb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "pass_completions": null,
+            "pass_attempts": null,
+            "pass_yards": null,
+            "pass_touchdowns": null,
+            "interceptions": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "QB",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-qb-preseason": {
+          "source_id": "cbs-sports-redraft-qb-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-qb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "pass_completions": null,
+            "pass_attempts": null,
+            "pass_yards": null,
+            "pass_touchdowns": null,
+            "interceptions": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "QB",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-rb-preseason": {
+          "source_id": "fftoday-redraft-rb-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-rb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "RB",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-rb-preseason": {
+          "source_id": "cbs-sports-redraft-rb-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-rb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "RB",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-wr-preseason": {
+          "source_id": "fftoday-redraft-wr-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-wr-preseason",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "rank": 42,
+            "percentile": 66.94,
+            "receptions": 56,
+            "receiving_yards": 715,
+            "receiving_touchdowns": 4,
+            "rush_attempts": 12,
+            "rush_yards": 76,
+            "rush_touchdowns": 1,
+            "projected_fantasy_points": 137.1,
+            "source_updated_date": "2026-09-06"
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "WR",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-wr-preseason": {
+          "source_id": "cbs-sports-redraft-wr-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-wr-preseason",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "rank": 80,
+            "percentile": 20.2,
+            "targets": 35,
+            "receptions": 22,
+            "receiving_yards": 226,
+            "receiving_touchdowns": 1,
+            "rush_attempts": 6,
+            "rush_yards": 33,
+            "rush_touchdowns": 0,
+            "fumbles_lost": 0,
+            "projected_fantasy_points": 26.1,
+            "projected_fantasy_points_per_game": 3.3
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "WR",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        },
+        "fftoday-redraft-te-preseason": {
+          "source_id": "fftoday-redraft-te-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-te-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "TE",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1033.37,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-te-preseason": {
+          "source_id": "cbs-sports-redraft-te-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-te-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "TE",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:13.110612Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        }
+      },
+      "market": {
+        "fantasypros": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 133,
+          "percentile": 75.74,
+          "position_rank": "WR58",
+          "tier": "9",
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:24.058990Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fantasycalc": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 184,
+          "percentile": 56.32,
+          "position_rank": 65,
+          "tier": "29",
+          "value": 1169,
+          "trend_30_day": -567,
+          "roster_percent": 0.9898,
+          "trade_frequency": 0.0061,
+          "freshness": {
+            "source_timestamp": "2026-11-25T04:47:28.377332Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_source_id": "ffc-redraft-ppr-8-team",
+        "primary_applicability": "applicable",
+        "primary_listed": true,
+        "primary": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 47,
+          "percentile": 19.3,
+          "adp": 102.3,
+          "times_drafted": 6,
+          "stdev": 6.6,
+          "sample_total_drafts": 137,
+          "sample_start_date": "2026-09-12",
+          "sample_end_date": "2026-09-19",
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1584.97,
+            "status": "stale"
+          }
+        },
+        "formats": {
+          "ppr_8_team": {
+            "source_id": "ffc-redraft-ppr-8-team",
+            "coverage_status": "listed",
+            "applicable": true,
+            "listed": true,
+            "join_method": "normalized_name_position",
+            "rank": 47,
+            "percentile": 19.3,
+            "adp": 102.3,
+            "times_drafted": 6,
+            "stdev": 6.6,
+            "sample_total_drafts": 137,
+            "sample_start_date": "2026-09-12",
+            "sample_end_date": "2026-09-19",
+            "freshness": {
+              "source_timestamp": "2026-09-20T03:49:19.235854Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 1584.97,
+              "status": "stale"
+            }
+          },
+          "two_qb_10_team": {
+            "source_id": "ffc-redraft-2qb-10-team",
+            "coverage_status": "listed",
+            "applicable": true,
+            "listed": true,
+            "join_method": "normalized_name_position",
+            "rank": 97,
+            "percentile": 21.31,
+            "adp": 111.9,
+            "times_drafted": 10,
+            "stdev": 7.5,
+            "sample_total_drafts": 187,
+            "sample_start_date": "2026-09-08",
+            "sample_end_date": "2026-10-08",
+            "freshness": {
+              "source_timestamp": "2026-11-22T04:22:21.834404Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 72.42,
+              "status": "stale"
+            }
+          }
+        },
+        "format_gap": 2.01,
+        "ppr_8_team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 47,
+          "percentile": 19.3,
+          "adp": 102.3,
+          "times_drafted": 6,
+          "stdev": 6.6,
+          "sample_total_drafts": 137,
+          "sample_start_date": "2026-09-12",
+          "sample_end_date": "2026-09-19",
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1584.97,
+            "status": "stale"
+          }
+        },
+        "two_qb_10_team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 97,
+          "percentile": 21.31,
+          "adp": 111.9,
+          "times_drafted": 10,
+          "stdev": 7.5,
+          "sample_total_drafts": 187,
+          "sample_start_date": "2026-09-08",
+          "sample_end_date": "2026-10-08",
+          "freshness": {
+            "source_timestamp": "2026-11-22T04:22:21.834404Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 72.42,
+            "status": "stale"
+          }
+        }
+      },
+      "projections": {
+        "providers": {
+          "fftoday": {
+            "source_id": "fftoday-redraft-wr-preseason",
+            "coverage_status": "listed",
+            "applicable": true,
+            "listed": true,
+            "join_method": "normalized_name_position",
+            "rank": 42,
+            "percentile": 66.94,
+            "receptions": 56,
+            "receiving_yards": 715,
+            "receiving_touchdowns": 4,
+            "rush_attempts": 12,
+            "rush_yards": 76,
+            "rush_touchdowns": 1,
+            "projected_fantasy_points": 137.1,
+            "source_updated_date": "2026-09-06",
+            "league_scoring": {
+              "status": "reconciled_core",
+              "core_points": 165.1,
+              "policy": "Mighty Giants scoring applied only to source-projected components shared across active providers; missing stats are never imputed",
+              "included_components": [
+                {
+                  "signal": "receptions",
+                  "scoring_key": "rec",
+                  "projected_stat": 56,
+                  "multiplier": 1.0,
+                  "points": 56.0
+                },
+                {
+                  "signal": "receiving_yards",
+                  "scoring_key": "rec_yd",
+                  "projected_stat": 715,
+                  "multiplier": 0.1,
+                  "points": 71.5
+                },
+                {
+                  "signal": "receiving_touchdowns",
+                  "scoring_key": "rec_td",
+                  "projected_stat": 4,
+                  "multiplier": 6.0,
+                  "points": 24.0
+                },
+                {
+                  "signal": "rush_yards",
+                  "scoring_key": "rush_yd",
+                  "projected_stat": 76,
+                  "multiplier": 0.1,
+                  "points": 7.6
+                },
+                {
+                  "signal": "rush_touchdowns",
+                  "scoring_key": "rush_td",
+                  "projected_stat": 1,
+                  "multiplier": 6.0,
+                  "points": 6.0
+                }
+              ],
+              "excluded_nonzero_components": [
+                {
+                  "scoring_key": "rush_2pt",
+                  "multiplier": 2.0,
+                  "reason": "not projected comparably by both active providers"
+                },
+                {
+                  "scoring_key": "rec_2pt",
+                  "multiplier": 2.0,
+                  "reason": "not projected comparably by both active providers"
+                },
+                {
+                  "scoring_key": "fum_lost",
+                  "multiplier": -2.0,
+                  "reason": "not projected comparably by both active providers"
+                }
+              ]
+            },
+            "freshness": {
+              "source_timestamp": "2026-10-13T03:24:59.693367Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 1033.37,
+              "status": "stale"
+            }
+          },
+          "cbs_sports": {
+            "source_id": "cbs-sports-redraft-wr-preseason",
+            "coverage_status": "listed",
+            "applicable": true,
+            "listed": true,
+            "join_method": "normalized_name_position",
+            "rank": 80,
+            "percentile": 20.2,
+            "targets": 35,
+            "receptions": 22,
+            "receiving_yards": 226,
+            "receiving_touchdowns": 1,
+            "rush_attempts": 6,
+            "rush_yards": 33,
+            "rush_touchdowns": 0,
+            "fumbles_lost": 0,
+            "projected_fantasy_points": 26.1,
+            "projected_fantasy_points_per_game": 3.3,
+            "league_scoring": {
+              "status": "reconciled_core",
+              "core_points": 53.9,
+              "policy": "Mighty Giants scoring applied only to source-projected components shared across active providers; missing stats are never imputed",
+              "included_components": [
+                {
+                  "signal": "receptions",
+                  "scoring_key": "rec",
+                  "projected_stat": 22,
+                  "multiplier": 1.0,
+                  "points": 22.0
+                },
+                {
+                  "signal": "receiving_yards",
+                  "scoring_key": "rec_yd",
+                  "projected_stat": 226,
+                  "multiplier": 0.1,
+                  "points": 22.6
+                },
+                {
+                  "signal": "receiving_touchdowns",
+                  "scoring_key": "rec_td",
+                  "projected_stat": 1,
+                  "multiplier": 6.0,
+                  "points": 6.0
+                },
+                {
+                  "signal": "rush_yards",
+                  "scoring_key": "rush_yd",
+                  "projected_stat": 33,
+                  "multiplier": 0.1,
+                  "points": 3.3
+                },
+                {
+                  "signal": "rush_touchdowns",
+                  "scoring_key": "rush_td",
+                  "projected_stat": 0,
+                  "multiplier": 6.0,
+                  "points": 0.0
+                }
+              ],
+              "excluded_nonzero_components": [
+                {
+                  "scoring_key": "rush_2pt",
+                  "multiplier": 2.0,
+                  "reason": "not projected comparably by both active providers"
+                },
+                {
+                  "scoring_key": "rec_2pt",
+                  "multiplier": 2.0,
+                  "reason": "not projected comparably by both active providers"
+                },
+                {
+                  "scoring_key": "fum_lost",
+                  "multiplier": -2.0,
+                  "reason": "not projected comparably by both active providers"
+                }
+              ]
+            },
+            "freshness": {
+              "source_timestamp": "2026-11-22T04:22:13.110612Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 72.42,
+              "status": "stale"
+            }
+          }
+        },
+        "summary": {
+          "applicable_provider_count": 2,
+          "listed_provider_count": 2,
+          "consensus_percentile": 43.57,
+          "percentile_spread": 46.74,
+          "provider_fantasy_points_policy": "kept_separate_not_averaged"
+        }
+      },
+      "activity": {
+        "source_id": "sleeper-trending",
+        "provider": "sleeper",
+        "dataset_id": "nfl-roster-activity-24h-top100",
+        "source_timestamp": "2026-11-25T04:47:26.082306Z",
+        "comparison": {
+          "baseline": false,
+          "comparable": true,
+          "reason": "same_configuration_previous_snapshot_available",
+          "previous_generated_at": "2026-11-25T04:32:29.888649+00:00",
+          "material_event_eligible": true,
+          "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
+        },
+        "coverage_status": "listed_in_current_union",
+        "listed": true,
+        "add": {
+          "status": "listed",
+          "rank": 99,
+          "count": 14319
+        },
+        "drop": {
+          "status": "listed",
+          "rank": 72,
+          "count": 38529
         },
         "absence_semantics": "not_listed means outside the provider top-N list, never zero activity"
       }

@@ -11,7 +11,7 @@ Taxi phase: `locked`
 - Reserve: **5 / 5**
 - Startable Skill Pool: **18 / 10** (margin +8)
 - General churn target: **2**; active general churn: **0**; status: `review_required`
-- Comparison boundary candidates: **3**; decision readiness: `review_required`
+- Comparison boundary candidates: **2**; decision readiness: `review_required`
 
 ## Position coverage
 
@@ -56,6 +56,7 @@ Taxi phase: `locked`
 | WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no | no |
 | WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Germie Bernard | active | prospect | conditional | development | development | yes | no |
+| WR | Jack Bech | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Jaylen Waddle | active | starter_rotation | hold | starter_core | fixed_starter_pool | no | no |
 | WR | Ladd McConkey | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Malik Nabers | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
@@ -63,11 +64,9 @@ Taxi phase: `locked`
 | WR | Pat Bryant | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | WR | Tetairoa McMillan | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
-| WR | Travis Hunter | active | prospect | hold | development | development | yes | no |
 
 ## Comparison boundary pool
 
-- Travis Hunter (WR) — `hold` — area `active` — priority `20` — general churn: `no`
 - Germie Bernard (WR) — `conditional` — area `active` — priority `40` — general churn: `no`
 - Brian Thomas Jr. (WR) — `hold` — area `active` — priority `50` — general churn: `no`
 
