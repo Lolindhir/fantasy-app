@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 
 import type { Player } from '../../../core/models/player.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { injuryKind, injuryLabel, type InjuryKind } from '../../utils/team-injury-report.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 export type TeamLineupPlayerStatus = 'Starter' | 'Bench' | 'Taxi' | 'IR';
@@ -42,6 +43,14 @@ export class TeamLineupPlayerListComponent {
   @Input() rows: TeamLineupPlayerRow[] = [];
 
   constructor(private dialog: MatDialog) {}
+
+  injuryStatus(player: Player): { label: string; kind: InjuryKind } | null {
+    const designation = (player.InjuryDetails?.Designation ?? '').trim();
+    if (!designation) return null;
+
+    const kind = injuryKind(player);
+    return { kind, label: kind === 'unknown' ? designation : injuryLabel(kind) };
+  }
 
   openPlayerDetail(player: Player): void {
     this.dialog.open(PlayerDetailDialogComponent, {
