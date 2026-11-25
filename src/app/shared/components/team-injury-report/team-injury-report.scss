@@ -15,6 +15,7 @@
   align-items: center;
   gap: 10px;
   width: 100%;
+  box-sizing: border-box;
   padding: 10px 14px;
   border: 0;
   background: transparent;
@@ -24,13 +25,26 @@
   cursor: pointer;
   min-width: 0;
 
-  &--static { cursor: default; justify-content: space-between; }
+  &--static {
+    cursor: default;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    .eyebrow { min-width: 0; overflow-wrap: anywhere; }
+  }
 }
 
 .injury-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; }
 .injury-title strong { font-size: 14px; }
 .injury-summary { display: flex; flex-wrap: wrap; gap: 5px; margin-left: auto; justify-content: flex-end; }
-.injury-empty { color: #64748b; font-size: 13px; }
+.injury-empty {
+  color: #64748b;
+  font-size: 13px;
+  min-width: 0;
+  margin-inline-start: auto;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
 
 .injury-chip {
   display: inline-flex;
