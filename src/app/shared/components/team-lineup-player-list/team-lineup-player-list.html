@@ -1,9 +1,10 @@
 <div class="team-lineup-player-list" aria-label="Affected lineup players">
   @for (row of rows; track row.player.ID) {
+    @let injury = injuryStatus(row.player);
     <button
       type="button"
       class="team-lineup-player-row"
-      [attr.aria-label]="'Open ' + row.player.Name + ' player details'"
+      [attr.aria-label]="'Open ' + row.player.Name + ' player details' + (injury ? ', Injury: ' + injury.label : '')"
       (click)="openPlayerDetail(row.player)"
     >
       <span class="team-lineup-player-team-logo">
@@ -18,7 +19,14 @@
         }
       </span>
 
-      <strong class="team-lineup-player-name">{{ row.player.Name }}</strong>
+      <span class="team-lineup-player-identity">
+        <strong class="team-lineup-player-name">{{ row.player.Name }}</strong>
+        @if (injury) {
+          <span class="team-lineup-player-injury" [ngClass]="'team-lineup-player-injury--' + injury.kind">
+            Injury: {{ injury.label }}
+          </span>
+        }
+      </span>
 
       <span
         class="team-lineup-player-position"
