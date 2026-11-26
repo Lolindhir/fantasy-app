@@ -24,7 +24,7 @@ describe('HallOfFamePageComponent', () => {
 
   beforeEach(async () => {
     const dataService = {
-      getLeagueWithPlayers: () => of({ league, teams: [{ TeamID: 1, Owner: 'Ada', Team: 'Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }], players: [] }),
+      getLeagueWithPlayers: () => of({ league, teams: [{ TeamID: 1, Owner: 'Ada', OwnerAvatar: 'ada.png', Avatar: 'team.png', Team: 'Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }], players: [] }),
       getAllSeasonStatistics: () => of({ current: null, bySeason: new Map() }),
       getPlayerAwardHistory: () => of({
         Leaders: { MVP: [
@@ -112,7 +112,11 @@ describe('HallOfFamePageComponent', () => {
 
   it('renders the legacy tiles and the all-time standings; empty record groups are not shown', () => {
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('app-hall-of-fame[heading="League Legacy"] .hof__card')?.textContent).toContain('Champ of Champs');
+    const card = el.querySelector('app-hall-of-fame[heading="League Legacy"] .hof__card')!;
+    expect(card.textContent).toContain('All-Time Overall Leader');
+    expect(card.textContent).toContain('Manager');
+    expect(card.querySelector('.hof__manager-avatar')?.getAttribute('src')).toBe('ada.png');
+    expect(card.querySelector('.hof__team-logo')).toBeNull();
     expect(el.querySelector('app-hall-of-fame[heading="All-Time Bests"] .hof')).toBeNull();
     expect(el.querySelector('app-all-time-overview')).not.toBeNull();
   });
@@ -134,7 +138,10 @@ describe('HallOfFamePageComponent with several champions', () => {
     const multi = { Season: '2026', IsFinished: false, Standings: [season('2025', 'Aces'), season('2024', 'Kings'), { Season: 'AllTime', RegularSeason: [] }] };
     const dataService = {
       getLeagueWithPlayers: () => of({ league: multi, teams: [], players: [] }),
-      getAllSeasonStatistics: () => of({ current: null, bySeason: new Map() }),
+      getAllSeasonStatistics: () => of({
+        current: { Season: 2026, BiggestUpsetAllTime: { Season: 2024, Week: 10, WinnerTeamID: 1, LoserTeamID: 2, WinnerPoints: 163.08, LoserPoints: 139.92, WinnerPregameWinProbability: 0.0954 } },
+        bySeason: new Map([['2024', { Season: 2024, Teams: [{ TeamID: 1, Owner: 'Ada', TeamName: 'Kings' }, { TeamID: 2, Owner: 'Other', TeamName: 'Historical Opponent' }] }]])
+      }),
       getPlayerAwardHistory: () => of(null),
       getTeamSeasons: () => throwError(() => new Error('unavailable'))
     };
@@ -157,6 +164,17 @@ describe('HallOfFamePageComponent with several champions', () => {
     expect(tiles[1].textContent).toContain('Kings');
     expect(tiles[1].textContent).toContain('2024');
     tiles.forEach(t => expect(t.querySelector('app-achievement-banner')).toBeNull());
+  });
+
+  it('shows the historical matchup teams, actual scores and precise pregame probability', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const card = el.querySelector('app-hall-of-fame[heading="All-Time Bests"] .hof__card')!;
+    expect(card.querySelector('.hof__match-context')?.textContent).toContain('2024 · Week 10');
+    expect(card.querySelector('.hof__matchup')?.textContent).toContain('Kings');
+    expect(card.querySelector('.hof__matchup')?.textContent).toContain('Historical Opponent');
+    expect(card.querySelector('.hof__matchup')?.textContent).toContain('163.08');
+    expect(card.querySelector('.hof__matchup')?.textContent).toContain('139.92');
+    expect(card.querySelector('.hof__probability strong')?.textContent).toContain('9.54%');
   });
 
   it('opens the champion detail dialog from a tile', () => {

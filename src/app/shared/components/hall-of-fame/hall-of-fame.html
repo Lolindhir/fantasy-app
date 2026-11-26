@@ -5,11 +5,24 @@
   </header>
 
   <ul class="hof__grid" [class.hof__grid--compact]="compact">
-    <li *ngFor="let item of highlights; trackBy: trackHighlight" class="hof__card">
+    <li *ngFor="let item of highlights; trackBy: trackHighlight" class="hof__card" [class.hof__card--matchup]="!!item.upset">
       <div class="hof__label" [matTooltip]="item.reason">
         <span class="hof__icon" aria-hidden="true"><app-glyph [glyph]="item.icon"></app-glyph></span>
         <span>{{ item.title }}</span>
       </div>
+      <ng-container *ngIf="item.upset as upset; else normalRecord">
+        <div class="hof__match-context">{{ upset.season }} · Week {{ upset.week }}</div>
+        <div class="hof__matchup">
+          <ng-container *ngTemplateOutlet="upsetSide; context: { $implicit: upset.winner, winner: true }"></ng-container>
+          <span class="hof__versus">vs.</span>
+          <ng-container *ngTemplateOutlet="upsetSide; context: { $implicit: upset.loser, winner: false }"></ng-container>
+        </div>
+        <div class="hof__probability">
+          <span>Winner's pregame win chance</span>
+          <strong>{{ upset.pregameProbability | percent:'1.0-2' }}</strong>
+        </div>
+      </ng-container>
+      <ng-template #normalRecord>
       <div class="hof__record">
         <div class="hof__winners">
           <ng-container *ngIf="item.players?.length; else teamOrOwner">
@@ -37,12 +50,25 @@
             </ng-template>
           </ng-container>
           <ng-template #teamOrOwner>
-            <button *ngIf="item.team as team; else plainOwner" class="hof__identity" type="button"
-                    [disabled]="!item.teamInteractive" (click)="openTeam(item)">
-              <img class="hof__team-logo" [src]="team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
-              <span class="hof__owner">{{ item.owner }}</span>
-            </button>
-            <ng-template #plainOwner><span class="hof__owner">{{ item.owner }}</span></ng-template>
+            <ng-container *ngIf="item.manager as manager; else teamIdentity">
+              <button class="hof__identity" type="button" [disabled]="!item.teamInteractive" (click)="openTeam(item)"
+                      [attr.aria-label]="item.teamInteractive ? 'Open current team of manager ' + manager.name : manager.name">
+                <img *ngIf="manager.avatar; else managerFallback" class="hof__manager-avatar" [src]="manager.avatar" alt="" loading="lazy" />
+                <ng-template #managerFallback><span class="hof__manager-avatar hof__manager-fallback" aria-hidden="true">{{ manager.name.slice(0, 1) }}</span></ng-template>
+                <span class="hof__identity-copy">
+                  <span class="hof__owner">{{ manager.name }}</span>
+                  <span class="hof__identity-caption">Manager</span>
+                </span>
+              </button>
+            </ng-container>
+            <ng-template #teamIdentity>
+              <button *ngIf="item.team as team; else plainOwner" class="hof__identity" type="button"
+                      [disabled]="!item.teamInteractive" (click)="openTeam(item)">
+                <img class="hof__team-logo" [src]="team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
+                <span class="hof__owner">{{ team.Team || item.owner }}</span>
+              </button>
+              <ng-template #plainOwner><span class="hof__owner">{{ item.owner }}</span></ng-template>
+            </ng-template>
           </ng-template>
         </div>
         <div class="hof__value">
@@ -50,6 +76,7 @@
           <span *ngIf="valueCaption(item)">{{ valueCaption(item) }}</span>
         </div>
       </div>
+      </ng-template>
     </li>
   </ul>
 </section>
@@ -67,4 +94,16 @@
     <ng-template #noPortrait><span class="hof__photo hof__photo--empty">{{ player.name.slice(0, 1) }}</span></ng-template>
     <img *ngIf="player.teamLogo" class="hof__nfl-logo" [src]="player.teamLogo" alt="" loading="lazy" />
   </span>
+</ng-template>
+
+<ng-template #upsetSide let-side let-winner="winner">
+  <div class="hof__match-side" [class.hof__match-side--winner]="winner">
+    <button class="hof__match-team" type="button" [disabled]="!side.interactive" (click)="openTeamId(side.team.TeamID)"
+            [attr.aria-label]="'Open current team details for ' + side.team.Team">
+      <img class="hof__team-logo" [src]="side.team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
+      <span class="hof__owner">{{ side.team.Team }}</span>
+    </button>
+    <strong class="hof__score">{{ side.points | number:'1.2-2' }}</strong>
+    <span *ngIf="winner" class="hof__identity-caption">Winner</span>
+  </div>
 </ng-template>

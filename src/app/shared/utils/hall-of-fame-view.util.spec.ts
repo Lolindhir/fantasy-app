@@ -1,7 +1,7 @@
 import type { Player } from '../../core/models/player.models';
 import type { PlayerAwardHistoryReadModel } from '../../core/models/player-award-history.models';
 import type { SeasonStatisticsReadModel } from '../../core/models/season-statistics.models';
-import type { League } from '../../core/models/league.models';
+import type { FantasyTeam, League } from '../../core/models/league.models';
 import type { TeamSeasonsReadModel } from '../../core/models/team-season.models';
 import { TeamSeasonLookup } from '../services/team-season.service';
 import { buildHallOfFameChampions, buildHallOfFameSections } from './hall-of-fame-view.util';
@@ -84,6 +84,24 @@ describe('hall of fame view util', () => {
     expect(award.team?.Team).toBe('Season Team');
     expect(award.team?.Avatar).toBe('assets/default-team-avatar.png');
     expect(award.valueDisplay).toBe('10% win chance');
+    expect(award.upset?.winner.team.Team).toBe('Season Team');
+    expect(award.upset?.loser.team.Team).toBe('Other Team');
+    expect(award.upset?.loser.team.Avatar).toBe('assets/default-team-avatar.png');
+    expect(award.upset?.winner.points).toBe(100);
+    expect(award.upset?.loser.points).toBe(90);
+    expect(award.upset?.season).toBe('2024');
+    expect(award.upset?.week).toBe(3);
+    expect(award.upset?.pregameProbability).toBe(0.1);
+  });
+
+  it('uses the owner identity rather than the current team logo for legacy records', () => {
+    const league = leagueWith([{ Season: 'AllTime', LegacyHighlights: [{ Key: 'ChampOfChamps', TeamID: 1 }] }], '2026', false);
+    const teams = [{ TeamID: 1, Team: 'Renamed Team', Owner: 'Manager One', OwnerAvatar: 'manager.png', Avatar: 'team.png' }] as unknown as FantasyTeam[];
+    const [award] = buildHallOfFameSections(league, teams, null, new Map(), null).legacy;
+    expect(award.manager).toEqual({ name: 'Manager One', avatar: 'manager.png' });
+    expect(award.title).toBe('All-Time Overall Leader');
+    expect(award.valueDisplay).toBe('#1 Overall standings');
+    expect(award.team?.Avatar).toBe('team.png');
   });
 
   it('builds empty sections when nothing is available', () => {
