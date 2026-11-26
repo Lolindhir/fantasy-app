@@ -29,7 +29,10 @@ export class HallOfFameComponent {
 
   openTeam(item: HallOfFameHighlight): void {
     if (!item.team || !item.teamInteractive) return;
-    const teamId = item.team.TeamID;
+    this.openTeamId(item.team.TeamID);
+  }
+
+  openTeamId(teamId: number): void {
     // Match the existing on-demand dialog pattern; keep the display component out
     // of the eager Team Detail / Matchups dependency graph.
     void import('../../services/team-detail-dialog.service').then(({ TeamDetailDialogService }) =>

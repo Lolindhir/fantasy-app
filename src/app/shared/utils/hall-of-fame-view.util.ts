@@ -19,7 +19,23 @@ export interface HallOfFamePlayerIdentity {
   player: Player | null;
 }
 
+export interface HallOfFameUpsetSide {
+  team: TeamIdentitySubject;
+  points: number;
+  interactive: boolean;
+}
+
+export interface HallOfFameUpset {
+  season: string;
+  week: number;
+  winner: HallOfFameUpsetSide;
+  loser: HallOfFameUpsetSide;
+  pregameProbability: number;
+}
+
 export interface HallOfFameHighlight extends LeagueLegacyHighlight {
+  manager?: { name: string; avatar: string | null };
+  upset?: HallOfFameUpset;
   team?: TeamIdentitySubject;
   teamInteractive?: boolean;
   players?: HallOfFamePlayerIdentity[];
@@ -49,7 +65,17 @@ export function buildHallOfFameSections(
   const legacy = buildLeagueLegacy(league, teams).highlights.map(item => {
     const fact = facts.find(candidate => candidate.Key === item.key);
     const team = fact ? teamById.get(String(fact.TeamID)) : undefined;
-    return { ...item, team, teamInteractive: !!team };
+    const display = item.key === 'ChampOfChamps'
+      ? { title: 'All-Time Overall Leader', valueDisplay: '#1 Overall standings' }
+      : item.key === 'RegularSeasonKing'
+        ? { valueDisplay: '#1 Regular season standings' }
+        : item.key === 'PodiumMachine'
+          ? { valueDisplay: item.valueDisplay.replace(/Podium(s?)$/, 'Playoff podium$1') }
+          : item.key === 'AwardCollector'
+            ? { valueDisplay: item.valueDisplay.replace(/Awards$/, 'Season awards') }
+            : {};
+    return { ...item, ...display, team, teamInteractive: !!team,
+      manager: { name: item.owner, avatar: team?.OwnerAvatar?.trim() || null } };
   });
 
   const upset = buildBiggestUpsetHighlight(current, bySeason);
@@ -57,16 +83,24 @@ export function buildHallOfFameSections(
   const bests: HallOfFameHighlight[] = [];
   if (upset && upsetFact) {
     const season = String(upsetFact.Season);
-    const teamId = upsetFact.WinnerTeamID;
     const doc = upsetFact.Season === current?.Season ? current : bySeason.get(season);
-    const winner = doc?.Teams.find(team => String(team.TeamID) === String(teamId));
     const standings = league.Standings?.find(standing => standing.Season === season);
-    const playoff = standings?.Playoffs?.find(team => String(team.TeamID) === String(teamId));
-    const team = lookup?.identity(season, teamId)
-      ?? (season === String(league.Season) ? teamById.get(String(teamId)) : undefined)
-      ?? { TeamID: teamId, Team: winner?.TeamName || upset.owner, Owner: upset.owner,
-           Avatar: playoff?.TeamAvatar || DEFAULT_TEAM_AVATAR_SRC };
-    bests.push({ ...upset, team, teamInteractive: teamById.has(String(teamId)) });
+    const side = (teamId: number, points: number): HallOfFameUpsetSide => {
+      const row = doc?.Teams.find(team => String(team.TeamID) === String(teamId));
+      const playoff = standings?.Playoffs?.find(team => String(team.TeamID) === String(teamId));
+      const regular = standings?.RegularSeason?.find(team => String(team.TeamID) === String(teamId));
+      const team = lookup?.identity(season, teamId)
+        ?? (season === String(league.Season) ? teamById.get(String(teamId)) : undefined)
+        ?? { TeamID: teamId, Team: row?.TeamName || playoff?.TeamName || regular?.TeamName || `Team ${teamId}`,
+             Owner: row?.Owner || playoff?.Owner || regular?.Owner || '',
+             Avatar: playoff?.TeamAvatar || DEFAULT_TEAM_AVATAR_SRC };
+      return { team, points, interactive: teamById.has(String(teamId)) };
+    };
+    const winner = side(upsetFact.WinnerTeamID, upsetFact.WinnerPoints);
+    const loser = side(upsetFact.LoserTeamID, upsetFact.LoserPoints);
+    bests.push({ ...upset, team: winner.team, teamInteractive: winner.interactive,
+      upset: { season, week: upsetFact.Week, winner, loser,
+        pregameProbability: upsetFact.WinnerPregameWinProbability } });
   }
 
   const currentById = new Map(players.map(player => [String(player.ID), player]));
