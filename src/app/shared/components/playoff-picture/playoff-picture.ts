@@ -6,7 +6,8 @@ import type { CurrentStandingRow } from '../../utils/league-standings-view.util'
 import {
   formatPlayoffCell,
   playoffOddsBasis,
-  formatPlayoffPercent,
+  formatPlacePercent,
+  isZeroPlaceLabel,
   type PlayoffOddsView
 } from '../../utils/schedule-outlook-view.util';
 import { PlayoffOddsPillComponent } from '../playoff-odds-pill/playoff-odds-pill';
@@ -56,10 +57,10 @@ export class PlayoffPictureComponent {
       if (!team) return [];
       const cells = team.places.map((probability, index): PicturePlaceCell => ({
         place: index + 1,
-        text: team.placeLabels ? (team.placeLabels[index] === '0%' ? '' : team.placeLabels[index].replace('%', '')) : formatPlayoffCell(probability),
+        text: team.placeLabels ? (isZeroPlaceLabel(team.placeLabels[index]) ? '' : team.placeLabels[index].replace('%', '')) : formatPlayoffCell(probability),
         intensity: probability,
         inPlayoffs: this.odds.playoffTeams !== null && index < this.odds.playoffTeams,
-        label: `Place ${index + 1}: ${team.placeLabels?.[index] ?? formatPlayoffPercent(probability)}`
+        label: `Place ${index + 1}: ${team.placeLabels?.[index] ?? formatPlacePercent(probability)}`
       }));
       return [{ row, cells, hasPlaces: cells.length > 0 }];
     });

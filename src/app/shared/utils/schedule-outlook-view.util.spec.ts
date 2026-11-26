@@ -1,6 +1,8 @@
 import type { PlayoffOddsStatus, ScheduleOutlookReadModel } from '../../core/models/schedule-outlook.models';
 import {
   formatPlayoffCell,
+  formatPlacePercent,
+  isZeroPlaceLabel,
   formatExactPlaceShares,
   playoffPillLabel,
   formatPlayoffPercent,
@@ -54,9 +56,13 @@ describe('schedule outlook view', () => {
     expect(formatPlayoffPercent(0.9999)).toBe('>99%');
     expect(formatPlayoffPercent(1)).toBe('100%');
     expect(formatPlayoffPercent(0)).toBe('0%');
-    expect(formatPlayoffCell(0.9972)).toBe('>99');
-    expect(formatPlayoffCell(1)).toBe('100');
+    expect(formatPlayoffCell(0.9972)).toBe('99.7');
+    expect(formatPlayoffCell(1)).toBe('100.0');
     expect(formatPlayoffCell(0)).toBe('');
+    expect(formatPlacePercent(0.00001)).toBe('<0.1%');
+    expect(formatPlacePercent(0.99999)).toBe('>99.9%');
+    expect(isZeroPlaceLabel('0.0%')).toBeTrue();
+    expect(isZeroPlaceLabel('<0.01%')).toBeFalse();
   });
 
   it('maps status to pill text and Overview markers', () => {
@@ -90,14 +96,15 @@ describe('schedule outlook view', () => {
 
   it('rounds exact rows jointly and preserves positive support even below float precision', () => {
     expect(formatExactPlaceShares(['0', '8954', '888', '158', '0', '0'], '10000'))
-      .toEqual(['0%', '89%', '9%', '2%', '0%', '0%']);
+      .toEqual(['0.0%', '89.5%', '8.9%', '1.6%', '0.0%', '0.0%']);
     expect(formatExactPlaceShares(['0', '6666863', '2102764', '1156076', '74297', '0'], '10000000'))
-      .toEqual(['0%', '67%', '21%', '11%', '1%', '0%']);
+      .toEqual(['0.0%', '66.7%', '21.0%', '11.6%', '0.7%', '0.0%']);
     expect(formatExactPlaceShares(['999', '1'], '1000')).toEqual(['99.9%', '0.1%']);
+    expect(formatExactPlaceShares(['9999', '1'], '10000')).toEqual(['99.99%', '0.01%']);
     expect(formatExactPlaceShares(['999999999999999999999999999999', '1'], '1000000000000000000000000000000'))
       .toEqual(['>99.99%', '<0.01%']);
-    expect(formatExactPlaceShares(['1', '1', '1'], '3')).toEqual(['34%', '33%', '33%']);
-    expect(formatExactPlaceShares(['1', '0'], '1')).toEqual(['100%', '0%']);
+    expect(formatExactPlaceShares(['1', '1', '1'], '3')).toEqual(['33.4%', '33.3%', '33.3%']);
+    expect(formatExactPlaceShares(['1', '0'], '1')).toEqual(['100.0%', '0.0%']);
     expect(formatExactPlaceShares(['2', '0'], '1')).toBeNull();
     expect(formatExactPlaceShares(['1e5', '0'], '100000')).toBeNull();
   });
@@ -116,7 +123,7 @@ describe('schedule outlook view', () => {
       ]
     });
     const odds = resolvePlayoffOdds(model, 2026)!;
-    expect(odds.teams.get(1)!.placeLabels).toEqual(['>99.99%', '<0.01%', '0%']);
+    expect(odds.teams.get(1)!.placeLabels).toEqual(['>99.99%', '<0.01%', '0.0%']);
     expect(playoffPillText(odds.teams.get(1)!)).toBe('>99%');
     expect(playoffPillLabel(odds.teams.get(1)!)).toContain('1% tie probability');
     expect(playoffLockedPlace(odds, 1)).toBeNull();

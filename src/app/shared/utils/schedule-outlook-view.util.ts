@@ -90,7 +90,7 @@ export function formatExactPlaceShares(masses: readonly string[], denominator: s
   const total = BigInt(denominator);
   const values = masses.map(m => BigInt(m));
   if (values.reduce((sum, mass) => sum + mass, 0n) !== total) return null;
-  for (let digits = 0; digits <= 2; digits++) {
+  for (let digits = 1; digits <= 2; digits++) {
     const scale = 100n * 10n ** BigInt(digits);
     const units = values.map(m => m * scale / total);
     const remainder = values.map((m, index) => ({ index, mass: m * scale % total }));
@@ -100,8 +100,8 @@ export function formatExactPlaceShares(masses: readonly string[], denominator: s
     const hasHiddenTail = values.some((m, i) => m > 0n && m < total && (units[i] === 0n || units[i] === scale));
     if (hasHiddenTail && digits < 2) continue;
     return values.map((m, i) => {
-      if (m === 0n) return '0%';
-      if (m === total) return '100%';
+      if (m === 0n) return '0.0%';
+      if (m === total) return '100.0%';
       if (units[i] === 0n) return '<0.01%';
       if (units[i] === scale) return '>99.99%';
       return `${(Number(units[i]) / 10 ** digits).toFixed(digits)}%`;
@@ -148,9 +148,23 @@ export function formatPlayoffPercent(probability: number): string {
   return `${Math.round(probability * 100)}%`;
 }
 
+/** One decimal for legacy place shares; exact models use jointly rounded labels. */
+export function formatPlacePercent(probability: number): string {
+  if (probability <= 0) return '0.0%';
+  if (probability >= 1) return '100.0%';
+  if (probability < 0.001) return '<0.1%';
+  if (probability > 0.999) return '>99.9%';
+  return `${(probability * 100).toFixed(1)}%`;
+}
+
+/** A zero label denotes an excluded place, never a positive tail. */
+export function isZeroPlaceLabel(label: string): boolean {
+  return label === '0.0%';
+}
+
 /** Matrix cell text without the percent sign; empty for an exact 0. */
 export function formatPlayoffCell(probability: number): string {
-  return probability <= 0 ? '' : formatPlayoffPercent(probability).replace('%', '');
+  return probability <= 0 ? '' : formatPlacePercent(probability).replace('%', '');
 }
 
 export function ordinal(place: number): string {
