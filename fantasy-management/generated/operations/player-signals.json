@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "player-signals",
   "generated_at": "2026-11-26T04:47:08.944749Z",
-  "input_fingerprint": "858e0d11c096fafea50393ee422b9a7351617977b621598f688e07e4232094c9",
+  "input_fingerprint": "0a3780b4c605f8e1f4a6b4258343004c3e5b266f263cfd779fb5e1eb195e0b8d",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants"
@@ -18,7 +18,7 @@
     ],
     "inclusion_rule": "position is in configured fantasy positions and at least one population reason applies",
     "reason_counts": {
-      "canonical_nfl_membership": 843,
+      "canonical_nfl_membership": 844,
       "canonical_nfl_recent_history": 969,
       "league_owned": 203,
       "listed_in_external_source": 601,
@@ -60,7 +60,7 @@
     {
       "id": "canonical_league_rosters",
       "path": "data-source/leagues/nfl-reise/seasons/2026/rosters.json",
-      "content_sha256": "21c1d9a42aa625333d380dcbb270e318b136f396c94bf5df4ecfff072da3c0dd",
+      "content_sha256": "917fdd566a54abd1ebf796d3a5c34023063448d56f19fd32cc8b95c210ec3480",
       "source_timestamp": null
     },
     {
@@ -78,7 +78,7 @@
     {
       "id": "canonical_nfl_rosters",
       "path": "data-source/nfl/rosters/2026.json",
-      "content_sha256": "f8fa500a30a159055fa93772f627d66359d356b3e3a7797b8fc9b9d6620136c7",
+      "content_sha256": "135b10145a3a5d3c67c73aa1f83a4d97d83a7b13dd7e563854eacc2720863b4f",
       "source_timestamp": null
     },
     {
@@ -150,7 +150,7 @@
     {
       "id": "canonical_nfl_weekly_rosters_12",
       "path": "data-source/nfl/weekly-rosters/2026/12.json",
-      "content_sha256": "cead4c00da72d3cf5d829c9bb7995aef383a21ef02230a9fff3b5e8027d4cb86",
+      "content_sha256": "26c6dbb1a93ad625379e3f322e2ee2487af796df6c4430c52d9224bf7820736e",
       "source_timestamp": null
     },
     {
@@ -168,7 +168,7 @@
     {
       "id": "canonical_sleeper_players",
       "path": "data-source/nfl/platform/sleeper/players.json",
-      "content_sha256": "8a3031a86e6f6956cc9c97878e90addf30c853580b32e2284d1298b17d68f794",
+      "content_sha256": "3eba88772c6e410470bf49018535a481c06ae9add3f153f3a400473057c847b5",
       "source_timestamp": null
     },
     {
@@ -180,7 +180,7 @@
     {
       "id": "external_signal_relevance",
       "path": "fantasy-management/generated/operations/external-signal-relevance.json",
-      "content_sha256": "5f0729ecbe2e2c4d19952bc7ef483a85f5274f5f11340d08e4af29b9fde1f3ce",
+      "content_sha256": "8d3cb447bb8e78f95dcf6116146d4d00113adc66eecf4a044637ca26c2b68990",
       "source_timestamp": "2026-11-26T04:47:08.944749Z"
     },
     {
@@ -354,7 +354,7 @@
     {
       "id": "canonical_nfl_season_roster",
       "path": "data-source/nfl/rosters/2026.json",
-      "content_sha256": "f8fa500a30a159055fa93772f627d66359d356b3e3a7797b8fc9b9d6620136c7",
+      "content_sha256": "135b10145a3a5d3c67c73aa1f83a4d97d83a7b13dd7e563854eacc2720863b4f",
       "source_timestamp": null
     },
     {
@@ -426,7 +426,7 @@
     {
       "id": "canonical_nfl_weekly_roster_12",
       "path": "data-source/nfl/weekly-rosters/2026/12.json",
-      "content_sha256": "cead4c00da72d3cf5d829c9bb7995aef383a21ef02230a9fff3b5e8027d4cb86",
+      "content_sha256": "26c6dbb1a93ad625379e3f322e2ee2487af796df6c4430c52d9224bf7820736e",
       "source_timestamp": null
     },
     {
@@ -473405,13 +473405,13 @@
         "espn_id": "2573401"
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Chest",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -527694,8 +527694,8 @@
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Questionable",
-        "description": "Thigh",
+        "designation": "Out",
+        "description": "Concussion",
         "reported_date": null,
         "return_date": null,
         "external_verification_priority": "high",
@@ -542128,6 +542128,7 @@
       "nfl_team": "HOU",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -792803,7 +792804,7 @@
       "WR": 384
     },
     "population_reasons": {
-      "canonical_nfl_membership": 843,
+      "canonical_nfl_membership": 844,
       "canonical_nfl_recent_history": 969,
       "league_owned": 203,
       "listed_in_external_source": 601,
