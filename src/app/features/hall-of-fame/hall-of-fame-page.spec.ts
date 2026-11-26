@@ -110,6 +110,20 @@ describe('HallOfFamePageComponent', () => {
     expect(el.querySelector('app-hall-of-fame[heading="Player Legends"] .hof__grid--compact')).toBeNull();
   });
 
+  it('places all-time standings immediately below champions and preserves the remaining record order', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const sections = Array.from(el.querySelector('.hof-page')!.children).map(child =>
+      child.tagName === 'APP-HALL-OF-FAME' ? child.getAttribute('heading') : child.tagName);
+    expect(sections).toEqual(['SECTION', 'APP-ALL-TIME-OVERVIEW', 'League Legacy', 'All-Time Bests', 'Player Legends']);
+    const overview = el.querySelector('app-all-time-overview')!;
+    expect(overview.querySelector('.all-time-crest')?.textContent).toBe('📊');
+    expect(overview.querySelector('.all-time-heading h2')?.textContent).toBe('All-Time Standings');
+    expect(overview.querySelector('[aria-selected="true"]')?.textContent?.trim()).toBe('Overall');
+    (overview.querySelectorAll('button[role="tab"]')[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(overview.querySelector('[aria-selected="true"]')?.textContent?.trim()).toBe('Regular Season');
+  });
+
   it('renders the legacy tiles and the all-time standings; empty record groups are not shown', () => {
     const el = fixture.nativeElement as HTMLElement;
     const card = el.querySelector('app-hall-of-fame[heading="League Legacy"] .hof__card')!;

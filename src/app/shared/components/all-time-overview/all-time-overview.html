@@ -1,5 +1,9 @@
 <section class="all-time-overview">
-  <h2>All-Time Standings</h2>
+  <header class="all-time-heading" *ngIf="crest; else plainHeading">
+    <span class="all-time-crest" aria-hidden="true">{{ crest }}</span>
+    <h2>All-Time Standings</h2>
+  </header>
+  <ng-template #plainHeading><h2>All-Time Standings</h2></ng-template>
 
   <div class="all-time-tabs" role="tablist" aria-label="All-Time Standings">
     <button
