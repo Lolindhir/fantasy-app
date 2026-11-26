@@ -272,7 +272,8 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     expect(card!.querySelector('[role="img"][aria-label="Final"]')).toBeNull();
     expect(getComputedStyle(metrics!).flexWrap).toBe('nowrap');
     expect(getComputedStyle(strip!).position).toBe('absolute');
-    expect(getComputedStyle(strip!).justifyContent).toBe('flex-end');
+    // Chromium can serialize flex-end as its logical equivalent flow-end.
+    expect(['flex-end', 'flow-end']).toContain(getComputedStyle(strip!).justifyContent);
     expect(getComputedStyle(avatarGroup!).flexGrow).toBe('0');
 
     const metricsRect = metrics!.getBoundingClientRect();
@@ -588,7 +589,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
         expect(cardRect.right).withContext(`${width}px card containment`).toBeLessThanOrEqual(width + 1);
         expect(card.scrollWidth).withContext(`${width}px card horizontal overflow`).toBeLessThanOrEqual(card.clientWidth + 1);
         expect(getComputedStyle(metrics).flexWrap).withContext(`${width}px metadata wrapping`).toBe('nowrap');
-        expect(getComputedStyle(strip).justifyContent).withContext(`${width}px right cluster alignment`).toBe('flex-end');
+        expect(['flex-end', 'flow-end']).withContext(`${width}px right cluster alignment`).toContain(getComputedStyle(strip).justifyContent);
         expect(getComputedStyle(avatarGroup).flexGrow).withContext(`${width}px avatar group must not consume metadata row`).toBe('0');
         expect(strip.querySelector('.fantasy-pulse-team-strip-label')).withContext(`${width}px redundant strip label`).toBeNull();
         expect(lastMetricRect.right).withContext(`${width}px counts/avatar overlap`).toBeLessThanOrEqual(stripRect.left + 1);
