@@ -63,6 +63,8 @@ identity:
       - schedule-outlook-v3
       - playoff-odds-v1
       - playoff-odds-v2
+      - playoff-odds-v3
+      - playoff-odds-v4
       - injury-impact-v1
       - rivalry-v1
       - weekly-recap-v1
@@ -104,6 +106,15 @@ identity:
       module: tools/derived_data_lib/models/playoff_odds/v2.py
       produces: Seeded strength-based playoff chances with the standings-v1 points tiebreak; strength = outlook Strength.Value of the same run, league mean and scoring spread from the league's own scores (nothing hard-coded), exact single-game win probabilities, strict clinched/eliminated (Issue #1607, ADR-093)
       parameters: Seed, Simulations, Digits (versioned PARAMS)
+    playoff-odds-v3:
+      module: tools/derived_data_lib/models/playoff_odds/v3.py
+      produces: A1 exact neutral W/T/L scenario masses, all outcomes equally weighted, equal final records share occupied places; exact reachability and status, no strength or simulated points (Issue #1693).
+      status: registered-candidate-not-selected
+    playoff-odds-v4:
+      module: tools/derived_data_lib/models/playoff_odds/v4.py
+      produces: A2 same exact enumeration and record tiebreak as A1, global 1% tie assumption and 49.5% each for win/loss (Issue #1693).
+      parameters: OutcomeWeights, MinPlayedFraction, MaxStates, MaxTransitions, EqualRecordTieRule (immutable after productive use)
+      status: registered-candidate-not-selected
     injury-impact:
       module: tools/derived_data_lib/models/injury_impact/v1.py
       produces: Fantasy Injury Impact per team and league-scored week - best lineup of the full roster minus best lineup of the roster without injured and unknown-evidence players, both from participation-conditional PlayerWeekFantasy projections; single-return value per injured player (Issue #1584 CP5, ADR-096)
