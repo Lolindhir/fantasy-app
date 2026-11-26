@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
+import { DEFAULT_TEAM_AVATAR_SRC } from '../../utils/championship.util';
+import type { TeamIdentitySubject } from '../team-identity/team-identity';
+
 export interface RegularSeasonStandingListRow {
+  team?: TeamIdentitySubject;
   place: number;
   owner: string;
   record: string | null;
@@ -22,6 +26,7 @@ export class RegularSeasonStandingsListComponent {
   @Input({ required: true }) standings: RegularSeasonStandingListRow[] | null | undefined;
   @Input() title = 'Regular Season Standings';
   @Input() showTitle = true;
+  readonly defaultTeamAvatar = DEFAULT_TEAM_AVATAR_SRC;
 
   recordWithQuote(row: RegularSeasonStandingListRow): string {
     const quote = row.winPercentageDisplay

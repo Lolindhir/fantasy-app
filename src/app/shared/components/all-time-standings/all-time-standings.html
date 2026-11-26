@@ -1,9 +1,15 @@
 <section class="all-time" *ngIf="standings as rows">
   <h2 *ngIf="showTitle">{{ title }}</h2>
 
-  <div *ngFor="let row of rows" class="all-time-row">
+  <div *ngFor="let row of rows" class="all-time-row" [class.all-time-row--team]="teamIdentity">
     <div class="all-time-place">{{ row.place }}</div>
 
+    <div class="all-time-team-identity" *ngIf="teamIdentity; else ownerIdentity">
+      <img class="all-time-team-logo" [src]="row.team.Avatar || defaultTeamAvatar" alt="" />
+      <span class="all-time-team-name">{{ row.team.Team || ('Team ' + row.team.TeamID) }}</span>
+    </div>
+
+    <ng-template #ownerIdentity>
     <div class="all-time-owner-avatar" aria-hidden="true">
       <ng-container *ngIf="row.team.OwnerAvatar; else ownerAvatarFallback">
         <img [src]="row.team.OwnerAvatar" alt="" />
@@ -14,6 +20,7 @@
     </div>
 
     <div class="all-time-owner">{{ row.owner }}</div>
+    </ng-template>
 
     <div class="all-time-awards">
       <span

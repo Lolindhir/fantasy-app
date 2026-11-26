@@ -34,7 +34,6 @@ export interface HallOfFameUpset {
 }
 
 export interface HallOfFameHighlight extends LeagueLegacyHighlight {
-  manager?: { name: string; avatar: string | null };
   upset?: HallOfFameUpset;
   team?: TeamIdentitySubject;
   teamInteractive?: boolean;
@@ -74,8 +73,7 @@ export function buildHallOfFameSections(
           : item.key === 'AwardCollector'
             ? { valueDisplay: item.valueDisplay.replace(/Awards$/, 'Season awards') }
             : {};
-    return { ...item, ...display, team, teamInteractive: !!team,
-      manager: { name: item.owner, avatar: team?.OwnerAvatar?.trim() || null } };
+    return { ...item, ...display, team, teamInteractive: !!team };
   });
 
   const upset = buildBiggestUpsetHighlight(current, bySeason);

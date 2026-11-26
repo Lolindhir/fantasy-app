@@ -24,7 +24,7 @@ describe('HallOfFamePageComponent', () => {
 
   beforeEach(async () => {
     const dataService = {
-      getLeagueWithPlayers: () => of({ league, teams: [{ TeamID: 1, Owner: 'Ada', OwnerAvatar: 'ada.png', Avatar: 'team.png', Team: 'Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }], players: [] }),
+      getLeagueWithPlayers: () => of({ league, teams: [{ TeamID: 1, Owner: 'Ada', OwnerAvatar: 'ada.png', Avatar: 'team.png', Team: 'Renamed Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }], players: [] }),
       getAllSeasonStatistics: () => of({ current: null, bySeason: new Map() }),
       getPlayerAwardHistory: () => of({
         Leaders: { MVP: [
@@ -72,7 +72,7 @@ describe('HallOfFamePageComponent', () => {
 
   it('shows every tied player as an equal avatar and reveals all names only on expansion', () => {
     const el = fixture.nativeElement as HTMLElement;
-    const card = el.querySelector('app-hall-of-fame[heading="Player Legends"] .hof__card')!;
+    const card = el.querySelector('app-hall-of-fame[heading="Player Awards"] .hof__card')!;
     const details = card.querySelector('details') as HTMLDetailsElement;
     const summary = details.querySelector('summary')!;
     expect(summary.querySelectorAll('.hof__portrait').length).toBe(8);
@@ -91,7 +91,7 @@ describe('HallOfFamePageComponent', () => {
 
   it('renders one or two co-leaders directly without arbitrary hiding', () => {
     const el = fixture.nativeElement as HTMLElement;
-    const cards = el.querySelectorAll('app-hall-of-fame[heading="Player Legends"] .hof__card');
+    const cards = el.querySelectorAll('app-hall-of-fame[heading="Player Awards"] .hof__card');
     expect(cards[1].querySelectorAll('.hof__identity').length).toBe(2);
     expect(cards[1].textContent).toContain('First Long Player Name');
     expect(cards[1].textContent).toContain('Second Player');
@@ -106,31 +106,37 @@ describe('HallOfFamePageComponent', () => {
     expect(el.querySelector('.hof-champions__head h2')?.textContent).toBe('League Champions');
     expect(el.querySelector('.hof-champions__crest')?.textContent).toBe('🏆');
     expect(getComputedStyle(el.querySelector('.hof-champion')!).borderTopColor).toBe('rgb(200, 170, 114)');
-    expect(el.querySelector('app-hall-of-fame[heading="League Legacy"] .hof__grid--compact')).not.toBeNull();
-    expect(el.querySelector('app-hall-of-fame[heading="Player Legends"] .hof__grid--compact')).toBeNull();
+    expect(el.querySelector('app-hall-of-fame[heading="Team Awards"] .hof__grid--compact')).not.toBeNull();
+    expect(el.querySelector('app-hall-of-fame[heading="Player Awards"] .hof__grid--compact')).toBeNull();
   });
 
   it('places all-time standings immediately below champions and preserves the remaining record order', () => {
     const el = fixture.nativeElement as HTMLElement;
     const sections = Array.from(el.querySelector('.hof-page')!.children).map(child =>
       child.tagName === 'APP-HALL-OF-FAME' ? child.getAttribute('heading') : child.tagName);
-    expect(sections).toEqual(['SECTION', 'APP-ALL-TIME-OVERVIEW', 'League Legacy', 'All-Time Bests', 'Player Legends']);
+    expect(sections).toEqual(['SECTION', 'APP-ALL-TIME-OVERVIEW', 'Team Awards', 'All-Time Bests', 'Player Awards']);
     const overview = el.querySelector('app-all-time-overview')!;
     expect(overview.querySelector('.all-time-crest')?.textContent).toBe('📊');
     expect(overview.querySelector('.all-time-heading h2')?.textContent).toBe('All-Time Standings');
     expect(overview.querySelector('[aria-selected="true"]')?.textContent?.trim()).toBe('Overall');
+    expect(overview.querySelector('.all-time-team-name')?.textContent).toBe('Renamed Aces');
+    expect(overview.querySelector('.all-time-team-logo')?.getAttribute('src')).toBe('team.png');
+    expect(overview.querySelector('.all-time-owner')).toBeNull();
     (overview.querySelectorAll('button[role="tab"]')[1] as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(overview.querySelector('[aria-selected="true"]')?.textContent?.trim()).toBe('Regular Season');
+    expect(overview.querySelector('.regular-team-name')?.textContent).toBe('Renamed Aces');
+    expect(overview.querySelector('.regular-team-logo')?.getAttribute('src')).toBe('team.png');
+    expect(overview.querySelector('.regular-owner')).toBeNull();
   });
 
   it('renders the legacy tiles and the all-time standings; empty record groups are not shown', () => {
     const el = fixture.nativeElement as HTMLElement;
-    const card = el.querySelector('app-hall-of-fame[heading="League Legacy"] .hof__card')!;
+    const card = el.querySelector('app-hall-of-fame[heading="Team Awards"] .hof__card')!;
     expect(card.textContent).toContain('All-Time Overall Leader');
-    expect(card.textContent).toContain('Manager');
-    expect(card.querySelector('.hof__manager-avatar')?.getAttribute('src')).toBe('ada.png');
-    expect(card.querySelector('.hof__team-logo')).toBeNull();
+    expect(card.textContent).toContain('Renamed Aces');
+    expect(card.textContent).not.toContain('Ada');
+    expect(card.querySelector('.hof__team-logo')?.getAttribute('src')).toBe('team.png');
     expect(el.querySelector('app-hall-of-fame[heading="All-Time Bests"] .hof')).toBeNull();
     expect(el.querySelector('app-all-time-overview')).not.toBeNull();
   });

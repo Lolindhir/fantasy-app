@@ -124,3 +124,38 @@
     display: none;
   }
 }
+
+.all-time-team-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.all-time-team-logo {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 25%;
+}
+
+.all-time-team-name {
+  font-weight: bold;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.all-time-row--team {
+  grid-template-columns: 15px minmax(0, 1fr) minmax(0, 1.4fr) 80px;
+}
+
+@media (max-width: 767px) {
+  .all-time-row--team {
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    margin-left: 2px;
+  }
+
+  .all-time-team-name { font-size: 0.85rem; }
+  .all-time-team-logo { width: 26px; height: 26px; flex-basis: 26px; }
+}

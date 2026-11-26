@@ -44,3 +44,57 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+.regular-team-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.regular-team-logo {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 25%;
+}
+
+.regular-team-name {
+  min-width: 0;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  .regular-row--team {
+    grid-template-columns: 18px minmax(0, 1fr) max-content max-content;
+    gap: 6px;
+    padding: 3px 8px;
+    margin-left: 2px;
+  }
+
+  .regular-row--team .regular-record,
+  .regular-row--team .regular-diff {
+    width: auto;
+    font-size: 0.8rem;
+  }
+
+  .regular-team-name { font-size: 0.85rem; }
+  .regular-team-logo { width: 26px; height: 26px; flex-basis: 26px; }
+}
+
+@media (max-width: 380px) {
+  .regular-row--team {
+    grid-template-columns: 18px minmax(0, 1fr) max-content;
+  }
+
+  .regular-row--team .regular-team-identity {
+    grid-column: 2 / -1;
+  }
+
+  .regular-row--team .regular-record {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

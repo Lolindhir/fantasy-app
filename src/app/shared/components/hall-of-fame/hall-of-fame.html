@@ -50,25 +50,12 @@
             </ng-template>
           </ng-container>
           <ng-template #teamOrOwner>
-            <ng-container *ngIf="item.manager as manager; else teamIdentity">
-              <button class="hof__identity" type="button" [disabled]="!item.teamInteractive" (click)="openTeam(item)"
-                      [attr.aria-label]="item.teamInteractive ? 'Open current team of manager ' + manager.name : manager.name">
-                <img *ngIf="manager.avatar; else managerFallback" class="hof__manager-avatar" [src]="manager.avatar" alt="" loading="lazy" />
-                <ng-template #managerFallback><span class="hof__manager-avatar hof__manager-fallback" aria-hidden="true">{{ manager.name.slice(0, 1) }}</span></ng-template>
-                <span class="hof__identity-copy">
-                  <span class="hof__owner">{{ manager.name }}</span>
-                  <span class="hof__identity-caption">Manager</span>
-                </span>
-              </button>
-            </ng-container>
-            <ng-template #teamIdentity>
-              <button *ngIf="item.team as team; else plainOwner" class="hof__identity" type="button"
-                      [disabled]="!item.teamInteractive" (click)="openTeam(item)">
-                <img class="hof__team-logo" [src]="team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
-                <span class="hof__owner">{{ team.Team || item.owner }}</span>
-              </button>
-              <ng-template #plainOwner><span class="hof__owner">{{ item.owner }}</span></ng-template>
-            </ng-template>
+            <button *ngIf="item.team as team; else plainOwner" class="hof__identity" type="button"
+                    [disabled]="!item.teamInteractive" (click)="openTeam(item)">
+              <img class="hof__team-logo" [src]="team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
+              <span class="hof__owner">{{ team.Team || ('Team ' + team.TeamID) }}</span>
+            </button>
+            <ng-template #plainOwner><span class="hof__owner">{{ item.owner }}</span></ng-template>
           </ng-template>
         </div>
         <div class="hof__value">
