@@ -1,3 +1,6 @@
+import type { Player } from '../../core/models/player.models';
+import type { PlayerAwardHistoryReadModel } from '../../core/models/player-award-history.models';
+import type { SeasonStatisticsReadModel } from '../../core/models/season-statistics.models';
 import type { League } from '../../core/models/league.models';
 import type { TeamSeasonsReadModel } from '../../core/models/team-season.models';
 import { TeamSeasonLookup } from '../services/team-season.service';
@@ -57,6 +60,30 @@ describe('hall of fame view util', () => {
     // Season unknown to the product: the standings snapshot of that season is shown.
     expect(y2025.teamName).toBe('Old 3');
     expect(y2025.isRegularSeasonChampion).toBe(true);
+  });
+
+  it('preserves published tied leaders, joins by player ID and uses historical portrait fallback', () => {
+    const history = { Leaders: { MVP: [
+      { PlayerID: 'a', Name: 'First', Count: 4 },
+      { PlayerID: 'b', Name: 'Second', Count: 4 },
+      { PlayerID: 'c', Name: 'Third', Count: 4 }
+    ] }, Players: [{ PlayerID: 'b', Picture: 'historic.png' }] } as unknown as PlayerAwardHistoryReadModel;
+    const current = [{ ID: 'a', Name: 'Different display name', Picture: 'current.png', TeamNFL: { Logo: 'nfl.png', Abv: 'NYG' } }] as unknown as Player[];
+    const [award] = buildHallOfFameSections(leagueWith([], '2026', false), [], null, new Map(), history, current).playerLegends;
+    expect(award.valueDisplay).toBe('4×');
+    expect(award.players?.map(player => player.name)).toEqual(['First', 'Second', 'Third']);
+    expect(award.players?.map(player => player.picture)).toEqual(['current.png', 'historic.png', null]);
+    expect(award.players?.[0].teamLogo).toBe('nfl.png');
+    expect(award.players?.[1].player).toBeNull();
+  });
+
+  it('uses the historical identity for a historical upset, not a current team logo', () => {
+    const current = { Season: 2026, BiggestUpsetAllTime: { Season: 2024, Week: 3, WinnerTeamID: 1, LoserTeamID: 2, WinnerPoints: 100, LoserPoints: 90, WinnerPregameWinProbability: 0.1 } } as unknown as SeasonStatisticsReadModel;
+    const old = { Season: 2024, Teams: [{ TeamID: 1, Owner: 'Season Owner', TeamName: 'Season Team' }, { TeamID: 2, Owner: 'Other', TeamName: 'Other Team' }] } as unknown as SeasonStatisticsReadModel;
+    const [award] = buildHallOfFameSections(leagueWith([], '2026', false), [], current, new Map([['2024', old]]), null, [], new TeamSeasonLookup(teamSeasons)).bests;
+    expect(award.team?.Team).toBe('Season Team');
+    expect(award.team?.Avatar).toBe('assets/default-team-avatar.png');
+    expect(award.valueDisplay).toBe('10% win chance');
   });
 
   it('builds empty sections when nothing is available', () => {

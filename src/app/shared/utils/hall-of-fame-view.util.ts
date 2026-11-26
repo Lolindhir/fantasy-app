@@ -1,20 +1,38 @@
+import type { Player } from '../../core/models/player.models';
+import type { TeamIdentitySubject } from '../components/team-identity/team-identity';
 import type { FantasyTeam, League } from '../../core/models/league.models';
 import type { PlayerAwardHistoryReadModel } from '../../core/models/player-award-history.models';
 import type { SeasonStatisticsReadModel } from '../../core/models/season-statistics.models';
 import type { TeamSeasonLookup } from '../services/team-season.service';
 import { DEFAULT_TEAM_AVATAR_SRC, getSeasonRingSrc } from './championship.util';
 import { buildLeagueLegacy, buildSeasonHistory, type LeagueLegacyHighlight } from './league-standings-view.util';
-import { buildPlayerAwardHighlights } from './player-award-view.util';
+import { buildPlayerAwardHighlights, PLAYER_AWARD_DISPLAY } from './player-award-view.util';
 import { buildBiggestUpsetHighlight } from './season-statistics-view.util';
 
-/** Record tiles of the Hall of Fame page, grouped in display order. Projection only, nothing is counted here (Issue #1621). */
+/** Display identities only: published award IDs and order remain authoritative. */
+export interface HallOfFamePlayerIdentity {
+  id: string;
+  name: string;
+  picture: string | null;
+  teamLogo: string | null;
+  teamAbbr: string | null;
+  player: Player | null;
+}
+
+export interface HallOfFameHighlight extends LeagueLegacyHighlight {
+  team?: TeamIdentitySubject;
+  teamInteractive?: boolean;
+  players?: HallOfFamePlayerIdentity[];
+}
+
+/** Record groups of the Hall of Fame page. Projection only, nothing is counted here. */
 export interface HallOfFameSections {
   /** League legacy facts: Champ of Champs, Regular Season King, Podium Machine, Award Collector. */
-  legacy: LeagueLegacyHighlight[];
+  legacy: HallOfFameHighlight[];
   /** All-time bests across seasons, currently the biggest upset. */
-  bests: LeagueLegacyHighlight[];
+  bests: HallOfFameHighlight[];
   /** Leaders of the weekly player awards. */
-  playerLegends: LeagueLegacyHighlight[];
+  playerLegends: HallOfFameHighlight[];
 }
 
 export function buildHallOfFameSections(
@@ -22,14 +40,52 @@ export function buildHallOfFameSections(
   teams: FantasyTeam[],
   current: SeasonStatisticsReadModel | null,
   bySeason: ReadonlyMap<string, SeasonStatisticsReadModel>,
-  awards: PlayerAwardHistoryReadModel | null
+  awards: PlayerAwardHistoryReadModel | null,
+  players: readonly Player[] = [],
+  lookup: TeamSeasonLookup | null = null
 ): HallOfFameSections {
+  const teamById = new Map(teams.map(team => [String(team.TeamID), team]));
+  const facts = league.Standings?.find(standing => standing.Season === 'AllTime')?.LegacyHighlights ?? [];
+  const legacy = buildLeagueLegacy(league, teams).highlights.map(item => {
+    const fact = facts.find(candidate => candidate.Key === item.key);
+    const team = fact ? teamById.get(String(fact.TeamID)) : undefined;
+    return { ...item, team, teamInteractive: !!team };
+  });
+
   const upset = buildBiggestUpsetHighlight(current, bySeason);
-  return {
-    legacy: buildLeagueLegacy(league, teams).highlights,
-    bests: upset ? [upset] : [],
-    playerLegends: buildPlayerAwardHighlights(awards)
-  };
+  const upsetFact = current?.BiggestUpsetAllTime;
+  const bests: HallOfFameHighlight[] = [];
+  if (upset && upsetFact) {
+    const season = String(upsetFact.Season);
+    const teamId = upsetFact.WinnerTeamID;
+    const doc = upsetFact.Season === current?.Season ? current : bySeason.get(season);
+    const winner = doc?.Teams.find(team => String(team.TeamID) === String(teamId));
+    const standings = league.Standings?.find(standing => standing.Season === season);
+    const playoff = standings?.Playoffs?.find(team => String(team.TeamID) === String(teamId));
+    const team = lookup?.identity(season, teamId)
+      ?? (season === String(league.Season) ? teamById.get(String(teamId)) : undefined)
+      ?? { TeamID: teamId, Team: winner?.TeamName || upset.owner, Owner: upset.owner,
+           Avatar: playoff?.TeamAvatar || DEFAULT_TEAM_AVATAR_SRC };
+    bests.push({ ...upset, team, teamInteractive: teamById.has(String(teamId)) });
+  }
+
+  const currentById = new Map(players.map(player => [String(player.ID), player]));
+  const historyById = new Map((awards?.Players ?? []).map(player => [String(player.PlayerID), player]));
+  const playerLegends = buildPlayerAwardHighlights(awards).map(item => {
+    const def = PLAYER_AWARD_DISPLAY.find(candidate => item.key === `player-award-${candidate.key}`);
+    const leaders = def ? awards?.Leaders?.[def.key] ?? [] : [];
+    return {
+      ...item,
+      players: leaders.map(leader => {
+        const id = String(leader.PlayerID);
+        const player = currentById.get(id) ?? null;
+        const history = historyById.get(id);
+        return { id, name: leader.Name, picture: player?.Picture || history?.Picture || null,
+          teamLogo: player?.TeamNFL?.Logo || null, teamAbbr: player?.TeamNFL?.Abv || null, player };
+      })
+    };
+  });
+  return { legacy, bests, playerLegends };
 }
 
 /** One decided league championship in the identity of its own season. */

@@ -26,7 +26,14 @@ describe('HallOfFamePageComponent', () => {
     const dataService = {
       getLeagueWithPlayers: () => of({ league, teams: [{ TeamID: 1, Owner: 'Ada', Team: 'Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }], players: [] }),
       getAllSeasonStatistics: () => of({ current: null, bySeason: new Map() }),
-      getPlayerAwardHistory: () => of(null),
+      getPlayerAwardHistory: () => of({
+        Leaders: { MVP: [
+          { PlayerID: 'a', Name: 'First Long Player Name', Count: 4 },
+          { PlayerID: 'b', Name: 'Second Player', Count: 4 },
+          { PlayerID: 'c', Name: 'Third Player', Count: 4 }
+        ] },
+        Players: [{ PlayerID: 'a', Picture: 'first.png' }]
+      }),
       getTeamSeasons: () => throwError(() => new Error('unavailable'))
     };
     await TestBed.configureTestingModule({
@@ -51,6 +58,19 @@ describe('HallOfFamePageComponent', () => {
     img.dispatchEvent(new Event('error'));
     fixture.detectChanges();
     expect(img.getAttribute('src')).toBe('assets/awards/ui/award-championship-ring.png');
+  });
+
+  it('renders published co-leaders and exposes all further ties in a native disclosure', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const card = el.querySelector('app-hall-of-fame[heading="Player Legends"] .hof__card')!;
+    expect(card.querySelector('.hof__photo')?.getAttribute('src')).toBe('first.png');
+    expect(card.querySelector('.hof__winners > .hof__identity')?.textContent).toContain('First Long Player Name');
+    expect(card.querySelector('.hof__more summary')?.textContent).toContain('+1 more tied players');
+    const details = card.querySelector('details') as HTMLDetailsElement;
+    expect(details.open).toBe(false);
+    details.open = true;
+    expect(details.textContent).toContain('Third Player');
+    expect(card.querySelector('.hof__value')?.textContent).toContain('4×');
   });
 
   it('renders the legacy tiles and the all-time standings; empty record groups are not shown', () => {

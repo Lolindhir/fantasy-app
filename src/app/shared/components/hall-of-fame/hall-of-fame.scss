@@ -1,12 +1,6 @@
 :host {
   display: block;
-}
-
-.hof {
-  padding: 12px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #111827, #1f2937);
-  color: #f8fafc;
+  min-width: 0;
 }
 
 .hof__head {
@@ -17,20 +11,17 @@
 }
 
 .hof__crest {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
 .hof__title {
   margin: 0;
-  font-size: 1.05rem;
-  letter-spacing: 0.01em;
 }
 
-/* Two columns on phones, three from tablet width: a card always has room for a whole title. */
 .hof__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -38,69 +29,169 @@
 }
 
 .hof__card {
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
-  align-items: start;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
-  padding: 9px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.07);
+  background: #fff;
+  color: #0f172a;
+}
+
+.hof__label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .hof__icon {
   display: grid;
   place-items: center;
-  height: 30px;
-  font-size: 1.5rem;
+  flex: 0 0 24px;
+  font-size: 1.15rem;
   line-height: 1;
 }
 
-.hof__body {
+.hof__record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
+  align-items: start;
+  gap: 12px;
+}
+
+.hof__winners, .hof__extra {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 6px;
   min-width: 0;
 }
 
-.hof__label {
-  color: rgba(248, 250, 252, 0.72);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-  text-transform: uppercase;
-  text-wrap: balance;
+.hof__identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hof__identity:disabled {
+  cursor: default;
+}
+
+.hof__identity:not(:disabled):hover .hof__owner {
+  text-decoration: underline;
+}
+
+.hof__identity:focus-visible, .hof__more summary:focus-visible {
+  outline: 2px solid var(--mat-sys-primary, #4f46e5);
+  outline-offset: 2px;
 }
 
 .hof__owner {
-  display: -webkit-box;
-  overflow: hidden;
+  min-width: 0;
   font-size: 0.88rem;
-  font-weight: 800;
-  line-height: 1.25;
+  font-weight: 750;
+  line-height: 1.3;
   overflow-wrap: anywhere;
-  text-wrap: balance;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+}
+
+.hof__team-logo {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 25%;
+  object-fit: cover;
+  background: #eef2ff;
+}
+
+.hof__portrait {
+  position: relative;
+  flex: 0 0 32px;
+  height: 32px;
+}
+
+.hof__photo {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  object-fit: cover;
+}
+
+.hof__nfl-logo {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.2));
 }
 
 .hof__value {
-  color: rgba(248, 250, 252, 0.82);
-  font-size: 0.76rem;
-  font-weight: 600;
-  line-height: 1.25;
-  text-wrap: balance;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: center;
+  max-width: 88px;
+  text-align: right;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
-@media (min-width: 640px) {
-  .hof {
-    padding: 14px;
-  }
+.hof__value strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
 
+.hof__value span, .hof__more {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.hof__more summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+.hof__extra {
+  margin-top: 5px;
+}
+
+.hof__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 760px) {
   .hof__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 10px;
+    align-items: start;
   }
 }

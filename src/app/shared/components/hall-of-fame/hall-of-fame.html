@@ -5,13 +5,51 @@
   </header>
 
   <ul class="hof__grid">
-    <li *ngFor="let item of highlights; trackBy: trackHighlight" class="hof__card" [matTooltip]="item.reason">
-      <span class="hof__icon" aria-hidden="true"><app-glyph [glyph]="item.icon"></app-glyph></span>
-      <span class="hof__body">
-        <span class="hof__label">{{ item.title }}</span>
-        <span class="hof__owner">{{ item.owner }}</span>
-        <span class="hof__value">{{ item.valueDisplay }}</span>
-      </span>
+    <li *ngFor="let item of highlights; trackBy: trackHighlight" class="hof__card">
+      <div class="hof__label" [matTooltip]="item.reason">
+        <span class="hof__icon" aria-hidden="true"><app-glyph [glyph]="item.icon"></app-glyph></span>
+        <span>{{ item.title }}</span>
+      </div>
+      <div class="hof__record">
+        <div class="hof__winners">
+          <ng-container *ngIf="item.players?.length; else teamOrOwner">
+            <ng-container *ngFor="let player of item.players | slice:0:previewCount; trackBy: trackPlayer">
+              <ng-container *ngTemplateOutlet="playerIdentity; context: { $implicit: player }"></ng-container>
+            </ng-container>
+            <details class="hof__more" *ngIf="(item.players?.length ?? 0) > previewCount">
+              <summary>+{{ (item.players?.length ?? 0) - previewCount }} more tied players</summary>
+              <div class="hof__extra">
+                <ng-container *ngFor="let player of item.players | slice:previewCount; trackBy: trackPlayer">
+                  <ng-container *ngTemplateOutlet="playerIdentity; context: { $implicit: player }"></ng-container>
+                </ng-container>
+              </div>
+            </details>
+          </ng-container>
+          <ng-template #teamOrOwner>
+            <button *ngIf="item.team as team; else plainOwner" class="hof__identity" type="button"
+                    [disabled]="!item.teamInteractive" (click)="openTeam(item)">
+              <img class="hof__team-logo" [src]="team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
+              <span class="hof__owner">{{ item.owner }}</span>
+            </button>
+            <ng-template #plainOwner><span class="hof__owner">{{ item.owner }}</span></ng-template>
+          </ng-template>
+        </div>
+        <div class="hof__value">
+          <strong>{{ valueMain(item) }}</strong>
+          <span *ngIf="valueCaption(item)">{{ valueCaption(item) }}</span>
+        </div>
+      </div>
     </li>
   </ul>
 </section>
+
+<ng-template #playerIdentity let-player>
+  <button class="hof__identity" type="button" [disabled]="!player.player" (click)="openPlayer(player)">
+    <span class="hof__portrait" aria-hidden="true">
+      <img *ngIf="player.picture; else noPortrait" class="hof__photo" [src]="player.picture" alt="" loading="lazy" />
+      <ng-template #noPortrait><span class="hof__photo hof__photo--empty"></span></ng-template>
+      <img *ngIf="player.teamLogo" class="hof__nfl-logo" [src]="player.teamLogo" alt="" loading="lazy" />
+    </span>
+    <span class="hof__owner">{{ player.name }}<span *ngIf="player.teamAbbr" class="hof__sr-only">, {{ player.teamAbbr }}</span></span>
+  </button>
+</ng-template>
