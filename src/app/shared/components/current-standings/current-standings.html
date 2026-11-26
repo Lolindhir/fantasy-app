@@ -175,6 +175,8 @@
           <app-playoff-place-bars
             *ngIf="odds.places.length > 0"
             [places]="odds.places"
+            [placeLabels]="odds.placeLabels"
+            [model]="odds.model"
             [playoffTeams]="playoffOdds?.playoffTeams ?? null"
             [teamName]="row.team.Team || row.team.Owner"
           ></app-playoff-place-bars>

@@ -9,7 +9,7 @@ import type {
 
 /**
  * Display mapping for the generator-owned ScheduleOutlook read model (Issues #1588, #1589).
- * Nothing is calculated here: probabilities, statuses and strength classes are shown as published.
+ * No domain probabilities are calculated here: only display rounding and read-model validation.
  * Everything returns null while the file is missing, unavailable, from another season or after the regular season.
  */
 export interface PlayoffOddsTeamView {
@@ -19,6 +19,10 @@ export interface PlayoffOddsTeamView {
   probability: number | null;
   /** Place shares, index 0 = place 1; empty when unavailable. */
   places: number[];
+  /** Formatted exact masses; optional on legacy snapshots. */
+  placeLabels?: string[];
+  possiblePlaces?: number[];
+  model?: string;
 }
 
 export interface PlayoffOddsView {
@@ -27,6 +31,7 @@ export interface PlayoffOddsView {
   playoffTeams: number | null;
   teamCount: number;
   hasDecidedTeam: boolean;
+  model?: string;
   /** Points per team and game of the league, as published; null when unknown. */
   leagueMeanPoints: number | null;
 }
@@ -45,8 +50,8 @@ export function resolvePlayoffOdds(
 
   const teams = new Map<number, PlayoffOddsTeamView>();
   for (const team of odds.Teams) {
-    const view = toTeamView(team, odds.Teams.length);
-    if (!view) return null;
+    const view = toTeamView(team, odds.Teams.length, odds.Model, odds.Provenance?.PlaceMassDenominator);
+    if (!view || teams.has(view.teamId)) return null;
     teams.set(view.teamId, view);
   }
   const playoffTeams = odds.Provenance?.PlayoffTeams;
@@ -56,7 +61,8 @@ export function resolvePlayoffOdds(
       && playoffTeams < odds.Teams.length ? playoffTeams : null,
     teamCount: odds.Teams.length,
     hasDecidedTeam: [...teams.values()].some(team => team.status !== 'alive'),
-    leagueMeanPoints: finiteOrNull(odds.Scoring?.LeagueMeanPoints)
+    model: odds.Model,
+    leagueMeanPoints: finiteOrNull(outlook.RegularSeason?.MatchupForecast?.Scoring?.LeagueMeanPoints ?? odds.Scoring?.LeagueMeanPoints)
   };
 }
 
@@ -64,14 +70,66 @@ function finiteOrNull(value: number | null | undefined): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function toTeamView(team: PlayoffOddsTeam, teamCount: number): PlayoffOddsTeamView | null {
+export function isExactPlayoffModel(model: string | undefined): boolean {
+  return model === 'playoff-odds-v3' || model === 'playoff-odds-v4';
+}
+
+export function playoffOddsBasis(model: string | undefined): string {
+  if (model === 'playoff-odds-v4') return 'all remaining win/tie/loss outcomes (1% tie probability), with equal records sharing places';
+  if (model === 'playoff-odds-v3') return 'all equally weighted remaining win/tie/loss outcomes, with equal records sharing places';
+  if (model === 'playoff-odds-v1') return 'equally weighted remaining win/loss outcomes, with equal records sharing places';
+  return 'team strength and the points tiebreak';
+}
+
+/** Display-only largest-remainder rounding from exact integer masses. Increase precision
+ * to preserve visible positive tails; at the compact display limit use explicit bounds.
+ * Exact zeros/ones are never inferred from floating-point values or rounded units.
+ */
+export function formatExactPlaceShares(masses: readonly string[], denominator: string): string[] | null {
+  if (!/^[1-9][0-9]*$/.test(denominator) || !masses.length || masses.some(m => !/^(0|[1-9][0-9]*)$/.test(m))) return null;
+  const total = BigInt(denominator);
+  const values = masses.map(m => BigInt(m));
+  if (values.reduce((sum, mass) => sum + mass, 0n) !== total) return null;
+  for (let digits = 0; digits <= 2; digits++) {
+    const scale = 100n * 10n ** BigInt(digits);
+    const units = values.map(m => m * scale / total);
+    const remainder = values.map((m, index) => ({ index, mass: m * scale % total }));
+    remainder.sort((a, b) => a.mass === b.mass ? a.index - b.index : a.mass > b.mass ? -1 : 1);
+    const left = Number(scale - units.reduce((sum, unit) => sum + unit, 0n));
+    for (let i = 0; i < left; i++) units[remainder[i].index] += 1n;
+    const hasHiddenTail = values.some((m, i) => m > 0n && m < total && (units[i] === 0n || units[i] === scale));
+    if (hasHiddenTail && digits < 2) continue;
+    return values.map((m, i) => {
+      if (m === 0n) return '0%';
+      if (m === total) return '100%';
+      if (units[i] === 0n) return '<0.01%';
+      if (units[i] === scale) return '>99.99%';
+      return `${(Number(units[i]) / 10 ** digits).toFixed(digits)}%`;
+    });
+  }
+  return null;
+}
+
+function toTeamView(team: PlayoffOddsTeam, teamCount: number, model: string, denominator?: string): PlayoffOddsTeamView | null {
   if (!Number.isInteger(team.TeamID) || !team.Status || !STATUSES.includes(team.Status)) return null;
   const places = Array.isArray(team.PlaceProbabilities)
     && team.PlaceProbabilities.length === teamCount
     && team.PlaceProbabilities.every(value => typeof value === 'number' && Number.isFinite(value))
     ? team.PlaceProbabilities
     : [];
+  let exact: Pick<PlayoffOddsTeamView, 'placeLabels' | 'possiblePlaces'> = {};
+  if (isExactPlayoffModel(model)) {
+    const masses = team.PlaceMassNumerators;
+    if (!denominator || !Array.isArray(masses) || masses.length !== teamCount || places.length !== teamCount
+        || !Array.isArray(team.PossiblePlaces)) return null;
+    const labels = formatExactPlaceShares(masses, denominator);
+    const support = masses.flatMap((mass, index) => mass === '0' ? [] : [index + 1]);
+    if (!labels || support.length !== team.PossiblePlaces.length || support.some((p, i) => p !== team.PossiblePlaces![i])) return null;
+    exact = { placeLabels: labels, possiblePlaces: support };
+  }
   return {
+    ...exact,
+    model,
     teamId: team.TeamID,
     status: team.Status,
     probability: typeof team.PlayoffProbability === 'number' && Number.isFinite(team.PlayoffProbability)
@@ -103,6 +161,7 @@ export function ordinal(place: number): string {
 
 /** Place the team has certain (published share exactly 1), e.g. 1 for "Clinched 1st"; null otherwise. */
 function certainPlace(team: PlayoffOddsTeamView): number | null {
+  if (team.possiblePlaces) return team.possiblePlaces.length === 1 ? team.possiblePlaces[0] : null;
   const index = team.places.findIndex(share => share >= 1);
   return index >= 0 ? index + 1 : null;
 }
@@ -124,7 +183,7 @@ export function playoffPillLabel(team: PlayoffOddsTeamView): string | null {
   const text = playoffPillText(team);
   if (text === null) return null;
   return team.status === 'alive'
-    ? `Playoff chance ${text}, based on team strength and the points tiebreak`
+    ? `Playoff chance ${text}, based on ${playoffOddsBasis(team.model)}`
     : `${text} for the playoffs`;
 }
 
@@ -199,7 +258,11 @@ export function resolveTeamScheduleOutlook(
   if (!team) return null;
   const odds = outlook.PlayoffOdds;
   const oddsUsable = !!odds && odds.Available === true && odds.Provenance?.RegularSeasonComplete === false;
-  const oddsTeam = oddsUsable ? odds.Teams?.find(candidate => String(candidate.TeamID) === String(teamId)) : undefined;
+  const forecast = outlook.RegularSeason?.MatchupForecast;
+  const forecastUsable = forecast?.Model === 'schedule-matchup-forecast-v1' && forecast.Provenance?.RegularSeasonComplete === false;
+  const legacyUsable = !forecast && oddsUsable && !isExactPlayoffModel(odds?.Model);
+  const forecastTeams = forecastUsable ? forecast.Teams : legacyUsable ? odds?.Teams : undefined;
+  const oddsTeam = forecastTeams?.find(candidate => String(candidate.TeamID) === String(teamId));
   const opponentByWeek = new Map<number, OpponentStrengthClass>();
   const gameByWeek = new Map<number, UpcomingGameOutlook>();
   for (const game of team.Upcoming ?? []) {
@@ -224,7 +287,8 @@ export function resolveTeamScheduleOutlook(
     remainingExpectedWins: finiteOrNull(oddsTeam?.RemainingExpectedWins),
     opponentByWeek,
     gameByWeek,
-    leagueMeanPoints: oddsUsable ? finiteOrNull(odds.Scoring?.LeagueMeanPoints) : null
+    leagueMeanPoints: forecastUsable ? finiteOrNull(forecast.Scoring?.LeagueMeanPoints)
+      : legacyUsable ? finiteOrNull(odds?.Scoring?.LeagueMeanPoints) : null
   };
 }
 

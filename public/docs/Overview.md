@@ -26,7 +26,7 @@ Hier findest du unsere **Sonderregeln und eigenen Berechnungen** auf einen Blick
 - Abgeschlossene NFL-Spiele zählen im Verlauf mit echten Punkten. Die persönliche Ausfallwahrscheinlichkeit ist in Spielerprognosen nicht automatisch eingerechnet.
 
 ## 🎯 Playoff-Chancen & Gegnerstärke
-- In der Tabelle zeigen wir die Playoff-Chancen aus vielen durchgespielten Restsaisons. Dabei zählt die **Stärke** der Teams, bei Gleichstand entscheiden die **erzielten Punkte**. Das ist eine Einschätzung, **keine Garantie**.
+- Die neuen mathematischen Playoff-Chancen berücksichtigen alle möglichen Ergebnisse der Restspiele (Sieg, Unentschieden, Niederlage), ohne Teamstärke oder simulierte Punkte. Gleiche Endbilanzen teilen sich die betroffenen Plätze. Die stärkeabhängigen Spielprognosen bleiben separat; die Anzeige kennzeichnet, ob noch das frühere Simulationsmodell verwendet wird.
 - **Clinched** und **Eliminated** sind sicher: Das Team ist in jedem möglichen Ausgang dabei bzw. draußen.
 - Im Spielplan eines Teams ordnen wir kommende Gegner nach ihren **erzielten Punkten** ein. Je länger die Saison läuft, desto weniger zählt die Vorsaison.
 

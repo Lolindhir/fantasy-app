@@ -4,15 +4,15 @@ Diese Seite erklärt, was hinter den **Playoff-Anzeigen** in der Tabelle und der
 
 ## 🎲 Wie entstehen die Playoff-Chancen?
 
-Wir spielen die **restliche Hauptrunde** viele tausend Mal gedanklich durch. In jedem Durchgang bekommt jedes Team in jedem offenen Spiel eine zufällige Punktzahl: Je **stärker** das Team (siehe unten), desto höher liegen seine Punkte im Schnitt, dazu kommt die übliche Schwankung von Woche zu Woche. Am Ende zählen wir, wie oft ein Team welchen Tabellenplatz belegt.
+Für die neuen mathematischen Playoff-Chancen betrachten wir **alle möglichen Siege, Unentschieden und Niederlagen** der restlichen Hauptrunde. Im Modell A2 gehen wir pro Spiel von 49,5 % Sieg, 1 % Unentschieden und 49,5 % Niederlage aus. Das ist eine feste Modellannahme, keine aus der Liga gemessene Quote. Die Wahrscheinlichkeiten werden exakt berechnet, nicht simuliert.
 
-- Der Wert „Playoffs 62 %“ bedeutet: In 62 von 100 Durchgängen kommt das Team weiter.
-- Die Anzeige „Chancen der Plätze“ in der aufgeklappten Zeile und im **Playoff Picture** zeigt, wie sich die Durchgänge auf die Endplätze verteilen.
-- Bei gleichem Siegverhältnis entscheiden die **erzielten Punkte** („Points for“), danach die Gegenpunkte, genau wie in der echten Tabelle. Deshalb zählen auch Punkte in den Restspielen mit.
-- Ein Team, das noch eine Chance hat, zeigt nie „0 %“ oder „100 %“, sondern „<1 %“ bzw. „>99 %“.
-- Im Spielplan eines Teams steht bei jedem offenen Spiel außerdem die **Siegchance** für genau dieses Spiel und der erwartete **Punkteunterschied** zum Gegner. Oben steht die durchschnittliche Siegchance über alle verbleibenden Spiele und die daraus erwartete Zahl an Siegen.
+- „Playoffs 62 %“ bezeichnet den gewichteten Anteil möglicher Endplatzierungen auf einem Playoff-Platz.
+- Bei gleichem abschließendem Siegverhältnis verteilen sich die betroffenen Plätze gleichmäßig auf die Teams mit gleichem Siegverhältnis. Die tatsächliche Tabelle verwendet weiterhin die offiziellen Punkte-Tiebreaker.
+- Die Platzierungswerte werden gemeinsam gerundet, sodass die numerischen Anteile zusammen 100 % ergeben. Bei sehr kleinen Restchancen verwenden wir eine Grenzwertanzeige wie „<0,01 %“, statt eine mögliche Platzierung als unmöglich darzustellen.
+- 0 % oder 100 % bedeuten im exakten Modell, dass ein Platz ausgeschlossen beziehungsweise garantiert ist.
+- Die exakten Chancen erscheinen erst, wenn ausreichend Saisonspiele abgeschlossen sind und die vollständige Berechnung innerhalb ihrer Grenzen möglich ist.
 
-**Wichtig:** Das ist eine Einschätzung auf Basis bisheriger Punkte, **keine Garantie**. Verletzungen, Trades oder Aufstellungen sind darin nicht vorhergesehen. Ändert sich die Stärkeberechnung eines Teams, ändern sich auch seine Playoff-Chancen.
+**Wichtig:** Die mathematischen Chancen sind keine Vorhersage der Spielstärke. Die **Siegchancen, erwarteten Siege und Punkteunterschiede** im Team-Spielplan werden weiterhin separat aus der bisherigen Punktestärke berechnet und fließen nicht in A2 ein. Solange noch das frühere Modell V2 angezeigt wird, beruhen die Playoff-Chancen auf simulierten Punkten und Teamstärke. Die Anzeige erklärt jeweils das verwendete Modell.
 
 ## ✅ Clinched und Eliminated
 

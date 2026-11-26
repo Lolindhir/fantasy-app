@@ -1,6 +1,8 @@
 import type { PlayoffOddsStatus, ScheduleOutlookReadModel } from '../../core/models/schedule-outlook.models';
 import {
   formatPlayoffCell,
+  formatExactPlaceShares,
+  playoffPillLabel,
   formatPlayoffPercent,
   ordinal,
   playoffLockedPlace,
@@ -84,6 +86,61 @@ describe('schedule outlook view', () => {
     expect(resolvePlayoffOdds(outlook(), 2027)).toBeNull();
     expect(resolvePlayoffOdds(outlook({ Provenance: { PlayoffTeams: 1, RegularSeasonComplete: true } }), 2026)).toBeNull();
     expect(resolvePlayoffOdds({ ...outlook(), PlayoffOdds: undefined }, 2026)).toBeNull();
+  });
+
+  it('rounds exact rows jointly and preserves positive support even below float precision', () => {
+    expect(formatExactPlaceShares(['0', '8954', '888', '158', '0', '0'], '10000'))
+      .toEqual(['0%', '89%', '9%', '2%', '0%', '0%']);
+    expect(formatExactPlaceShares(['0', '6666863', '2102764', '1156076', '74297', '0'], '10000000'))
+      .toEqual(['0%', '67%', '21%', '11%', '1%', '0%']);
+    expect(formatExactPlaceShares(['999', '1'], '1000')).toEqual(['99.9%', '0.1%']);
+    expect(formatExactPlaceShares(['999999999999999999999999999999', '1'], '1000000000000000000000000000000'))
+      .toEqual(['>99.99%', '<0.01%']);
+    expect(formatExactPlaceShares(['1', '1', '1'], '3')).toEqual(['34%', '33%', '33%']);
+    expect(formatExactPlaceShares(['1', '0'], '1')).toEqual(['100%', '0%']);
+    expect(formatExactPlaceShares(['2', '0'], '1')).toBeNull();
+    expect(formatExactPlaceShares(['1e5', '0'], '100000')).toBeNull();
+  });
+
+  it('uses the exact support rather than rounded float certainty and labels the right model', () => {
+    const base = outlook();
+    const model = outlook({
+      Model: 'playoff-odds-v4',
+      Provenance: { PlayoffTeams: 1, RegularSeasonComplete: false, PlaceMassDenominator: '100000000000000000000' },
+      Teams: [
+        { ...base.PlayoffOdds!.Teams[0], Status: 'alive', PlayoffProbability: 1, PlaceProbabilities: [1, 1e-20, 0],
+          PlaceMassNumerators: ['99999999999999999999', '1', '0'], PossiblePlaces: [1, 2] },
+        { ...base.PlayoffOdds!.Teams[1], Status: 'alive', PlayoffProbability: 1e-20, PlaceProbabilities: [1e-20, 1, 0],
+          PlaceMassNumerators: ['1', '99999999999999999999', '0'], PossiblePlaces: [1, 2] },
+        { ...base.PlayoffOdds!.Teams[2], PlaceMassNumerators: ['0', '0', '100000000000000000000'], PossiblePlaces: [3] }
+      ]
+    });
+    const odds = resolvePlayoffOdds(model, 2026)!;
+    expect(odds.teams.get(1)!.placeLabels).toEqual(['>99.99%', '<0.01%', '0%']);
+    expect(playoffPillText(odds.teams.get(1)!)).toBe('>99%');
+    expect(playoffPillLabel(odds.teams.get(1)!)).toContain('1% tie probability');
+    expect(playoffLockedPlace(odds, 1)).toBeNull();
+    expect(playoffLockedPlace(odds, 3)).toBe(3);
+    model.PlayoffOdds!.Teams[0].PossiblePlaces = [1];
+    expect(resolvePlayoffOdds(model, 2026)).toBeNull();
+  });
+
+  it('keeps independent schedule forecasts when exact playoff odds are unavailable', () => {
+    const model = outlook({ Model: 'playoff-odds-v4', Available: false });
+    model.RegularSeason!.MatchupForecast = {
+      Model: 'schedule-matchup-forecast-v1',
+      Provenance: { RegularSeasonComplete: false },
+      Scoring: { LeagueMeanPoints: 190, PointsStdDev: 30, MeanSource: 'current-season' },
+      Teams: [{ TeamID: 1, RemainingExpectedWins: 0.62, RemainingWinProbability: 0.62,
+        Upcoming: [{ Week: 5, OpponentTeamID: 2, WinProbability: 0.62, OpponentExpectedPoints: 171, ExpectedMargin: 12 }] }]
+    };
+    expect(resolvePlayoffOdds(model, 2026)).toBeNull();
+    const view = resolveTeamScheduleOutlook(model, 2026, 1)!;
+    expect(view.remainingExpectedWins).toBe(0.62);
+    expect(view.gameByWeek.get(5)!.margin).toBe(12);
+    expect(view.leagueMeanPoints).toBe(190);
+    model.RegularSeason!.MatchupForecast.Provenance.RegularSeasonComplete = true;
+    expect(resolveTeamScheduleOutlook(model, 2026, 1)!.remainingExpectedWins).toBeNull();
   });
 
   it('exposes strength classes per upcoming week and skips unknown ones', () => {

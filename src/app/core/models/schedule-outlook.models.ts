@@ -12,6 +12,9 @@ export interface PlayoffOddsTeam {
   Record: { Wins: number; Losses: number; Ties: number };
   /** Index 0 = place 1; each entry is a share between 0 and 1. */
   PlaceProbabilities: number[] | null;
+  /** Exact-model authoritative nonnegative integer masses and mathematical support. */
+  PlaceMassNumerators?: string[] | null;
+  PossiblePlaces?: number[] | null;
   PlayoffProbability: number | null;
   EliminationProbability: number | null;
   Status: PlayoffOddsStatus | null;
@@ -48,6 +51,7 @@ export interface PlayoffOddsBlock {
     PlayoffTeams: number | null;
     RegularSeasonComplete: boolean;
     StrengthBasis?: string | null;
+    PlaceMassDenominator?: string;
   } | null;
   Scoring?: PlayoffOddsScoring | null;
   Teams: PlayoffOddsTeam[];
@@ -79,9 +83,16 @@ export interface ScheduleOutlookTeam {
   Upcoming: ScheduleOutlookUpcoming[];
 }
 
+export interface ScheduleMatchupForecast {
+  Model: string;
+  Provenance: { RegularSeasonComplete: boolean; StrengthBasis?: string | null };
+  Scoring: PlayoffOddsScoring;
+  Teams: Pick<PlayoffOddsTeam, 'TeamID' | 'ExpectedPoints' | 'RemainingExpectedWins' | 'RemainingWinProbability' | 'Upcoming'>[];
+}
+
 export interface ScheduleOutlookReadModel {
   Season: number;
   AsOf?: { AfterWeek: number | null } | null;
-  RegularSeason?: { Teams: ScheduleOutlookTeam[] } | null;
+  RegularSeason?: { Teams: ScheduleOutlookTeam[]; MatchupForecast?: ScheduleMatchupForecast | null } | null;
   PlayoffOdds?: PlayoffOddsBlock | null;
 }
