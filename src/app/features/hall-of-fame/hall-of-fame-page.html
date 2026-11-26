@@ -8,10 +8,10 @@
     <ul class="hof-champions__grid" >
       <li *ngFor="let champion of vm.champions; trackBy: trackSeason">
         <button type="button" class="hof-champion" (click)="openChampion(champion)" [attr.aria-label]="champion.season + ' champion ' + champion.teamName + ', show details'">
-          <img class="hof-champion__ring" [src]="ringSrc(champion)" alt="" (error)="onRingError(champion)" />
+          <span class="hof-champion__season">{{ champion.season }}</span>
           <img class="hof-champion__logo" [src]="champion.teamAvatar" alt="" />
           <span class="hof-champion__name">{{ champion.teamName }}</span>
-          <span class="hof-champion__season">{{ champion.season }}</span>
+          <img class="hof-champion__ring" [src]="ringSrc(champion)" alt="" (error)="onRingError(champion)" />
         </button>
       </li>
     </ul>
