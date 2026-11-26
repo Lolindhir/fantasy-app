@@ -77,15 +77,15 @@ function alternativeCut(s,team,id,mode,cap,free){
   // Include same-year cash replacement plus the exact cut debt.
   const oldContract=s.contracts.get(id);
   const oldAnnual=salary(oldContract);
-  const newDue=due(team,s)-oldAnnual+incoming.price+quote.currentDead;
+  const newDue=due(team,s)-oldAnnual+incoming.price+quote.now;
   const altQuality=lineup(next,s.world).score;
   const w=W[team.strategy];
   const baseline=u(next,team,s,cap);
-  const dueWithoutNewDead=newDue-quote.currentDead;
-  const score=baseline-w.cap*(quote.currentDead/M)-
+  const dueWithoutNewDead=newDue-quote.now;
+  const score=baseline-w.cap*(quote.now/M)-
    .30*(Math.max(0,(newDue-cap)/M)-Math.max(0,(dueWithoutNewDead-cap)/M))-
-   .5*w.cap*(quote.futureDead/M);
-  const relief=oldAnnual-incoming.price-quote.currentDead;
+   .5*w.cap*(quote.futureDebt/M);
+  const relief=oldAnnual-incoming.price-quote.now;
   const cand={player:id,replacement:incoming.id,replacementSalary:incoming.price,relief,quote,
    score,afterCost:newDue,afterIndex:altQuality};
   if(!best||cand.score>best.score+1e-8)best=cand;
