@@ -1,6 +1,9 @@
 <div class="hof-page" *ngIf="vm$ | async as vm">
   <section class="hof-champions" aria-label="League champions" *ngIf="vm.champions.length > 0">
-    <h2>League Champions</h2>
+    <header class="hof-champions__head">
+      <span class="hof-champions__crest" aria-hidden="true">🏆</span>
+      <h2>League Champions</h2>
+    </header>
 
     <ul class="hof-champions__grid" >
       <li *ngFor="let champion of vm.champions; trackBy: trackSeason">
@@ -14,8 +17,8 @@
     </ul>
   </section>
 
-  <app-hall-of-fame heading="League Legacy" crest="🏛️" [highlights]="vm.sections.legacy"></app-hall-of-fame>
-  <app-hall-of-fame heading="All-Time Bests" crest="⭐" [highlights]="vm.sections.bests"></app-hall-of-fame>
+  <app-hall-of-fame heading="League Legacy" crest="🏛️" [compact]="true" [highlights]="vm.sections.legacy"></app-hall-of-fame>
+  <app-hall-of-fame heading="All-Time Bests" crest="⭐" [compact]="true" [highlights]="vm.sections.bests"></app-hall-of-fame>
   <app-hall-of-fame heading="Player Legends" crest="🎖️" [highlights]="vm.sections.playerLegends"></app-hall-of-fame>
 
   <app-all-time-overview

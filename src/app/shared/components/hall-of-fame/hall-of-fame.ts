@@ -17,12 +17,13 @@ import type { HallOfFameHighlight, HallOfFamePlayerIdentity } from '../../utils/
 export class HallOfFameComponent {
   @Input() heading = 'Hall of Fame';
   @Input() crest = '🏛️';
+  @Input() compact = false;
   @Input({ required: true }) highlights: readonly HallOfFameHighlight[] | null | undefined;
 
   private readonly dialog = inject(MatDialog);
   private readonly injector = inject(Injector);
   readonly defaultTeamAvatar = DEFAULT_TEAM_AVATAR_SRC;
-  readonly previewCount = 2;
+  readonly directWinnerLimit = 2;
   trackHighlight = (_: number, item: HallOfFameHighlight): string => item.key;
   trackPlayer = (_: number, item: HallOfFamePlayerIdentity): string => item.id;
 
