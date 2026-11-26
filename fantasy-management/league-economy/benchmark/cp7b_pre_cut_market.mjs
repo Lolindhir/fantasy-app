@@ -62,8 +62,14 @@ function cutQuote(s,team,id,mode,year=2027){
 }
 function alternativeCut(s,team,id,mode,cap,free){
  const old=team.players;const quote=cutQuote(s,team,id,mode);
- const options=free.filter(p=>p.pos===s.world.get(id).pos&&p.id!==id)
-  .sort((a,b)=>a.price-b.price||b.known-a.known||a.id.localeCompare(b.id)).slice(0,12);
+ const samePos=free.filter(p=>p.pos===s.world.get(id).pos&&p.id!==id&&p.known>0);
+ const optionsById=new Map();
+ for(const sorter of [
+  (a,b)=>a.price-b.price||b.known-a.known,
+  (a,b)=>b.known/(1+a.price/M)-a.known/(1+b.price/M),
+  (a,b)=>b.known-a.known||a.price-b.price
+ ])for(const p of [...samePos].sort(sorter).slice(0,14))optionsById.set(p.id,p);
+ const options=[...optionsById.values()];
  let best=null;
  for(const incoming of options){
   const next=old.map(x=>x===id?incoming.id:x);
@@ -72,13 +78,13 @@ function alternativeCut(s,team,id,mode,cap,free){
   const oldContract=s.contracts.get(id);
   const oldAnnual=salary(oldContract);
   const newDue=due(team,s)-oldAnnual+incoming.price+quote.currentDead;
-  const before=u(old,team,s,cap);
   const altQuality=lineup(next,s.world).score;
-  const nowQuality=lineup(old,s.world).score;
   const w=W[team.strategy];
-  const score=before+w.line*(altQuality-nowQuality) -
-   w.cap*((newDue-due(team,s))/M)-Math.max(0,(newDue-cap)/M)*.30+
-   Math.max(0,(due(team,s)-cap)/M)*.30;
+  const baseline=u(next,team,s,cap);
+  const dueWithoutNewDead=newDue-quote.currentDead;
+  const score=baseline-w.cap*(quote.currentDead/M)-
+   .30*(Math.max(0,(newDue-cap)/M)-Math.max(0,(dueWithoutNewDead-cap)/M))-
+   .5*w.cap*(quote.futureDead/M);
   const relief=oldAnnual-incoming.price-quote.currentDead;
   const cand={player:id,replacement:incoming.id,replacementSalary:incoming.price,relief,quote,
    score,afterCost:newDue,afterIndex:altQuality};
@@ -134,8 +140,7 @@ function tryTrades(s,mode,cap,{waitProbability=.5,maxTrades=6}={}){
        screened.rosterBlocked++;continue;
       }
       // Full contract swap, no debt created and any existing debt remains with its owner.
-      const aScore=u(aNew,seller,s,cap)- (W[seller.strategy].cap*(-sellerRelief/M)) +
-        0; // current u() sees pre-transfer contract salary by player, already correct
+      const aScore=u(aNew,seller,s,cap); // each player carries full current contract salary
       const bScore=u(bNew,buyer,s,cap);
       const sellerBenefit=aScore-alt.score;
       const buyerBenefit=bScore-buyerU;
@@ -144,7 +149,7 @@ function tryTrades(s,mode,cap,{waitProbability=.5,maxTrades=6}={}){
       const q=alt.quote;
       const buyerWouldBeUnderCapIfClaimed=oldBuyer+(q.activeAfterCut??outCost)<=cap+1;
       const waitPremium=mode==='retained_cycle'&&buyerWouldBeUnderCapIfClaimed?
-       waitProbability*W[buyer.strategy]*((outCost-(q.activeAfterCut||outCost))/M):0;
+       waitProbability*W[buyer.strategy].cap*((outCost-(q.activeAfterCut||outCost))/M):0;
       if(!(sellerBenefit>.10&&buyerBenefit>.10)){
        screened.noMutualUtility++;continue;
       }
