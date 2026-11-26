@@ -124,6 +124,8 @@ def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str, odds
         "SchemaVersion": SCHEMA_VERSION,
         "ModelID": model_id,
         "PlayoffOddsModelID": odds_model_id,
+        **({"MatchupForecastModelID": source.matchup_forecast_v1.MODEL_ID}
+           if odds_model_id in ("playoff-odds-v3", "playoff-odds-v4") else {}),
         "Records": [(r["CanonicalLeagueRosterID"], r["Wins"], r["Losses"], r["Ties"],
                      r["Points"], r["PointsAgainst"])
                     for r in sorted(inputs.records(after_week), key=lambda r: r["CanonicalLeagueRosterID"])],
