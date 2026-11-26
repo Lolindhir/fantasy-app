@@ -49,9 +49,6 @@ function forecast(d,p,s,b,w){
    const h=hist.GameLog.map(x=>x.Points),weight=h.map((_,i)=>.8**(h.length-1-i)),ewma=h.reduce((a,x,i)=>a+x*weight[i],0)/weight.reduce((a,b)=>a+b,0);
    const histSD=Math.max(10,Math.sqrt(h.reduce((a,x)=>a+(x-avg(h))**2,0)/(h.length-1)));
    const model={base:Number.isFinite(base.ProjectedFinalScore)&&Number.isFinite(base.StandardDeviation)?{mu:base.ProjectedFinalScore,sd:base.StandardDeviation}:null,direct:solve(c,"direct"),inertia3:solve(c,"inertia3"),risk25:solve(c,"risk25"),ewma:{mu:ewma,sd:histSD},shrink4:{mu:(h.length*avg(h)+4*league)/(h.length+4),sd:histSD}};
-   // Efficiency estimated on past weeks only; direct lineup (not hindsight best ball) is not multiplied by actual efficiency.
-   model.bbActualEff=model.direct&&Number.isFinite(hist.LineupEfficiencyActual)?{mu:model.direct.mu*hist.LineupEfficiencyActual/100,sd:model.direct.sd*hist.LineupEfficiencyActual/100}:null;
-   model.bbProjectedEff=model.direct&&Number.isFinite(hist.LineupEfficiencyProjected)?{mu:model.direct.mu*hist.LineupEfficiencyProjected/100,sd:model.direct.sd*hist.LineupEfficiencyProjected/100}:null;
    for(const [key,x] of [["baseEWMA",model.base],["directEWMA",model.direct],["inertiaEWMA",model.inertia3]]){
       // linear blend of estimates, not variance of independent predictions: use average SD.
       model[key]=x?{mu:(x.mu+ewma)/2,sd:(x.sd+histSD)/2}:null;
@@ -75,10 +72,21 @@ function summarize(rows){
  const pairs=Object.values(groups);if(pairs.some(g=>g.length!==2))throw Error("invalid pair");
  function metrics(rs,ps,k){const a=rs.filter(r=>r.model[k]),b=ps.filter(g=>g.every(r=>r.model[k]));const errors=a.map(r=>r.model[k].mu-r.actual),loss=b.map(([r,s])=>{const x=r.model[k],z=s.model[k],y=r.official===s.official?.5:+(r.official>s.official),sd=Math.hypot(x.sd,z.sd),p=sd?norm((x.mu-z.mu)/sd):x.mu===z.mu?.5:+(x.mu>z.mu);return {raw:(p-y)**2,half:(.5+.5*(p-.5)-y)**2,coin:(.5-y)**2}});
  return {n:a.length,matches:b.length,mae:avg(errors.map(Math.abs)),bias:avg(errors),brier:avg(loss.map(x=>x.raw)),halfBrier:avg(loss.map(x=>x.half)),coin:avg(loss.map(x=>x.coin)),overlap:avg(a.filter(x=>Number.isFinite(x.overlap[k])).map(x=>x.overlap[k]))};}
- const core=keys.filter(k=>!["bbActualEff","bbProjectedEff"].includes(k));
+ const core=keys;
  const common=rows.filter(r=>core.every(k=>r.model[k])),cp=pairs.filter(g=>g.every(r=>core.every(k=>r.model[k])));
  return {full:Object.fromEntries(keys.map(k=>[k,metrics(rows,pairs,k)])),common:Object.fromEntries(keys.map(k=>[k,metrics(common,cp,k)]))};
 }
-function main(){const root=path.resolve(__dirname,"../../.."),get=(ref,p)=>JSON.parse(execFileSync("git",["show",ref+":"+p],{cwd:root,encoding:"utf8",maxBuffer:32*1024*1024}));const rows=[],skips=[];for(const [w,ref,dt] of SNAPS){try{const d=get(ref,"public/data/DecisionWindows.json"),p=get(ref,"public/data/PlayerWeekFantasy.json"),s=historicalScores(get(ref,"public/data/Matchups.json"),w),b=get(ref,"public/data/MatchupProjections.json");if(!(dt<d.DecisionWindows.map(x=>x.StartsAtUtc).sort()[0]))throw Error("not pregame");const pred=forecast(d,p,s,b,w);const m=get(TRUTH,"data-source/leagues/nfl-reise/seasons/2026/matchups/week-"+w+".json"),t=get(TRUTH,"data-derived/team-week-performance/nfl-reise/2026/"+String(w).padStart(2,"0")+".json");rows.push(...evaluate(pred,b,m,t,w));}catch(e){skips.push({w,error:String(e)});}}if(!rows.length)throw Error("no accepted weeks");console.log(JSON.stringify({skips,overall:summarize(rows),byWeek:Object.fromEntries([...new Set(rows.map(x=>x.w))].map(w=>[w,summarize(rows.filter(x=>x.w===w))])),rows},null,2));}
+function checkLeakage(d,p,h,b,w){
+ const base=forecast(d,p,historicalScores(h,w),b,w);
+ const changed={...h,Weeks:h.Weeks.map(x=>x.Week>=w?{...x,Matchups:x.Matchups.map(m=>({...m,Participants:m.Participants.map(a=>({...a,Points:999999}))}))}:x)};
+ if(JSON.stringify(base)!==JSON.stringify(forecast(d,p,historicalScores(changed,w),b,w)))throw Error("target-week score leakage");
+ const malformed={...p,Records:p.Records.map((x,i)=>i===0?{...x,Actual:{State:"final",Points:999999}}:x)};
+ let rejected=false;try{forecast(d,malformed,historicalScores(h,w),b,w)}catch(e){rejected=String(e).includes("target actual")}
+ if(!rejected)throw Error("target-week actual not rejected");
+ rejected=false;try{historicalScores({...h,Weeks:h.Weeks.map(x=>x.Week===1?{...x,CompletionState:"open"}:x)},w)}catch(e){rejected=String(e).includes("not final")}
+ if(!rejected)throw Error("unfinalized history not rejected");
+ return "PASS";
+}
+function main(){const root=path.resolve(__dirname,"../../.."),get=(ref,p)=>JSON.parse(execFileSync("git",["show",ref+":"+p],{cwd:root,encoding:"utf8",maxBuffer:32*1024*1024}));const rows=[],skips=[];for(const [w,ref,dt] of SNAPS){try{const d=get(ref,"public/data/DecisionWindows.json"),p=get(ref,"public/data/PlayerWeekFantasy.json"),s=historicalScores(get(ref,"public/data/Matchups.json"),w),b=get(ref,"public/data/MatchupProjections.json");if(!(dt<d.DecisionWindows.map(x=>x.StartsAtUtc).sort()[0]))throw Error("not pregame");if(process.argv.includes("--self-test")){checkLeakage(d,p,get(ref,"public/data/Matchups.json"),b,w);console.log("CP3n archived leakage check W"+w+" PASS");continue;}const pred=forecast(d,p,s,b,w);const m=get(TRUTH,"data-source/leagues/nfl-reise/seasons/2026/matchups/week-"+w+".json"),t=get(TRUTH,"data-derived/team-week-performance/nfl-reise/2026/"+String(w).padStart(2,"0")+".json");rows.push(...evaluate(pred,b,m,t,w));}catch(e){skips.push({w,error:String(e)});}}if(process.argv.includes("--self-test")){if(skips.length)throw Error(JSON.stringify(skips));return;}if(!rows.length)throw Error("no accepted weeks");console.log(JSON.stringify({skips,overall:summarize(rows),byWeek:Object.fromEntries([...new Set(rows.map(x=>x.w))].map(w=>[w,summarize(rows.filter(x=>x.w===w))])),rows},null,2));}
 if(require.main===module)main();
-module.exports={forecast,evaluate,summarize,historicalScores,SNAPS,TRUTH};
+module.exports={forecast,evaluate,summarize,historicalScores,checkLeakage,SNAPS,TRUTH};
