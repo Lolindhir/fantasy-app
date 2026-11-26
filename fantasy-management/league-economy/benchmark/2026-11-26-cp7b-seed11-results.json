@@ -1,5 +1,5 @@
 {
-  "schema": "cp7b-precut-six-team-v1",
+  "schema": "cp7b-precut-six-team-v2",
   "date": "2026-11-26",
   "asOf": "2026-10-05",
   "seed": 11,
@@ -8,23 +8,19 @@
     -0.1,
     -0.2
   ],
-  "status": "2027 synthetic owner/contract vintage, cap-only one-year market, no actual manager deals",
+  "status": "one-season synthetic 2027 contracts and owner market, no real offers or NFL future",
   "assumptions": {
     "maxRegularSlots": 45,
     "noTaxi": true,
     "noIR": true,
     "identicalFrozenCriticalityPrices": true,
-    "shocks": [
-      0,
-      -0.1,
-      -0.2
-    ],
     "waitProbability": 0.5,
-    "trade": "1:1 entire current and future contracts, buyer currently cap/positions legal, both proxy utilities positive",
-    "tenure": "synthetic contract start proxy initially, resets on intra-benchmark trade",
-    "market": "pre-cut, greedy max six trades; minimum 20 and simultaneous same-position FA replacement for cuts",
-    "future": "2028/29 future transfer audited and compared only to frozen-cap stress proxy; no true futures",
-    "exclusions": "no actual 2027 NFL season/manager consent, no waiver claim execution, no Rookie Draft, Pick bundles, IR, full future cap legality"
+    "tenure": "synthetic CP6r contract start proxies ownership until a trade resets 2027 acquisition",
+    "trade": "1:1 full remaining contract transfer, buyer currently cap/roster legal, both proxy utilities positive",
+    "cut": "same-position legally available FA replacement; P1 released waiver salary discounted and offered subsequently; P2 undefined postcut FA contract price excluded",
+    "salary": "fixed archived criticality-based 2027 salary, cap shocks 0/-10/-20% are cap-only events, never Salary-repricing",
+    "future": "2028/29 transfer schedules audited; frozen-cap stress only, not verified future buyer solvency",
+    "exclusions": "real managers/owner consent, future picks, 2027 rookie draft, weekly injuries, IR, real postcut competitive claims and 5-year economy"
   },
   "starts": {
     "cap": 489862209,
@@ -1871,9 +1867,9 @@
         },
         {
           "team": 1,
-          "capUsed": 361177544,
+          "capUsed": 379930109,
           "roster": 20,
-          "index": 182.73699999999997,
+          "index": 187.03899999999996,
           "overBy": 0
         },
         {
@@ -2134,15 +2130,15 @@
           },
           {
             "team": 1,
-            "player": "4984",
-            "replacement": "11560",
-            "oldSalary": 83322043,
-            "replacementSalary": 20102181,
-            "deadNow": 24996613,
+            "player": "4866",
+            "replacement": "5967",
+            "oldSalary": 41895124,
+            "replacementSalary": 16140171,
+            "deadNow": 6284269,
             "deadFuture": 0,
-            "salaryAfterRelease": 58325430,
-            "netRelief": 38223249,
-            "afterUsed": 361177544
+            "salaryAfterRelease": 35610855,
+            "netRelief": 19470684,
+            "afterUsed": 379930109
           },
           {
             "team": 2,
@@ -2173,7 +2169,7 @@
         "steps": 5
       },
       "debt": {
-        "now": 64607584,
+        "now": 45895240,
         "future": 0,
         "ledger": [
           {
@@ -2192,10 +2188,10 @@
           },
           {
             "owner": 1,
-            "player": "4984",
+            "player": "4866",
             "year": 2027,
-            "amount": 24996613,
-            "signYear": 2026
+            "amount": 6284269,
+            "signYear": 2025
           },
           {
             "owner": 2,
@@ -2225,9 +2221,9 @@
           "salaryAfterRelease": 46981547
         },
         {
-          "player": "4984",
-          "discountFromOriginal": 24996613,
-          "salaryAfterRelease": 58325430
+          "player": "4866",
+          "discountFromOriginal": 6284269,
+          "salaryAfterRelease": 35610855
         },
         {
           "player": "7564",
@@ -2707,7 +2703,7 @@
       "legal": true,
       "trades": 3,
       "cuts": 5,
-      "deadNow": 64607584,
+      "deadNow": 45895240,
       "uncured": [],
       "waiverWaitBlocked": 0
     },
@@ -2717,7 +2713,7 @@
       "legal": true,
       "trades": 3,
       "cuts": 5,
-      "deadNow": 64607584,
+      "deadNow": 45895240,
       "uncured": [],
       "waiverWaitBlocked": 60
     }
@@ -2725,14 +2721,15 @@
   "validation": {
     "scenarios": 9,
     "legal": 9,
-    "greedyUncured": [],
+    "uncuredGreedy": [],
     "trades": 19,
     "cuts": 17,
     "futureTradeSchedulesAudited": 38,
-    "issues": []
+    "retainedDiscountedReplacementCount": 0,
+    "allInvariantsPassed": true
   },
   "provenance": {
-    "sourceBlob": "30937b747102f89073093f9384e24d7ee5ae1148",
+    "sourceBlob": "42b3cf71681ee22df7bfa395839473f656475807",
     "coreBlob": "f5346b7a82f2fda6e97bea929cc4e7dc08620d67",
     "cutProbeBlob": "053c027050339255e3f3df013fb16d4e09ca9ab2",
     "archiveBlob": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
