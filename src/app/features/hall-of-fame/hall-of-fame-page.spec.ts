@@ -30,8 +30,18 @@ describe('HallOfFamePageComponent', () => {
         Leaders: { MVP: [
           { PlayerID: 'a', Name: 'First Long Player Name', Count: 4 },
           { PlayerID: 'b', Name: 'Second Player', Count: 4 },
-          { PlayerID: 'c', Name: 'Third Player', Count: 4 }
-        ] },
+          { PlayerID: 'c', Name: 'Third Player', Count: 4 },
+          { PlayerID: 'd', Name: 'Fourth Player', Count: 4 },
+          { PlayerID: 'e', Name: 'Fifth Player', Count: 4 },
+          { PlayerID: 'f', Name: 'Sixth Player', Count: 4 },
+          { PlayerID: 'g', Name: 'Seventh Player', Count: 4 },
+          { PlayerID: 'h', Name: 'Eighth Player', Count: 4 }
+        ],
+        MatchupHero: [
+          { PlayerID: 'a', Name: 'First Long Player Name', Count: 2 },
+          { PlayerID: 'b', Name: 'Second Player', Count: 2 }
+        ],
+        Heartbreaker: [{ PlayerID: 'c', Name: 'Third Player', Count: 1 }] },
         Players: [{ PlayerID: 'a', Picture: 'first.png' }]
       }),
       getTeamSeasons: () => throwError(() => new Error('unavailable'))
@@ -60,17 +70,44 @@ describe('HallOfFamePageComponent', () => {
     expect(img.getAttribute('src')).toBe('assets/awards/ui/award-championship-ring.png');
   });
 
-  it('renders published co-leaders and exposes all further ties in a native disclosure', () => {
+  it('shows every tied player as an equal avatar and reveals all names only on expansion', () => {
     const el = fixture.nativeElement as HTMLElement;
     const card = el.querySelector('app-hall-of-fame[heading="Player Legends"] .hof__card')!;
-    expect(card.querySelector('.hof__photo')?.getAttribute('src')).toBe('first.png');
-    expect(card.querySelector('.hof__winners > .hof__identity')?.textContent).toContain('First Long Player Name');
-    expect(card.querySelector('.hof__more summary')?.textContent).toContain('+1 more tied players');
     const details = card.querySelector('details') as HTMLDetailsElement;
+    const summary = details.querySelector('summary')!;
+    expect(summary.querySelectorAll('.hof__portrait').length).toBe(8);
+    expect(summary.querySelector('.hof__photo')?.getAttribute('src')).toBe('first.png');
+    expect(summary.textContent).toContain('8 players tied');
+    expect(summary.textContent).not.toContain('First Long Player Name');
+    expect(card.querySelector('.hof__winners > .hof__identity')).toBeNull();
     expect(details.open).toBe(false);
     details.open = true;
-    expect(details.textContent).toContain('Third Player');
+    fixture.detectChanges();
+    expect(details.querySelectorAll('.hof__extra .hof__identity').length).toBe(8);
+    expect(details.querySelector('.hof__extra')?.textContent).toContain('First Long Player Name');
+    expect(details.querySelector('.hof__extra')?.textContent).toContain('Eighth Player');
     expect(card.querySelector('.hof__value')?.textContent).toContain('4×');
+  });
+
+  it('renders one or two co-leaders directly without arbitrary hiding', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const cards = el.querySelectorAll('app-hall-of-fame[heading="Player Legends"] .hof__card');
+    expect(cards[1].querySelectorAll('.hof__identity').length).toBe(2);
+    expect(cards[1].textContent).toContain('First Long Player Name');
+    expect(cards[1].textContent).toContain('Second Player');
+    expect(cards[1].querySelector('details')).toBeNull();
+    expect(cards[2].querySelectorAll('.hof__identity').length).toBe(1);
+    expect(cards[2].textContent).toContain('Third Player');
+    expect(cards[2].querySelector('details')).toBeNull();
+  });
+
+  it('uses the compact grid for team records only and gives champions the matching heading and gold border', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.hof-champions__head h2')?.textContent).toBe('League Champions');
+    expect(el.querySelector('.hof-champions__crest')?.textContent).toBe('🏆');
+    expect(getComputedStyle(el.querySelector('.hof-champion')!).borderTopColor).toBe('rgb(200, 170, 114)');
+    expect(el.querySelector('app-hall-of-fame[heading="League Legacy"] .hof__grid--compact')).not.toBeNull();
+    expect(el.querySelector('app-hall-of-fame[heading="Player Legends"] .hof__grid--compact')).toBeNull();
   });
 
   it('renders the legacy tiles and the all-time standings; empty record groups are not shown', () => {

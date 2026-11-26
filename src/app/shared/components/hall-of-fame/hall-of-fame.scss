@@ -148,7 +148,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  align-self: center;
+  align-self: start;
   max-width: 88px;
   text-align: right;
   line-height: 1.2;
@@ -168,12 +168,69 @@
 }
 
 .hof__more summary {
+  display: block;
   cursor: pointer;
-  padding: 5px 0;
+  padding: 2px 0;
+  list-style: none;
+  border-radius: 6px;
+}
+
+.hof__more summary::-webkit-details-marker {
+  display: none;
+}
+
+.hof__stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0;
+  padding: 2px 0 3px;
+  margin-bottom: 5px;
+}
+
+.hof__stack .hof__portrait {
+  margin-right: -3px;
+}
+
+.hof__stack .hof__photo {
+  box-sizing: border-box;
+  border: 1px solid #fff;
+}
+
+.hof__photo--empty {
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.hof__tie-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hof__tie-label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.hof__more[open] .hof__tie-label::before {
+  transform: rotate(45deg);
+}
+
+.hof__more[open] .hof__stack {
+  display: none;
 }
 
 .hof__extra {
-  margin-top: 5px;
+  margin-top: 6px;
+  color: #0f172a;
 }
 
 .hof__sr-only {
@@ -188,10 +245,87 @@
   border: 0;
 }
 
+.hof__grid--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.hof__grid--compact > :only-child {
+  grid-column: 1 / -1;
+}
+
+.hof__grid--compact .hof__card {
+  padding: 8px;
+  gap: 6px;
+}
+
+.hof__grid--compact .hof__label {
+  gap: 5px;
+  align-items: flex-start;
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.hof__grid--compact .hof__icon {
+  flex-basis: 18px;
+  font-size: 0.95rem;
+}
+
+.hof__grid--compact .hof__record {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.hof__grid--compact .hof__winners {
+  width: 100%;
+}
+
+.hof__grid--compact .hof__identity {
+  min-height: 24px;
+  gap: 5px;
+}
+
+.hof__grid--compact .hof__team-logo {
+  flex-basis: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.hof__grid--compact .hof__owner {
+  font-size: 0.8rem;
+}
+
+.hof__grid--compact .hof__value {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  align-self: stretch;
+  gap: 3px;
+  margin-top: auto;
+  max-width: none;
+}
+
+.hof__grid--compact .hof__value strong {
+  font-size: 1rem;
+}
+
+.hof__grid--compact .hof__value span {
+  font-size: 0.68rem;
+}
+
 @media (min-width: 760px) {
   .hof__grid {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 10px;
     align-items: start;
+  }
+}
+
+@media (min-width: 760px) {
+  .hof__grid--compact {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 }

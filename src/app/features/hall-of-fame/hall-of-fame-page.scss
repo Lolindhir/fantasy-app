@@ -15,8 +15,20 @@
   }
 }
 
+.hof-champions__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hof-champions__crest {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 .hof-champions h2 {
-  margin: 0 0 10px;
+  margin: 0;
 }
 
 /* All champions: dense wrapping tiles without banner. */
@@ -36,14 +48,15 @@
   width: 100%;
   min-width: 0;
   padding: 8px 4px 6px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
+  border: 1px solid #c8aa72;
   border-radius: 11px;
-  background: #fff;
+  background: linear-gradient(150deg, #fff 55%, #fbf7ec);
+  box-shadow: 0 1px 3px rgba(146, 115, 65, 0.12);
   font: inherit;
   cursor: pointer;
 }
 
-.hof-champion:hover { background: #f8fafc; }
+.hof-champion:hover { background: #fbf7ec; }
 .hof-champion:focus-visible { outline: 2px solid var(--mat-sys-primary, #4f46e5); outline-offset: 2px; }
 .hof-champion__ring { width: 44px; height: 44px; object-fit: contain; }
 .hof-champion__logo { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
