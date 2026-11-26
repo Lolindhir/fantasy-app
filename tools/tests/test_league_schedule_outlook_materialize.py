@@ -214,6 +214,61 @@ class StrengthOddsTests(Harness):
                             stripped(mat.build_document(right, 3, "schedule-outlook-v2", "0" * 64, "playoff-odds-v2")))
 
 
+class ExactOddsIntegrationTests(Harness):
+    """The exact odds candidate does not remove or weight the existing schedule forecast."""
+
+    def setUp(self):
+        super().setUp()
+        self.data["structure"]["PlayoffTeams"] = 2
+        self.data["previous"] = {1: 1.2, 2: 1.0, 3: 0.9, 4: 0.9}
+        patcher = mock.patch.object(source.SeasonInputs, "previous_points",
+                                    return_value=[90.0 + (i * 7) % 30 for i in range(24)])
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def run_season(self, **kwargs):
+        return mat.materialize_season(self.root, self.out, LEAGUE, SEASON, "schedule-outlook-v2",
+                                      odds_model_id="playoff-odds-v4", **kwargs)
+
+    def test_exact_candidates_and_legacy_schedule_forecast_parity(self):
+        inputs = inputs_from(self.data)
+        for model_id in ("playoff-odds-v3", "playoff-odds-v4"):
+            for week in (0, 1, 2):
+                old = mat.build_document(inputs, week, "schedule-outlook-v2", "0" * 64, "playoff-odds-v2")
+                new = mat.build_document(inputs, week, "schedule-outlook-v2", "0" * 64, model_id)
+                self.assertEqual(new["PlayoffOdds"]["Available"], week >= 2)
+                self.assertEqual(new["Models"]["PlayoffOdds"], model_id)
+                self.assertNotIn("MatchupForecast", old["RegularSeason"])
+                forecast = new["RegularSeason"]["MatchupForecast"]
+                self.assertEqual("schedule-matchup-forecast-v1", forecast["Model"])
+                self.assertEqual(old["PlayoffOdds"]["Scoring"], forecast["Scoring"])
+                self.assertEqual(old["PlayoffOdds"]["Provenance"]["StrengthBasis"],
+                                 forecast["Provenance"]["StrengthBasis"])
+                for before, after in zip(old["PlayoffOdds"]["Teams"], forecast["Teams"]):
+                    self.assertEqual(after, {key: before[key] for key in after})
+                self.assertNotIn("Scoring", new["PlayoffOdds"])
+                self.assertNotIn("Upcoming", new["PlayoffOdds"]["Teams"][0])
+
+    def test_strength_revision_changes_only_schedule_forecast_not_exact_odds(self):
+        self.run_season()
+        before = json.loads(self.read(2))
+        self.data["previous"][1] = 0.5
+        self.run_season()
+        after = json.loads(self.read(2))
+        self.assertEqual(before["PlayoffOdds"], after["PlayoffOdds"])
+        self.assertNotEqual(before["RegularSeason"]["MatchupForecast"], after["RegularSeason"]["MatchupForecast"])
+
+    def test_exact_materialization_noop_and_complete_snapshot(self):
+        first = self.run_season()
+        self.assertEqual((6, 6, 7), (first["Snapshots"], first["Recomputed"], first["Written"]))
+        again = self.run_season()
+        self.assertEqual((6, 0, 0), (again["Unchanged"], again["Recomputed"], again["Written"]))
+        final = json.loads(self.read(5))
+        self.assertTrue(final["PlayoffOdds"]["Available"])
+        self.assertTrue(final["PlayoffOdds"]["Provenance"]["RegularSeasonComplete"])
+        self.assertTrue(all(not row["Upcoming"] for row in final["RegularSeason"]["MatchupForecast"]["Teams"]))
+
+
 class IncrementalTests(Harness):
     def test_cold_then_incremental_is_a_true_noop(self):
         first = self.run_season()
