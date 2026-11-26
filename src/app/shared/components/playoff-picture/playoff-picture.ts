@@ -5,6 +5,7 @@ import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identit
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 import {
   formatPlayoffCell,
+  playoffOddsBasis,
   formatPlayoffPercent,
   type PlayoffOddsView
 } from '../../utils/schedule-outlook-view.util';
@@ -41,6 +42,10 @@ export class PlayoffPictureComponent {
   expanded = false;
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
 
+  get basis(): string {
+    return playoffOddsBasis(this.odds.model);
+  }
+
   get placeNumbers(): number[] {
     return Array.from({ length: this.odds.teamCount }, (_, index) => index + 1);
   }
@@ -51,10 +56,10 @@ export class PlayoffPictureComponent {
       if (!team) return [];
       const cells = team.places.map((probability, index): PicturePlaceCell => ({
         place: index + 1,
-        text: formatPlayoffCell(probability),
+        text: team.placeLabels ? (team.placeLabels[index] === '0%' ? '' : team.placeLabels[index].replace('%', '')) : formatPlayoffCell(probability),
         intensity: probability,
         inPlayoffs: this.odds.playoffTeams !== null && index < this.odds.playoffTeams,
-        label: `Place ${index + 1}: ${formatPlayoffPercent(probability)}`
+        label: `Place ${index + 1}: ${team.placeLabels?.[index] ?? formatPlayoffPercent(probability)}`
       }));
       return [{ row, cells, hasPlaces: cells.length > 0 }];
     });
