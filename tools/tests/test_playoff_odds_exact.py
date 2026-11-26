@@ -105,5 +105,118 @@ class ExactPlacesTests(unittest.TestCase):
                 run(starts, pairs, weights)
 
 
+class ExactRecordModelTests(unittest.TestCase):
+    @staticmethod
+    def teams(records, points=None):
+        return [
+            {"TeamID": i + 1, "CanonicalLeagueRosterID": f"r{i}", "Wins": w,
+             "Losses": l, "Ties": t, "Points": (points or [0] * len(records))[i],
+             "PointsAgainst": 0}
+            for i, (w, l, t) in enumerate(records)
+        ]
+
+    @staticmethod
+    def models():
+        from derived_data_lib.models.playoff_odds import v3, v4
+        return v3, v4
+
+    def test_global_parameters_are_pinned(self):
+        for model, weights in zip(self.models(), ((1, 1, 1), (99, 2, 99))):
+            self.assertEqual(dict(model.PARAMS), {
+                "OutcomeWeights": weights, "MinPlayedFraction": (2, 5),
+                "MaxStates": 750_000, "MaxTransitions": 8_000_000,
+                "EqualRecordTieRule": "equal-record-teams-share-places",
+            })
+            with self.assertRaises(TypeError):
+                model.PARAMS["OutcomeWeights"] = (1, 0, 1)
+
+    def test_exact_mass_matches_oracle_and_ignores_points(self):
+        records = [(2, 0, 0), (0, 2, 0), (1, 1, 0), (1, 1, 0)]
+        pairs = ((0, 1), (2, 3), (0, 2), (1, 3))
+        games = [(f"r{a}", f"r{b}") for a, b in pairs]
+        supports = []
+        for model in self.models():
+            kwargs = dict(open_games=games, playoff_teams=2, regular_season_complete=False)
+            result = model.compute(teams=self.teams(records), **kwargs)
+            self.assertTrue(result["Available"])
+            self.assertEqual(result, model.compute(teams=self.teams(records, [900, 100, 500, 600]), **kwargs))
+            denominator = int(result["Provenance"]["PlaceMassDenominator"])
+            masses = [[int(x) for x in team["PlaceMassNumerators"]] for team in result["Teams"]]
+            actual = [[Fraction(x, denominator) for x in row] for row in masses]
+            self.assertEqual(actual, oracle(tuple(2*w+t for w, _, t in records), pairs,
+                                            model.PARAMS["OutcomeWeights"]))
+            self.assertTrue(all(sum(row) == denominator for row in masses))
+            self.assertTrue(all(sum(col) == denominator for col in zip(*masses)))
+            self.assertEqual(sum(sum(row[:2]) for row in masses), 2 * denominator)
+            for team, row in zip(result["Teams"], masses):
+                self.assertEqual(team["PossiblePlaces"], [i + 1 for i, x in enumerate(row) if x])
+                self.assertEqual(team["Status"], "clinched" if sum(row[:2]) == denominator
+                                 else "eliminated" if not sum(row[:2]) else "alive")
+            supports.append([team["PossiblePlaces"] for team in result["Teams"]])
+        self.assertEqual(*supports)
+
+    def test_progress_gate_is_dynamic(self):
+        from unittest.mock import patch
+        for model in self.models():
+            kwargs = dict(open_games=[("r0", "r1")] * 3, playoff_teams=1, regular_season_complete=False)
+            with patch("derived_data_lib.models.playoff_odds.record_model_v1.enumerate_places",
+                       side_effect=AssertionError("must not enumerate before the gate")):
+                early = model.compute(teams=self.teams([(1, 0, 0), (0, 1, 0)]), **kwargs)
+            self.assertFalse(early["Available"])
+            self.assertEqual(early["Reason"], "season-progress-too-low")
+            self.assertIsNone(early["Teams"][0]["PlaceProbabilities"])
+            self.assertTrue(model.compute(teams=self.teams([(1, 1, 0)] * 2), **kwargs)["Available"])
+
+    def test_exact_tail_survives_float_rounding(self):
+        _, model = self.models()
+        result = model.compute(teams=self.teams([(60, 0, 0), (0, 60, 0)]),
+                               open_games=[("r0", "r1")] * 60,
+                               playoff_teams=1, regular_season_complete=False)
+        favorite, underdog = result["Teams"]
+        self.assertEqual(favorite["Status"], "alive")
+        self.assertEqual(underdog["Status"], "alive")
+        self.assertEqual(favorite["PossiblePlaces"], [1, 2])
+        self.assertEqual(underdog["PossiblePlaces"], [1, 2])
+        denominator = int(result["Provenance"]["PlaceMassDenominator"])
+        self.assertEqual(Fraction(int(underdog["PlaceMassNumerators"][0]), denominator),
+                         Fraction(99, 200) ** 60 / 2)
+        self.assertGreater(favorite["EliminationProbability"], 0)
+
+    def test_unequal_future_schedule_is_explicitly_unavailable(self):
+        for model in self.models():
+            result = model.compute(teams=self.teams([(2, 2, 0)] * 4),
+                                   open_games=[("r0", "r1")], playoff_teams=2,
+                                   regular_season_complete=False)
+            self.assertEqual(result["Reason"], "unequal-final-game-count")
+            self.assertFalse(result["Available"])
+
+    def test_limit_is_not_a_partial_probability(self):
+        from derived_data_lib.models.playoff_odds.record_model_v1 import compute_record_odds
+        model, _ = self.models()
+        result = compute_record_odds(model_id=model.MODEL_ID, params={**model.PARAMS, "MaxStates": 1},
+                                     teams=self.teams([(1, 1, 0)] * 2), open_games=[("r0", "r1")],
+                                     playoff_teams=1, regular_season_complete=False)
+        self.assertEqual(result["Reason"], "state-limit-exceeded")
+        self.assertFalse(result["Available"])
+        self.assertTrue(all(t["Status"] is None for t in result["Teams"]))
+
+    def test_official_final_uses_points_and_points_against(self):
+        teams = self.teams([(2, 1, 0)] * 4, [300, 290, 300, 280])
+        teams[0]["PointsAgainst"] = 100
+        teams[2]["PointsAgainst"] = 90
+        for model in self.models():
+            result = model.compute(teams=teams, open_games=[], playoff_teams=2, regular_season_complete=True)
+            self.assertEqual(result["Provenance"]["Method"], "official-table")
+            self.assertEqual([t["PossiblePlaces"] for t in result["Teams"]], [[2], [3], [1], [4]])
+            self.assertEqual([t["PlayoffProbability"] for t in result["Teams"]], [1, 0, 1, 0])
+
+    def test_final_shared_rank_at_boundary_is_not_invented(self):
+        for model in self.models():
+            result = model.compute(teams=self.teams([(2, 1, 0)] * 4, [300, 300, 300, 280]),
+                                   open_games=[], playoff_teams=2, regular_season_complete=True)
+            self.assertFalse(result["Available"])
+            self.assertEqual(result["Reason"], "ambiguous-final-playoff-boundary")
+
+
 if __name__ == "__main__":
     unittest.main()
