@@ -26,6 +26,7 @@ export class AllTimeOverviewComponent {
   @Input({ required: true }) regularSeasonStandings: AllTimeRegularSeasonStandingRow[] | null | undefined;
 
   @Input() crest: string | null = null;
+  @Input() teamIdentity = false;
 
   activeTab: AllTimeTab = 'overall';
 

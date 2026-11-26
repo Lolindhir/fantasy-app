@@ -94,11 +94,11 @@ describe('hall of fame view util', () => {
     expect(award.upset?.pregameProbability).toBe(0.1);
   });
 
-  it('uses the owner identity rather than the current team logo for legacy records', () => {
+  it('uses the current team identity for season-spanning team awards', () => {
     const league = leagueWith([{ Season: 'AllTime', LegacyHighlights: [{ Key: 'ChampOfChamps', TeamID: 1 }] }], '2026', false);
     const teams = [{ TeamID: 1, Team: 'Renamed Team', Owner: 'Manager One', OwnerAvatar: 'manager.png', Avatar: 'team.png', Placements: { AllTime: { Playoffs: { Place: 999 }, Regular: { Place: 999 } } } }] as unknown as FantasyTeam[];
     const [award] = buildHallOfFameSections(league, teams, null, new Map(), null).legacy;
-    expect(award.manager).toEqual({ name: 'Manager One', avatar: 'manager.png' });
+    expect(award.team?.Team).toBe('Renamed Team');
     expect(award.title).toBe('All-Time Overall Leader');
     expect(award.valueDisplay).toBe('#1 Overall standings');
     expect(award.team?.Avatar).toBe('team.png');

@@ -17,11 +17,13 @@ export class AllTimeRegularSeasonStandingsComponent {
   @Input({ required: true }) standings: AllTimeRegularSeasonStandingRow[] | null | undefined;
   @Input() title = 'All-Time Regular Season';
   @Input() showTitle = true;
+  @Input() teamIdentity = false;
 
   regularSeasonRows(): RegularSeasonStandingListRow[] | null | undefined {
     return this.standings?.map(row => ({
       place: row.place,
       owner: row.owner,
+      team: this.teamIdentity ? row.team : undefined,
       record: row.record,
       points: row.points,
       pointsAgainst: row.pointsAgainst,

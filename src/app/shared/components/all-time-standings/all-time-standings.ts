@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
+import { DEFAULT_TEAM_AVATAR_SRC } from '../../utils/championship.util';
 import type { AllTimeStandingRow } from '../../utils/league-standings-view.util';
 
 @Component({
@@ -24,6 +25,8 @@ export class AllTimeStandingsComponent {
   @Input({ required: true }) standings: AllTimeStandingRow[] | null | undefined;
   @Input() title = 'All-Time Standings';
   @Input() showTitle = true;
+  @Input() teamIdentity = false;
+  readonly defaultTeamAvatar = DEFAULT_TEAM_AVATAR_SRC;
 
   showAwardMultiplier(row: AllTimeStandingRow, count: number): boolean {
     return count > 1 && this.shouldCompactAwards(row);

@@ -1,10 +1,14 @@
 <section class="regular-season-list" *ngIf="standings as rows">
   <h2 *ngIf="showTitle">{{ title }}</h2>
 
-  <div *ngFor="let row of rows" class="regular-row">
+  <div *ngFor="let row of rows" class="regular-row" [class.regular-row--team]="!!row.team">
     <div class="regular-place">{{ row.place }}</div>
 
-    <div class="regular-owner">{{ row.owner }}</div>
+    <div class="regular-team-identity" *ngIf="row.team as team; else ownerIdentity">
+      <img class="regular-team-logo" [src]="team.Avatar || defaultTeamAvatar" alt="" />
+      <span class="regular-team-name">{{ team.Team || ('Team ' + team.TeamID) }}</span>
+    </div>
+    <ng-template #ownerIdentity><div class="regular-owner">{{ row.owner }}</div></ng-template>
 
     <div class="regular-record">
       {{ recordWithQuote(row) }}
