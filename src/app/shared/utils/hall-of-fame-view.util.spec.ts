@@ -99,7 +99,7 @@ describe('hall of fame view util', () => {
     const teams = [{ TeamID: 1, Team: 'Renamed Team', Owner: 'Manager One', OwnerAvatar: 'manager.png', Avatar: 'team.png', Placements: { AllTime: { Playoffs: { Place: 999 }, Regular: { Place: 999 } } } }] as unknown as FantasyTeam[];
     const [award] = buildHallOfFameSections(league, teams, null, new Map(), null).legacy;
     expect(award.team?.Team).toBe('Renamed Team');
-    expect(award.title).toBe('All-Time Overall Leader');
+    expect(award.title).toBe('All-Time Leader');
     expect(award.valueDisplay).toBe('#1 Overall standings');
     expect(award.team?.Avatar).toBe('team.png');
   });

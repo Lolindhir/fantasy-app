@@ -13,13 +13,12 @@
       <ng-container *ngIf="item.upset as upset; else normalRecord">
         <div class="hof__match-context">{{ upset.season }} · Week {{ upset.week }}</div>
         <div class="hof__matchup">
+          <div class="hof__probability">
+            <strong>{{ upset.pregameProbability | percent:'1.0-2' }}</strong>
+            <span>Winner's pregame win chance</span>
+          </div>
           <ng-container *ngTemplateOutlet="upsetSide; context: { $implicit: upset.winner, winner: true }"></ng-container>
-          <span class="hof__versus">vs.</span>
           <ng-container *ngTemplateOutlet="upsetSide; context: { $implicit: upset.loser, winner: false }"></ng-container>
-        </div>
-        <div class="hof__probability">
-          <span>Winner's pregame win chance</span>
-          <strong>{{ upset.pregameProbability | percent:'1.0-2' }}</strong>
         </div>
       </ng-container>
       <ng-template #normalRecord>

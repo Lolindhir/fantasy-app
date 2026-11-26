@@ -354,8 +354,9 @@
 
 .hof__matchup {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas: "probability probability" "winner opponent";
+  gap: 12px;
   align-items: start;
   padding: 4px 0;
 }
@@ -365,32 +366,28 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  align-items: flex-start;
+  grid-area: opponent;
+  align-items: center;
+  text-align: center;
 }
 
-.hof__match-side:last-child {
-  align-items: flex-end;
-  text-align: right;
+.hof__match-side--winner {
+  grid-area: winner;
 }
 
 .hof__match-team {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 4px;
   background: none;
   border: none;
   padding: 0;
   color: inherit;
   font: inherit;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   max-width: 100%;
-}
-
-.hof__match-side:last-child .hof__match-team {
-  align-items: flex-end;
-  text-align: right;
 }
 
 .hof__match-team:disabled {
@@ -408,23 +405,37 @@
   font-variant-numeric: tabular-nums;
 }
 
-.hof__versus {
-  color: #64748b;
-  font-size: 0.75rem;
-  align-self: center;
-}
-
 .hof__probability {
+  grid-area: probability;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 8px;
-  border-top: 1px solid #e2e8f0;
-  padding-top: 6px;
+  flex-direction: column;
+  align-items: center;
+  align-self: center;
+  gap: 3px;
+  text-align: center;
+  min-width: 0;
 }
 
 .hof__probability strong {
-  font-size: 1.1rem;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 600px) {
+  .hof__matchup {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "winner probability opponent";
+    align-items: center;
+  }
+
+  .hof__probability strong {
+    font-size: 2.4rem;
+  }
+
+  .hof__card--matchup .hof__match-context {
+    align-self: flex-end;
+    margin-top: -1.3em;
+  }
 }
