@@ -1,202 +1,66 @@
 {
-  "schema": "cp7b-precut-six-team-v0",
+  "schema": "cp7b-precut-six-team-v1",
   "date": "2026-11-26",
   "asOf": "2026-10-05",
-  "status": "synthetic 2027 frozen snapshot only, not a full 5-year backtest or real offers",
+  "seed": 47,
+  "shocks": [
+    0,
+    -0.1,
+    -0.2
+  ],
+  "status": "synthetic 2027 owner/contract vintage, cap-only one-year market, no real trades",
   "assumptions": {
-    "seeds": [
-      47
-    ],
+    "maxRegularSlots": 45,
+    "noTaxi": true,
+    "noIR": true,
+    "identicalFrozenCriticalityPrices": true,
     "shocks": [
       0,
       -0.1,
       -0.2
     ],
     "waitProbability": 0.5,
-    "modes": [
-      "none",
-      "retained_cycle",
-      "guaranteed_vintage"
-    ],
-    "regularSlotsMax": 45,
-    "minimumResearchSlots": 20,
-    "cap": "frozen 2027 Top120/6 cap times shock; separate from salary reprice",
-    "salary": "same CP6r frozen dynamic Criticality archival price in all models",
-    "tenure": "synthetic acquisition proxy uses synthetic CP6r vintage, not real historical tenure",
-    "trade": "one-for-one full-contract salary exchange before forced cuts; buyer financially and position legal; both proxy utility improvements; at most six league trades per world",
-    "cut": "same-position free-agent replacement with retained current or multiyear dead cap; reject unresolvable cases",
-    "freeAgent": "P1 released active Salary discounted, P2 new deal price unspecified; no postcut waiver claims or real human consent",
-    "limits": "no real owner history, IR/Taxi, draft picks, other trade bundles, renewals, injuries, true 2027+ NFL, playoff/championship odds"
+    "trade": "1:1 whole current and future contracts, buyer currently cap/positions legal, both proxy utilities positive",
+    "tenure": "synthetic acquisition proxy initially, resets on intra-benchmark trade",
+    "market": "pre-cut greedy maximum six league trades, min20, same-position FA replacement for cuts",
+    "future": "2028/29 annual salary transfer audited with frozen cap counterfactual, not true future buyer solvency",
+    "exclusions": "no actual owners/consent, rookie draft, pick bundles, IR, postcut waiver claims or multiyear cap settlement"
   },
-  "starts": [
-    {
-      "seed": 47,
-      "cap": 489862209,
-      "teams": [
-        {
-          "team": 0,
-          "roster": 20,
-          "index": 208.18999999999997,
-          "initialSalary": 479519327
-        },
-        {
-          "team": 1,
-          "roster": 20,
-          "index": 202.13800000000003,
-          "initialSalary": 470083023
-        },
-        {
-          "team": 2,
-          "roster": 20,
-          "index": 191.32699999999997,
-          "initialSalary": 423774799
-        },
-        {
-          "team": 3,
-          "roster": 20,
-          "index": 187.871,
-          "initialSalary": 417387790
-        },
-        {
-          "team": 4,
-          "roster": 20,
-          "index": 168.85199999999998,
-          "initialSalary": 283857218
-        },
-        {
-          "team": 5,
-          "roster": 20,
-          "index": 160.63,
-          "initialSalary": 247652843
-        }
-      ]
-    }
-  ],
-  "groups": [
-    {
-      "shock": 0,
-      "models": [
-        {
-          "mode": "none",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 0,
-          "cuts": 0,
-          "hardFailures": 0,
-          "totalCurrentDead": 0,
-          "totalFutureDead": 0,
-          "candidatesScreened": 0,
-          "waiverWaitBlocks": 0
-        },
-        {
-          "mode": "retained_cycle",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 0,
-          "cuts": 0,
-          "hardFailures": 0,
-          "totalCurrentDead": 0,
-          "totalFutureDead": 0,
-          "candidatesScreened": 0,
-          "waiverWaitBlocks": 0
-        },
-        {
-          "mode": "guaranteed_vintage",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 0,
-          "cuts": 0,
-          "hardFailures": 0,
-          "totalCurrentDead": 0,
-          "totalFutureDead": 0,
-          "candidatesScreened": 0,
-          "waiverWaitBlocks": 0
-        }
-      ]
-    },
-    {
-      "shock": -0.1,
-      "models": [
-        {
-          "mode": "none",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 1,
-          "cuts": 1,
-          "hardFailures": 0,
-          "totalCurrentDead": 0,
-          "totalFutureDead": 0,
-          "candidatesScreened": 954,
-          "waiverWaitBlocks": 0
-        },
-        {
-          "mode": "retained_cycle",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 2,
-          "cuts": 0,
-          "hardFailures": 0,
-          "totalCurrentDead": 0,
-          "totalFutureDead": 0,
-          "candidatesScreened": 954,
-          "waiverWaitBlocks": 1
-        },
-        {
-          "mode": "guaranteed_vintage",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 2,
-          "cuts": 0,
-          "hardFailures": 0,
-          "totalCurrentDead": 0,
-          "totalFutureDead": 0,
-          "candidatesScreened": 954,
-          "waiverWaitBlocks": 0
-        }
-      ]
-    },
-    {
-      "shock": -0.2,
-      "models": [
-        {
-          "mode": "none",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 1,
-          "cuts": 5,
-          "hardFailures": 0,
-          "totalCurrentDead": 0,
-          "totalFutureDead": 0,
-          "candidatesScreened": 1173,
-          "waiverWaitBlocks": 0
-        },
-        {
-          "mode": "retained_cycle",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 2,
-          "cuts": 6,
-          "hardFailures": 0,
-          "totalCurrentDead": 52179104,
-          "totalFutureDead": 0,
-          "candidatesScreened": 1734,
-          "waiverWaitBlocks": 15
-        },
-        {
-          "mode": "guaranteed_vintage",
-          "scenarios": 1,
-          "legal": 1,
-          "trades": 2,
-          "cuts": 10,
-          "hardFailures": 0,
-          "totalCurrentDead": 117700709,
-          "totalFutureDead": 16581722,
-          "candidatesScreened": 1734,
-          "waiverWaitBlocks": 0
-        }
-      ]
-    }
-  ],
+  "starts": {
+    "cap": 489862209,
+    "teams": [
+      {
+        "team": 0,
+        "roster": 20,
+        "index": 208.18999999999997
+      },
+      {
+        "team": 1,
+        "roster": 20,
+        "index": 202.13800000000003
+      },
+      {
+        "team": 2,
+        "roster": 20,
+        "index": 191.32699999999997
+      },
+      {
+        "team": 3,
+        "roster": 20,
+        "index": 187.871
+      },
+      {
+        "team": 4,
+        "roster": 20,
+        "index": 168.85199999999998
+      },
+      {
+        "team": 5,
+        "roster": 20,
+        "index": 160.63
+      }
+    ]
+  },
   "results": [
     {
       "seed": 47,
@@ -693,6 +557,31 @@
             "sellerUtilityVsCut": 0.713,
             "buyerUtilityVsStay": 2.439,
             "buyerWaiverWaitOpportunity": 0,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 322648604,
+                "buyerBefore": 248399916,
+                "sellerAfter": 279606308,
+                "buyerAfter": 291442212,
+                "salaryToBuyer": 45813626,
+                "salaryToSeller": 2771330,
+                "frozenCapStressBuyerHeadroom": 149433776,
+                "frozenCapStressSellerHeadroom": 161269680
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 129978391,
+                "buyerBefore": 216614627,
+                "sellerAfter": 129978391,
+                "buyerAfter": 216614627,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 224261361,
+                "frozenCapStressSellerHeadroom": 310897597
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -867,6 +756,31 @@
             "sellerUtilityVsCut": 3.475,
             "buyerUtilityVsStay": 3.311,
             "buyerWaiverWaitOpportunity": 1.237,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 393092929,
+                "buyerBefore": 248399916,
+                "sellerAfter": 334027666,
+                "buyerAfter": 307465179,
+                "salaryToBuyer": 61836593,
+                "salaryToSeller": 2771330,
+                "frozenCapStressBuyerHeadroom": 133410809,
+                "frozenCapStressSellerHeadroom": 106848322
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 285758099,
+                "buyerBefore": 216614627,
+                "sellerAfter": 211554188,
+                "buyerAfter": 290818538,
+                "salaryToBuyer": 74203911,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 150057450,
+                "frozenCapStressSellerHeadroom": 229321800
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -905,6 +819,31 @@
             "sellerUtilityVsCut": 2.573,
             "buyerUtilityVsStay": 2.522,
             "buyerWaiverWaitOpportunity": 0.573,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 322648604,
+                "buyerBefore": 307465179,
+                "sellerAfter": 276834978,
+                "buyerAfter": 353278805,
+                "salaryToBuyer": 45813626,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 87597183,
+                "frozenCapStressSellerHeadroom": 164041010
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 129978391,
+                "buyerBefore": 290818538,
+                "sellerAfter": 129978391,
+                "buyerAfter": 290818538,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 150057450,
+                "frozenCapStressSellerHeadroom": 310897597
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -1068,6 +1007,31 @@
             "sellerUtilityVsCut": 17.326,
             "buyerUtilityVsStay": 4.704,
             "buyerWaiverWaitOpportunity": 0,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 393092929,
+                "buyerBefore": 248399916,
+                "sellerAfter": 312679825,
+                "buyerAfter": 328813020,
+                "salaryToBuyer": 83789063,
+                "salaryToSeller": 3375959,
+                "frozenCapStressBuyerHeadroom": 112062968,
+                "frozenCapStressSellerHeadroom": 128196163
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 285758099,
+                "buyerBefore": 216614627,
+                "sellerAfter": 189262375,
+                "buyerAfter": 313110351,
+                "salaryToBuyer": 100546875,
+                "salaryToSeller": 4051151,
+                "frozenCapStressBuyerHeadroom": 127765637,
+                "frozenCapStressSellerHeadroom": 251613613
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -1107,6 +1071,31 @@
             "sellerUtilityVsCut": 5.633,
             "buyerUtilityVsStay": 5.341,
             "buyerWaiverWaitOpportunity": 0,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 322648604,
+                "buyerBefore": 328813020,
+                "sellerAfter": 235601729,
+                "buyerAfter": 415859895,
+                "salaryToBuyer": 87046875,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 25016093,
+                "frozenCapStressSellerHeadroom": 205274259
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 129978391,
+                "buyerBefore": 313110351,
+                "sellerAfter": 129978391,
+                "buyerAfter": 313110351,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 127765637,
+                "frozenCapStressSellerHeadroom": 310897597
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -1266,6 +1255,31 @@
             "sellerUtilityVsCut": 1.786,
             "buyerUtilityVsStay": 5.266,
             "buyerWaiverWaitOpportunity": 0,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 322648604,
+                "buyerBefore": 248399916,
+                "sellerAfter": 238373059,
+                "buyerAfter": 332675461,
+                "salaryToBuyer": 87046875,
+                "salaryToSeller": 2771330,
+                "frozenCapStressBuyerHeadroom": 59214306,
+                "frozenCapStressSellerHeadroom": 153516708
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 129978391,
+                "buyerBefore": 216614627,
+                "sellerAfter": 129978391,
+                "buyerAfter": 216614627,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 175275140,
+                "frozenCapStressSellerHeadroom": 261911376
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -1488,6 +1502,31 @@
             "sellerUtilityVsCut": 8.473,
             "buyerUtilityVsStay": 5.916,
             "buyerWaiverWaitOpportunity": 1.088,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 322648604,
+                "buyerBefore": 248399916,
+                "sellerAfter": 238977688,
+                "buyerAfter": 332070832,
+                "salaryToBuyer": 87046875,
+                "salaryToSeller": 3375959,
+                "frozenCapStressBuyerHeadroom": 59818935,
+                "frozenCapStressSellerHeadroom": 152912079
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 129978391,
+                "buyerBefore": 216614627,
+                "sellerAfter": 134029542,
+                "buyerAfter": 212563476,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 4051151,
+                "frozenCapStressBuyerHeadroom": 179326291,
+                "frozenCapStressSellerHeadroom": 257860225
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -1526,6 +1565,31 @@
             "sellerUtilityVsCut": 2.465,
             "buyerUtilityVsStay": 4.23,
             "buyerWaiverWaitOpportunity": 0.439,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 393092929,
+                "buyerBefore": 332070832,
+                "sellerAfter": 357977302,
+                "buyerAfter": 367186459,
+                "salaryToBuyer": 35115627,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 24703308,
+                "frozenCapStressSellerHeadroom": 33912465
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 285758099,
+                "buyerBefore": 212563476,
+                "sellerAfter": 285758099,
+                "buyerAfter": 212563476,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 179326291,
+                "frozenCapStressSellerHeadroom": 106131668
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -1835,6 +1899,31 @@
             "sellerUtilityVsCut": 16.38,
             "buyerUtilityVsStay": 5.916,
             "buyerWaiverWaitOpportunity": 0,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 322648604,
+                "buyerBefore": 248399916,
+                "sellerAfter": 238977688,
+                "buyerAfter": 332070832,
+                "salaryToBuyer": 87046875,
+                "salaryToSeller": 3375959,
+                "frozenCapStressBuyerHeadroom": 59818935,
+                "frozenCapStressSellerHeadroom": 152912079
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 129978391,
+                "buyerBefore": 216614627,
+                "sellerAfter": 134029542,
+                "buyerAfter": 212563476,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 4051151,
+                "frozenCapStressBuyerHeadroom": 179326291,
+                "frozenCapStressSellerHeadroom": 257860225
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -1874,6 +1963,31 @@
             "sellerUtilityVsCut": 5.245,
             "buyerUtilityVsStay": 4.23,
             "buyerWaiverWaitOpportunity": 0,
+            "futureTransfers": [
+              {
+                "year": 2028,
+                "sellerBefore": 393092929,
+                "buyerBefore": 332070832,
+                "sellerAfter": 357977302,
+                "buyerAfter": 367186459,
+                "salaryToBuyer": 35115627,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 24703308,
+                "frozenCapStressSellerHeadroom": 33912465
+              },
+              {
+                "year": 2029,
+                "sellerBefore": 285758099,
+                "buyerBefore": 212563476,
+                "sellerAfter": 285758099,
+                "buyerAfter": 212563476,
+                "salaryToBuyer": 0,
+                "salaryToSeller": 0,
+                "frozenCapStressBuyerHeadroom": 179326291,
+                "frozenCapStressSellerHeadroom": 106131668
+              }
+            ],
+            "contractBuyerFundingBeyond2027": "not established: future cap unknown",
             "transactionCreatesDeadCap": 0,
             "actualHumanConsent": "unobserved",
             "buyerPaidFullContract": true
@@ -2104,18 +2218,59 @@
       "syntheticContractTenureProxy": true
     }
   ],
+  "waitSensitivity": [
+    {
+      "shock": -0.1,
+      "waitProbability": 0,
+      "legal": true,
+      "trades": 2,
+      "cuts": 0,
+      "deadNow": 0,
+      "uncured": [],
+      "waiverWaitBlocked": 0
+    },
+    {
+      "shock": -0.1,
+      "waitProbability": 1,
+      "legal": true,
+      "trades": 2,
+      "cuts": 0,
+      "deadNow": 0,
+      "uncured": [],
+      "waiverWaitBlocked": 12
+    },
+    {
+      "shock": -0.2,
+      "waitProbability": 0,
+      "legal": true,
+      "trades": 2,
+      "cuts": 6,
+      "deadNow": 52179104,
+      "uncured": [],
+      "waiverWaitBlocked": 0
+    },
+    {
+      "shock": -0.2,
+      "waitProbability": 1,
+      "legal": true,
+      "trades": 2,
+      "cuts": 6,
+      "deadNow": 52179104,
+      "uncured": [],
+      "waiverWaitBlocked": 31
+    }
+  ],
   "validation": {
-    "pairedInitialWorlds": true,
-    "scenarioCount": 9,
+    "scenarios": 9,
     "legal": 9,
-    "uncuredGreedyPaths": [],
-    "tradeEvents": 10,
-    "cutEvents": 22,
-    "invariantsPassed": true,
+    "greedyUncured": [],
+    "trades": 10,
+    "cuts": 22,
+    "futureTradeSchedulesAudited": 20,
     "issues": []
   },
   "provenance": {
-    "benchmarkBlob": "f029d8d502cb141082600d4dfbfc8ac7ff5076ad",
+    "sourceBlob": "30937b747102f89073093f9384e24d7ee5ae1148",
     "coreBlob": "f5346b7a82f2fda6e97bea929cc4e7dc08620d67",
     "cutProbeBlob": "053c027050339255e3f3df013fb16d4e09ca9ab2",
     "archiveBlob": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
