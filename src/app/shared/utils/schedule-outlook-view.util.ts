@@ -9,7 +9,7 @@ import type {
 
 /**
  * Display mapping for the generator-owned ScheduleOutlook read model (Issues #1588, #1589).
- * Nothing is calculated here: probabilities, statuses and strength classes are shown as published.
+ * No domain probabilities are calculated here: only display rounding and read-model validation.
  * Everything returns null while the file is missing, unavailable, from another season or after the regular season.
  */
 export interface PlayoffOddsTeamView {
@@ -77,6 +77,7 @@ export function isExactPlayoffModel(model: string | undefined): boolean {
 export function playoffOddsBasis(model: string | undefined): string {
   if (model === 'playoff-odds-v4') return 'all remaining win/tie/loss outcomes (1% tie probability), with equal records sharing places';
   if (model === 'playoff-odds-v3') return 'all equally weighted remaining win/tie/loss outcomes, with equal records sharing places';
+  if (model === 'playoff-odds-v1') return 'equally weighted remaining win/loss outcomes, with equal records sharing places';
   return 'team strength and the points tiebreak';
 }
 
