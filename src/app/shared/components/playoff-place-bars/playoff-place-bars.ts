@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { formatPlayoffPercent } from '../../utils/schedule-outlook-view.util';
+import { formatPlayoffPercent, playoffOddsBasis } from '../../utils/schedule-outlook-view.util';
 
 interface PlaceBar {
   place: number;
@@ -22,6 +22,8 @@ interface PlaceBar {
 })
 export class PlayoffPlaceBarsComponent {
   @Input({ required: true }) places: readonly number[] = [];
+  @Input() placeLabels: readonly string[] | undefined;
+  @Input() model: string | undefined;
   @Input() playoffTeams: number | null = null;
   @Input() teamName = 'This team';
 
@@ -30,15 +32,15 @@ export class PlayoffPlaceBarsComponent {
     return this.places.map((probability, index) => ({
       place: index + 1,
       probability,
-      heightPercent: probability <= 0 ? 0 : Math.max(4, (probability / max) * 100),
+      heightPercent: (this.placeLabels?.[index] ?? formatPlayoffPercent(probability)) === '0%' ? 0 : Math.max(4, (probability / max) * 100),
       inPlayoffs: this.playoffTeams !== null && index < this.playoffTeams,
-      label: formatPlayoffPercent(probability)
+      label: this.placeLabels?.[index] ?? formatPlayoffPercent(probability)
     }));
   }
 
   get description(): string {
-    const parts = this.bars.filter(bar => bar.probability > 0)
-      .map(bar => `place ${bar.place} ${formatPlayoffPercent(bar.probability)}`);
-    return `${this.teamName}: chance of each final place based on team strength: ${parts.join(', ') || 'none'}`;
+    const parts = this.bars.filter(bar => bar.label !== '0%')
+      .map(bar => `place ${bar.place} ${bar.label}`);
+    return `${this.teamName}: chance of each final place based on ${playoffOddsBasis(this.model)}: ${parts.join(', ') || 'none'}`;
   }
 }
