@@ -41,7 +41,7 @@ KNOWN_MODEL_IDS: dict[str, frozenset[str]] = {
     "Rivalry": frozenset({"rivalry-v1", "rivalry-v2"}),
     "WeeklyRecap": frozenset({"weekly-recap-v1", "weekly-recap-v2"}),
     "ScheduleOutlook": frozenset({"schedule-outlook-v1", "schedule-outlook-v2", "schedule-outlook-v3"}),
-    "PlayoffOdds": frozenset({"playoff-odds-v1", "playoff-odds-v2"}),
+    "PlayoffOdds": frozenset({"playoff-odds-v1", "playoff-odds-v2", "playoff-odds-v3", "playoff-odds-v4"}),
     "InjuryImpact": frozenset({"injury-impact-v1"}),
 }
 
