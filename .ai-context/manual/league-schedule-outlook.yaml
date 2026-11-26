@@ -122,6 +122,38 @@ playoffOddsV2:
   noNewWriter: >-
     Same writers, prefix and App file as playoff-odds-v1; ScheduleOutlook.json passes the block unchanged.
 
+
+playoffOddsExact:
+  issue: 1693
+  status: registered-candidate-not-selected
+  models: [playoff-odds-v3, playoff-odds-v4]
+  principle: >
+    A1 counts W/T/L paths with equal weights (1, 1, 1). A2 counts the same paths with integer weights
+    (99, 2, 99), a global 1 percent tie assumption, not a measured Sleeper rate. Every final equal-record
+    block shares its occupied places equally. Exact integer dynamic programming preserves multiplicity and
+    mathematical support; no team strength, form, PF/PA or random sampling affects the open-season odds.
+    At completion use standings-v1; a shared rank crossing the playoff boundary is explicitly unavailable.
+  limits: >
+    At least 2/5 of the regular-season games per team must be completed. Deterministic work bounds
+    750000 states and 8000000 transitions; exceeded bound, unequal final game count or unknown playoff
+    size returns unavailable, never partial odds.
+  exactMass: >
+    PlayoffOdds.Provenance.PlaceMassDenominator and Teams[].PlaceMassNumerators[] are base-10 integer strings.
+    Teams[].PossiblePlaces and Status use exact mass, not rounded floats. PlaceProbabilities,
+    PlayoffProbability and EliminationProbability are convenience floating-point approximations only.
+    The consumer must use exact mass for certainty and display rounding.
+  independentScheduleForecast: >
+    For exact candidates, RegularSeason.MatchupForecast (Model schedule-matchup-forecast-v1) carries
+    Scoring, Provenance.StrengthBasis/StrengthReason/RegularSeasonComplete, and Teams rows with the same
+    ExpectedPoints, RemainingExpectedWins, RemainingWinProbability and Upcoming fields as v2.
+    This analytic component reuses the immutable v2 scoring basis and win CDF, without running a playoff
+    simulation; it is available independently of PlayoffOdds.Available. It is not a weight in A1/A2.
+    Legacy v1/v2 snapshot shape is unchanged. Existing publisher transfers the whole document unchanged.
+  invalidation: >
+    Exact model selection and the versioned forecast component ID are explicit fingerprint inputs,
+    in addition to existing records, scored points, strengths, schedule and previous points. No change
+    to legacy fingerprints or writer scope. Activation and consumer changes remain separate checkpoints.
+
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
   regular-season schedule, two separately explained opponent-strength metrics,

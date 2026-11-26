@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import data_derived_dir, data_source_dir
 from derived_data_lib.models.registry import get_model
+from derived_data_lib.models.schedule_outlook import matchup_forecast_v1
 from derived_data_lib.week_finality import resolve_week_finality
 from league_standings_sources import build_teams
 
@@ -344,6 +345,16 @@ def snapshot(inputs: SeasonInputs, after_week: int, playoff_odds_model_id: str |
                 "previous_points": inputs.previous_points(),
                 "upcoming_matchups": value["UpcomingMatchups"],
             }
+        if playoff_odds_model_id in ("playoff-odds-v3", "playoff-odds-v4"):
+            value["MatchupForecast"] = matchup_forecast_v1.compute(
+                teams=records,
+                strength_by_roster={t["CanonicalLeagueRosterID"]: (t.get("Strength") or {}).get("Value")
+                                    for t in value["Teams"]},
+                points_by_roster=inputs.points_history(after_week),
+                previous_points=inputs.previous_points(),
+                upcoming_matchups=value["UpcomingMatchups"],
+                regular_season_complete=complete,
+            )
         odds = odds_model.compute(teams=records, open_games=open_games,
                                   playoff_teams=inputs.week_structure.get("PlayoffTeams"),
                                   regular_season_complete=complete, **extra_odds)

@@ -14,6 +14,7 @@ from .grading import v1 as grading_v1
 from .injury_impact import v1 as injury_impact_v1
 from .lifecycle import v1 as lifecycle_v1
 from .playoff_odds import v1 as playoff_odds_v1, v2 as playoff_odds_v2
+from .playoff_odds import v3 as playoff_odds_v3, v4 as playoff_odds_v4
 from .repairability import v1 as repairability_v1
 from .rivalry import v1 as rivalry_v1
 from .rivalry import v2 as rivalry_v2
@@ -30,7 +31,7 @@ from .weekly_recap import v1 as weekly_recap_v1
 from .weekly_recap import v2 as weekly_recap_v2
 from .win_prob import v1 as win_prob_v1
 
-_MODULES: tuple[ModuleType, ...] = (salary_v1, salary_cap_v1, roster_cap_v1, auto_cut_v1, grading_v1, standings_v1, awards_v1, awards_v2, awards_v3, lifecycle_v1, repairability_v1, team_range_v1, win_prob_v1, season_stats_v1, schedule_outlook_v1, schedule_outlook_v2, schedule_outlook_v3, playoff_odds_v1, playoff_odds_v2, rivalry_v1, rivalry_v2, weekly_recap_v1, weekly_recap_v2, injury_impact_v1)
+_MODULES: tuple[ModuleType, ...] = (salary_v1, salary_cap_v1, roster_cap_v1, auto_cut_v1, grading_v1, standings_v1, awards_v1, awards_v2, awards_v3, lifecycle_v1, repairability_v1, team_range_v1, win_prob_v1, season_stats_v1, schedule_outlook_v1, schedule_outlook_v2, schedule_outlook_v3, playoff_odds_v1, playoff_odds_v2, playoff_odds_v3, playoff_odds_v4, rivalry_v1, rivalry_v2, weekly_recap_v1, weekly_recap_v2, injury_impact_v1)
 _REGISTRY: dict[str, ModuleType] = {module.MODEL_ID: module for module in _MODULES}
 
 KINDS = ("auto-cut", "awards", "grading", "injury-impact", "lifecycle", "playoff-odds", "repairability", "rivalry", "roster-cap", "salary", "salary-cap", "schedule-outlook", "season-stats", "standings", "team-range", "weekly-recap", "win-prob")
