@@ -28,7 +28,7 @@
           <ng-template #teamOrOwner>
             <button *ngIf="item.team as team; else plainOwner" class="hof__identity" type="button"
                     [disabled]="!item.teamInteractive" (click)="openTeam(item)">
-              <app-team-identity [team]="team" [elements]="['logo']" size="small" [interactive]="false"></app-team-identity>
+              <img class="hof__team-logo" [src]="team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
               <span class="hof__owner">{{ item.owner }}</span>
             </button>
             <ng-template #plainOwner><span class="hof__owner">{{ item.owner }}</span></ng-template>
