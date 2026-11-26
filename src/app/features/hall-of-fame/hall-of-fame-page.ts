@@ -40,9 +40,9 @@ export class HallOfFamePageComponent {
     awards: this.dataService.getPlayerAwardHistory().pipe(catchError(() => of(null))),
     lookup: this.teamSeasons.getLookup().pipe(catchError(() => of(null)))
   }).pipe(
-    map(({ data: { league, teams }, stats, awards, lookup }) => ({
+    map(({ data: { league, teams, players }, stats, awards, lookup }) => ({
       champions: buildHallOfFameChampions(league, lookup),
-      sections: buildHallOfFameSections(league, teams, stats.current, stats.bySeason, awards),
+      sections: buildHallOfFameSections(league, teams, stats.current, stats.bySeason, awards, players, lookup),
       allTime: buildLeagueLegacy(league, teams)
     }))
   );
