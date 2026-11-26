@@ -160,6 +160,7 @@ rosterStatusCodes:
 quality:
   perSeason:
     - RecordCount and StateCounts
+    - Population.RecordKeysSha256 (Issue #1616 regression hardening): SHA-256 of the compact UTF-8 JSON array of sorted [Week, CanonicalPlayerID] keys independently expected from the same roster, report and schedule inputs used for generation. The producer requires exact key-set equality before publication. This is a population witness, not a freshness timestamp or a fingerprint of participation/state; unchanged expected keys keep the same digest. Older v2/v3 files without the witness remain readable until regenerated.
     - ReportObservationsWithoutIdentity
     - WeekCoverage[] per week: Games, FinalGames, GamesWithSnapCounts, RosterPartition
     - Inputs.RosterStatusAvailable, SnapCountsAvailable, PlayerStatsAvailable, InjuryProduct (null when no report product exists)
@@ -177,10 +178,12 @@ dependencyInvalidation:
 publication:
   writer: >
     The existing nfl_injuries_derived job of sync-nfl-source-data.yml (rebuild-and-retry, scope nfl-availability-derived, prefix
-    data-derived/nfl-player-availability). It runs after every Injury Source update (daily in September to February) and on the Monday
-    historical reconciliation, so the product follows the roster, snap and stats inputs of the daily NFL Source sync with at most the lag
-    of the next injury run (current season) or the next Monday (outside the injury window). Historical rederivation is the Monday run
-    (data-sources.yaml historicalReconciliationStandard). No new workflow, schedule or credential.
+    data-derived/nfl-player-availability). It runs after every Injury Source update (daily in September to February) and after successful
+    full canonical NFL Source syncs, including the Monday historical reconciliation. Issue #1616 regression hardening: the existing job
+    now refreshes Availability immediately after the normal roster/stat/schedule Source publication; the Injury acquisition/derived gates
+    stay unchanged. Game-finality and schedule-odds-only scopes do not dispatch this job. The separate Source and Derived commits can
+    still briefly represent different revisions; the population witness separates valid lag from missing records. A second all-season
+    read-only --check must prove byte no-op before the existing publisher commits. No new workflow, scheduler, credential or write prefix.
   appFile: >
     The existing update-players.yml writer renders PlayerInjuryHistory.json (prefix public/data, already declared) after Players.json,
     fail-soft, only on a semantic difference, Timestamps.json key PlayerInjuryHistory.
@@ -204,5 +207,10 @@ notInScope:
 
 validation:
   tests: tools/tests/test_nfl_player_availability.py, tools/tests/test_player_injury_history_app_publish.py
-  persistedStateGuard: tools/tests/test_nfl_player_availability.py PersistedStateGuard (every roster week of the cut with any non-null status has exactly one record, every bye week of an attached player has a record, Available and Played valid; files without Population.ByeWeeksIncluded are skipped until regenerated; v1 season files are skipped until regenerated).
+  persistedStateGuard: >
+    tools/tests/test_nfl_player_availability.py PersistedStateGuard. Every new snapshot must match its independently calculated exact
+    source population witness; duplicate keys and invalid Available/Played/bye evidence fail. Compare the latest source expectation as
+    well; if it differs from the persisted witness, verify a fresh derivation on the latest roster/report/schedule without writing.
+    No new source week or revision of an existing week is excluded from that fresh check. Legacy v2/v3 files without a witness retain
+    the original covered-week guard until regenerated; v1 and pre-G1/G2 files retain their documented compatibility treatment.
   cases: healthy played, healthy scratch, bye (Issue #1616: synthesized bye, team change around the bye, ended attachment, regular season only), not-on-active-roster (EXE, CUT, DEV, RET, SUS), reserve without report, Out and played, Questionable and played, Doubtful, unknown (game not final, snap identity gap), cancelled game, other roster status, configurable position cut, no gaps, population documented; Out played/not played, Questionable played, reserve without report, inactive without report, bye, missing roster row, cancelled 2022 game, player without identity, game not final, no snap coverage, stats fallback, snap identity gap, postseason week without game, determinism and semantic no-op.
