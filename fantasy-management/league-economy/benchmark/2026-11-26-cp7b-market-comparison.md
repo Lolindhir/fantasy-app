@@ -110,3 +110,35 @@ Deshalb steht der Gesamtsieger von Status quo S0, Reload, Hybrid und Franchise-C
 - [Einzel-Contract-Probe CP7a](deadcap_contract_probe.mjs)
 
 **Keine aktive Liga-/Salary-/Sleeper-Regel verändert; alle Ergebnisse in Forschungs-PR #1576 und Issue #1344.**
+
+## 8. Historische Gegenprobe: Juni 2026 ändert die Interpretation von P1 erheblich
+
+Diese Daten stammen **nicht** aus dem synthetischen CP7b-Seed, sondern aus der bereits vor CP7b unabhängig archivierten [CP4c-Historienanalyse](../salary/analyses/2026-11-14-salary-cap-cp4-contract-deadcap-sensitivities.md) und den [CP5c-Fenster-/Carryover-Sensitivitäten](../salary/analyses/2026-11-14-salary-cap-cp5c-windows-deadcap-carryover.md). Sie dienen als reale **ex-ante-relevante Plausibilitätskontrolle**, nicht als weiterer synthetischer P1-/P2-Benchmarkpfad.
+
+### 8.1 Realer Dead-Cap-Anreiz könnte an der einzigen verbindlichen Deadline verpuffen
+
+Die tatsächlich dokumentierte Cap Deadline der Saison 2026 war **30.06.2026, 23:59:59 UTC**. Flo hatte acht teure Spieler bereits am **09.06.2026** entlassen. Die belegte Ownership-Historie ergibt unter dem **nicht aktiven** P1-Konzept sechs Tenure-2-Cuts (je 15 %) und zwei Tenure-1-Cuts (je 30 %): **37.551.933 $ hypothetische Dead Cap** über die acht betroffenen Spieler.
+
+Am **29.06.** ergäbe das bei den tatsächlich damaligen Cap-/Salary-Daten und der **additiven** Top20-plus-Dead-Cap-Semantik **465.281.512 $ Team-Belastung** gegenüber **434.255.984 $ Cap**, also **31.025.528 $ Überhang**. Bei der ebenfalls diskutierten virtuellen Top20-Slot-Semantik wären es **439.197.718 $**, nur **4.941.734 $ Überhang**. Beide Semantiken sind **offen**; keine darf als gültige Regel behandelt werden. Das gegenwärtige CP7b-Paarmodell zählt **jedes regulär gehaltene Spielergehalt voll**, deshalb sind die historischen Top20-Kosten nur ein eigener S0-/CP4-Reality-Check und dürfen nicht in die 45-Slot-Proxys umgerechnet werden.
+
+**Schwerwiegender Kalenderkonflikt:** P1 sieht einen vollständigen Reset bei der nächsten regulären Salary-Neubewertung vor. Erfolgt am einzigen bindenden Deadline-Termin **zuerst der Reset und erst danach die Pflicht-Cap-Prüfung**, können die Juni-Cuts am Prüftermin **0 $ aktive Alt-Dead-Cap-Last** hinterlassen. Wird **zuerst geprüft und erst danach zurückgesetzt**, entsteht eine andere wirtschaftliche Wirkung. Frühere Cap-Only-Checks vor dem Reset wären nochmals eine **dritte, bislang unbeschlossene** Vollzugsentscheidung mit messbarem operativem Mehraufwand. Der CP7b-Test führte nur Cap-Only-Schocks ohne echten Reset aus; er **kann die zentrale Jahres-Deadline-Frage noch nicht beantworten**. Die vorläufig positive P1-Bewertung ist daher ausdrücklich **an eine verbindliche wirksame Ereignisreihenfolge geknüpft**.
+
+### 8.2 Der Käufer könnte rational auf den Cut warten
+
+CP4c prüfte dieselben fünf verbliebenen Managerroster und die acht historischen Cut-Kandidaten unter dem damaligen Juni-2026-Cap, ohne zusätzliche Käufercuts (keine echten Angebote oder Zustimmungen):
+
+| Historische mathematische Käuferprobe am 29.06.2026 | Full Salary wie bei normalem Trade | Reduziertes aktives P1-Salary nach Cut |
+|---|---:|---:|
+| Bilateral cap-kompatible einzelne Spieler-/Käufer-Paare | **13 von 40** | **16 von 40** |
+| Maximal gleichzeitig ohne Käufercuts aufnehmbare Kandidaten | **4 von 8** | **5 von 8** |
+| Cap-kompatible direkte Käufer für Brock Purdy | **0 von 5** | **1 von 5** |
+
+Purdy kostete im damaligen historisch belegten Salary-Markt **41.511.235 $**; mit hypothetisch 30 % Retained Salary entstünden beim alten Team **12.453.371 $ Dead Cap** und ein aktives Salary von **29.057.864 $** für einen Käufer **vor** dem Reset. Das günstigere Waiver-Salary erhöht in dieser Gegenprobe die Käuferliquidität, **kann aber den Wunsch, vor dem Cut den vollen Salary zu traden, verringern**. Die wirklichen Free-Agent-Draft-Zugänge fanden erst **nach** der damaligen Deadline statt; die vergünstigten P1-Werte dürfen nicht auf diese realen späteren Transaktionen übertragen werden.
+
+Die Richtungen sind somit nicht symmetrisch: **Seller will lieber traden, Buyer kann nach dem Cut mehr finanzieren.** Gerade bei sechs statt zwölf Teams könnte das entscheidend sein. Die 13/40 und 16/40 sind rechnerisch finanzierbare Paarungen, **keine ausgehandelten Trades**.
+
+### 8.3 Konsequenz für Ranking und CP7c
+
+Die Frage **„Wie schaffen wir Trades statt Cuts?“** muss **zuerst** unter zwei öffentlich nachvollziehbaren Real-Event-Ordnungen geprüft werden: (A) Compliance **vor** Salary-Reset, (B) Salary-Reset **vor** Compliance; zusätzlich nur bewusst und mit Aufwand bewertet (C) früher Cap-Only-Check. Und der Käufer muss explizit zwischen (1) vollem Trade-Salary gegen Asset-Gegenleistung und (2) post-Cut/ggf. post-Reset günstigerem Free-Agent-Salary wählen können. **P1 darf nicht als Gewinner gelten, wenn sein Cut-Preis bei dem tatsächlich ausführbaren Termin verschwindet oder die Käufer routinemäßig den günstigeren Cut abwarten.** P2 behält seine mehrjährigen Garantien, ist aber wegen der stärkeren Last ebenfalls nicht automatisch überlegen.
+
+Historische S0-Kosten, aktuelle P0/P1/P2-Querschnittszahlen und künftige 5–10-Jahres-Contract-Ökonomien bleiben im finalen Vergleich drei explizit **getrennte Evidenzschichten**.
