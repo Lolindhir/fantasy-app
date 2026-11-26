@@ -24,7 +24,7 @@ function forecast(d,p,w,dt){
  for(const pl of roster){const q=index.get(pl.id)?.Projection;if(pl.state!=="unlocked"||!POS.includes(pl.pos)||q?.Status!=="available")continue;assert(q.ParticipationCondition==="conditional-on-participation"&&!q.AvailabilityAdjustmentApplied&&q.PredictionRange.Level===.9&&[q.Points,q.PredictionRange.Lower,q.PredictionRange.Upper].every(Number.isFinite)&&q.PredictionRange.Upper>=q.PredictionRange.Lower,"invalid projection");c.push({...pl,mu:q.Points,sd:(q.PredictionRange.Upper-q.PredictionRange.Lower)/(2*Z)});}
  let state=(20261126+100*w+Number(id))>>>0;const u=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return (state+.5)/4294967296};const n=()=>Math.sqrt(-2*Math.log(u()))*Math.cos(2*Math.PI*u());const samples=[];
  for(let i=0;i<1200;i++){for(const x of c)x.draw=x.mu+x.sd*n();samples.push(best(c,"draw"));}
- rows.push({w,id,roster,candidates:c.length,det:best(c,"mu"),mc:mean(samples),sd:Math.sqrt(mean(samples.map(x=>(x-mean(samples))**2)))});
+ const mc=mean(samples);rows.push({w,id,roster,candidates:c.length,det:best(c,"mu"),mc,sd:Math.sqrt(mean(samples.map(x=>(x-mc)**2)))});
  }
  return rows;
 }
@@ -78,13 +78,18 @@ function validate(rows){
  }
  return out;
 }
+function verifyPriorOfficial(rows,history,w){
+ const h=new Map(history.Teams.map(t=>[String(t.TeamID),new Map(t.GameLog.map(g=>[g.Week,g.Points]))]));
+ for(const r of rows.filter(x=>x.w<w))assert(h.get(r.id)?.get(r.w)===r.official,"prior official score mismatch at W"+w+" for W"+r.w+"/"+r.id);
+ return true;
+}
 function main(){
  const root=path.resolve(__dirname,"../../.."),get=(ref,p)=>JSON.parse(execFileSync("git",["show",ref+":"+p],{cwd:root,encoding:"utf8",maxBuffer:32*1024*1024}));const rows=[];
- for(const [w,ref,dt] of SNAPS){const d=get(ref,"public/data/DecisionWindows.json"),p=get(ref,"public/data/PlayerWeekFantasy.json");const preds=forecast(d,p,w,dt);
+ for(const [w,ref,dt] of SNAPS){const d=get(ref,"public/data/DecisionWindows.json"),p=get(ref,"public/data/PlayerWeekFantasy.json");const preds=forecast(d,p,w,dt);verifyPriorOfficial(rows,historicalScores(get(ref,"public/data/Matchups.json"),w),w);
  const m=get(TRUTH,"data-source/leagues/nfl-reise/seasons/2026/matchups/week-"+w+".json"),t=get(TRUTH,"data-derived/team-week-performance/nfl-reise/2026/"+String(w).padStart(2,"0")+".json");
  rows.push(...evaluate(preds,m,t));}
  const result=validate(rows);
  console.log(JSON.stringify({researchOnly:true,rows,all:summarize(result),aligned:summarize(result.filter(r=>r.aligned)),leakage:"PASS"},null,2));
 }
 if(require.main===module)main();
-module.exports={forecast,evaluate,walk,summarize,validate,best,SNAPS,TRUTH};
+module.exports={forecast,evaluate,walk,summarize,validate,best,verifyPriorOfficial,SNAPS,TRUTH};
