@@ -929,7 +929,21 @@ function simulateCP6r(csv,{seeds=[11,29,47],slopes=[.1,.25],rookieGuarantees=['t
  return result;
 }
 function thisYearFA(op){return op.replacements;}
-export {simulateCP6r};
+/** CP7b research-only: preserve the frozen 2026-derived six-team initial state.
+ * Does not draft, trade, cut, mutate live league data or invent 2025/26 owner history.
+ * Synthetic contract vintages are supplied for counterfactual analysis.
+ */
+function createCP7bBase(csv,seed,vetSlope=.25){
+ MAX_SLOTS=45;
+ const start=startWorld(csv,seed);
+ const world=new Map([...start.world].map(([id,p])=>[id,{...p,h:[...p.h]}]));
+ const teams=start.teams.map(t=>({...t,players:[...t.players],style:{...t.style},strategy:MANAGER_STYLES[t.id]}));
+ const contracts=makeLedger(world,teams,seed,vetSlope).ledger;
+ return {world,teams,contracts,cap:start.cap,seed,slope:vetSlope,
+  archiveAsOf:'2026-10-05',syntheticOwnership:true,syntheticContractVintages:true};
+}
+export {simulateCP6r,createCP7bBase,lineup,coverage,annual,capFor,tradeUtility};
+
 const self=fileURLToPath(import.meta.url);
 if(process.argv[1]&&path.resolve(process.argv[1])===self){
  const root=path.resolve(path.dirname(self),'../../../..');
