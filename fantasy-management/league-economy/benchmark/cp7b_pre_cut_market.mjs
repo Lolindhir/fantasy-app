@@ -20,7 +20,7 @@ function assert(v,n){if(!v)throw Error(n);}
 function clone(base){
  return {world:base.world,teams:base.teams.map(t=>({...t,players:[...t.players]})),
   contracts:new Map([...base.contracts].map(([id,c])=>[id,{...c,acquiredYear:c.start}])),
-  debt:[],released:new Map(),pickedFA:new Set()};
+  debt:[],released:new Map(),pickedFA:new Set(),cutPlayers:new Set()};
 }
 function salary(contract,year=2027){return annual(contract,year,.25);}
 function due(team,s,year=2027){return team.players.reduce((sum,id)=>sum+(s.contracts.has(id)?
@@ -36,14 +36,17 @@ function u(ids,team,s,cap,year=2027){
  const weight=W[team.strategy]||W.reload;const chosen=new Set(line.ids);
  const youth=ids.reduce((v,id)=>{const p=s.world.get(id);return v+(p.year<=4?(5-p.year)*Math.max(0,p.known)*.28:0);},0);
  const bench=ids.filter(id=>!chosen.has(id)).map(id=>s.world.get(id).known).sort((a,b)=>b-a).slice(0,6).reduce((a,b)=>a+b,0);
- const cash=ids.reduce((sum,id)=>sum+(s.contracts.has(id)?salary(s.contracts.get(id),year):s.world.get(id).price),0);
+ const cash=ids.reduce((sum,id)=>sum+(s.contracts.has(id)?salary(s.contracts.get(id),year):freeAgentSalary(s,id)),0);
  const existingDebt=s.debt.filter(x=>x.owner===team.id&&x.year===year).reduce((v,x)=>v+x.amount,0);
  const total=(cash+existingDebt)/M;
  return weight.line*line.score+weight.youth*youth+bench*.055-weight.cap*total-
   Math.max(0,(cash+existingDebt-cap)/M)*.30;
 }
-function freePool(s){const held=new Set(s.teams.flatMap(t=>t.players));
- return [...s.world.values()].filter(p=>p.active&&!held.has(p.id)&&!s.pickedFA.has(p.id));}
+function freePool(s,mode){const held=new Set(s.teams.flatMap(t=>t.players));
+ return [...s.world.values()].filter(p=>p.active&&!held.has(p.id)&&!s.pickedFA.has(p.id)&&
+  !(mode==='guaranteed_vintage'&&s.cutPlayers.has(p.id)));
+}
+function freeAgentSalary(s,id){return s.released.has(id)?s.released.get(id):s.world.get(id).price;}
 function guarantee(c){
  if(c.kind!=='rookie'||c.draftRound==null)return [1,.5,.25];
  return c.draftRound<=2?[1,1,1]:c.draftRound<=4?[1,1,.5]:[1,.5,.25];
@@ -84,7 +87,8 @@ function alternativeCut(s,team,id,mode,cap,free){
   // Include same-year cash replacement plus the exact cut debt.
   const oldContract=s.contracts.get(id);
   const oldAnnual=salary(oldContract);
-  const newDue=due(team,s)-oldAnnual+incoming.price+quote.now;
+  const incomingPrice=freeAgentSalary(s,incoming.id);
+  const newDue=due(team,s)-oldAnnual+incomingPrice+quote.now;
   const altQuality=lineup(next,s.world).score;
   const w=W[team.strategy];
   const baseline=u(next,team,s,cap);
@@ -92,8 +96,8 @@ function alternativeCut(s,team,id,mode,cap,free){
   const score=baseline-w.cap*(quote.now/M)-
    .30*(Math.max(0,(newDue-cap)/M)-Math.max(0,(dueWithoutNewDead-cap)/M))-
    .5*w.cap*(quote.futureDebt/M);
-  const relief=oldAnnual-incoming.price-quote.now;
-  const cand={player:id,replacement:incoming.id,replacementSalary:incoming.price,relief,quote,
+  const relief=oldAnnual-incomingPrice-quote.now;
+  const cand={player:id,replacement:incoming.id,replacementSalary:incomingPrice,relief,quote,
    score,afterCost:newDue,afterIndex:altQuality};
   if(!best||cand.score>best.score+1e-8)best=cand;
  }
@@ -120,7 +124,7 @@ function tryTrades(s,mode,cap,{waitProbability=.5,maxTrades=6}={}){
  let examinedSellers=new Set();
  for(let iteration=0;iteration<maxTrades;iteration++){
   let best=null;
-  const free=freePool(s);
+  const free=freePool(s,mode);
   const potential=s.teams.filter(t=>due(t,s)>cap+1);
   for(const seller of potential){
    const oldSeller=u(seller.players,seller,s,cap);
@@ -215,7 +219,7 @@ function settleCuts(s,mode,cap){
  const events=[],failed=[];let tried=0;
  for(const team of s.teams){
   for(let step=0;step<25&&due(team,s)>cap+1;step++){
-   const pool=freePool(s);
+   const pool=freePool(s,mode);
    const choices=team.players.map(id=>alternativeCut(s,team,id,mode,cap,pool)).filter(Boolean)
     .filter(x=>x.relief>0);
    choices.sort((a,b)=>{
@@ -228,12 +232,14 @@ function settleCuts(s,mode,cap){
    const b=choices[0],previous=due(team,s),contract=s.contracts.get(b.player);
    team.players=team.players.map(id=>id===b.player?b.replacement:id);
    s.contracts.delete(b.player);
-   const newPlayer=s.world.get(b.replacement);
+   const newPlayer=s.world.get(b.replacement),incomingPrice=freeAgentSalary(s,newPlayer.id);
+   assert(incomingPrice===b.replacementSalary,'replacement uses correct P1 retained waiver price');
    s.contracts.set(newPlayer.id,{player:newPlayer.id,owner:team.id,start:2027,end:2029,
-    kind:'veteran',base:newPlayer.price,pendingRenewal:false,acquiredYear:2027});
+    kind:'veteran',base:incomingPrice,pendingRenewal:false,acquiredYear:2027});
    for(const [yr,amount] of Object.entries(b.quote.dead))if(amount>0)
     s.debt.push({owner:team.id,player:b.player,year:Number(yr),amount,signYear:contract.start});
    if(mode==='retained_cycle')s.released.set(b.player,b.quote.activeAfterCut);
+   s.cutPlayers.add(b.player);
    s.pickedFA.add(b.replacement);
    assert(coverage(team.players,s.world),'postcut roster coverage');
    assert(due(team,s)===previous-b.relief,'postcut financial identity');
@@ -301,7 +307,7 @@ export function runCP7b(csv,{seeds=[11,29,47],shocks=[0,-.10,-.20],waitProbabili
    tenure:'synthetic acquisition proxy uses synthetic CP6r vintage, not real historical tenure',
    trade:'one-for-one full-contract salary exchange before forced cuts; buyer financially and position legal; both proxy utility improvements; at most six league trades per world',
    cut:'same-position free-agent replacement with retained current or multiyear dead cap; reject unresolvable cases',
-   freeAgent:'P1 released active Salary discounted, P2 new deal price unspecified; no postcut waiver claims or real human consent',
+   freeAgent:'P1 released active Salary discounted and available in same-offseason replacement sequence; P2 cut-player FA re-signing blocked since contract price unspecified; no separate discretionary claims or real human consent',
    limits:'no real owner history, IR/Taxi, draft picks, other trade bundles, renewals, injuries, true 2027+ NFL, playoff/championship odds'},
   starts,groups,results};
 }
