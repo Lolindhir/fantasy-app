@@ -177,7 +177,12 @@ describe('HallOfFamePageComponent with several champions', () => {
     expect(tiles[0].textContent).toContain('Aces');
     expect(tiles[1].textContent).toContain('Kings');
     expect(tiles[1].textContent).toContain('2024');
-    tiles.forEach(t => expect(t.querySelector('app-achievement-banner')).toBeNull());
+    tiles.forEach(t => {
+      expect(t.querySelector('app-achievement-banner')).toBeNull();
+      expect(Array.from(t.children).map(child => child.className)).toEqual([
+        'hof-champion__season', 'hof-champion__logo', 'hof-champion__name', 'hof-champion__ring'
+      ]);
+    });
   });
 
   it('shows the historical matchup teams, actual scores and precise pregame probability', () => {
