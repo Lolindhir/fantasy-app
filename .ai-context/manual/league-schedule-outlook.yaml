@@ -53,7 +53,7 @@ strengthOfSchedule:
   invalidation: input fingerprint of v2 additionally covers the previous-season strengths per TeamID and the model parameters; changing K or a band is a new model version.
 
 playoffOdds:
-  supersededBy: playoffOddsV2 (all seasons select playoff-odds-v2 since Issue #1607; v1 stays immutable and selectable)
+  supersededBy: playoffOddsV2 (all seasons originally selected playoff-odds-v2 in Issue #1607; v1 stays immutable and selectable; nfl-reise 2026 now selects v4 in #1693)
   issue: 1588
   architectureDecision: ADR-090
   model: playoff-odds-v1 (tools/derived_data_lib/models/playoff_odds/v1.py), chosen per season in data-meta Models.PlayoffOdds (no default)
@@ -89,7 +89,7 @@ playoffOdds:
 playoffOddsV2:
   issue: 1607
   architectureDecision: ADR-093
-  model: playoff-odds-v2 (tools/derived_data_lib/models/playoff_odds/v2.py), chosen per season in data-meta Models.PlayoffOdds (all seasons); v1 stays immutable and is no longer selected
+  model: playoff-odds-v2 (tools/derived_data_lib/models/playoff_odds/v2.py), chosen per season in data-meta Models.PlayoffOdds (nfl-reise 2024/2025 remain on v2; 2026 selects v4); v1 stays immutable and is no longer selected
   principle: >
     Strength-based and seeded. The team strength is the RegularSeason.Teams[].Strength.Value of the selected schedule-outlook model computed in the SAME run
     (relative to the league average, 1.0 = average; a test pins this contract); the odds model has no strength formula, so a new outlook version flows in
@@ -125,7 +125,7 @@ playoffOddsV2:
 
 playoffOddsExact:
   issue: 1693
-  status: registered-candidate-not-selected
+  status: selected-v4-for-nfl-reise-2026-v3-reference
   models: [playoff-odds-v3, playoff-odds-v4]
   principle: >
     A1 counts W/T/L paths with equal weights (1, 1, 1). A2 counts the same paths with integer weights
@@ -152,7 +152,8 @@ playoffOddsExact:
   invalidation: >
     Exact model selection and the versioned forecast component ID are explicit fingerprint inputs,
     in addition to existing records, scored points, strengths, schedule and previous points. No change
-    to legacy fingerprints or writer scope. Activation and consumer changes remain separate checkpoints.
+    to legacy fingerprints or writer scope. The 2026 season selects v4; prior seasons keep v2.
+    Revert the metadata selection to v2 and regenerate via the same writers for rollback.
 
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
