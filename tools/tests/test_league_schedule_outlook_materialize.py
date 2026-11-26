@@ -470,5 +470,104 @@ class RepositorySmokeTests(unittest.TestCase):
             self.assertEqual(len(replay["Snapshots"]), first["Snapshots"])
 
 
+class ExactOddsRepositoryReplayTests(unittest.TestCase):
+    """Real accepted source facts, all league cutoffs, both exact model candidates (#1693)."""
+
+    @staticmethod
+    def oracle(records, pairings, weights):
+        # Independent exhaustive paths (no compressed DP), only for bounded late-season cuts.
+        from itertools import product
+        from math import lcm
+        ids = [row["CanonicalLeagueRosterID"] for row in records]
+        starts = [2 * row["Record"]["Wins"] + row["Record"]["Ties"] for row in records]
+        games = [(ids.index(g["Team1CanonicalLeagueRosterID"]),
+                  ids.index(g["Team2CanonicalLeagueRosterID"])) for g in pairings]
+        n = len(ids)
+        scale = lcm(*range(1, n + 1))
+        rows = [[0] * n for _ in ids]
+        for path in product(range(3), repeat=len(games)):
+            scores, mass = list(starts), 1
+            for (a, b), result in zip(games, path):
+                scores[a] += result
+                scores[b] += 2 - result
+                mass *= weights[result]
+            for i, score in enumerate(scores):
+                first = sum(value > score for value in scores)
+                size = scores.count(score)
+                for place in range(first, first + size):
+                    rows[i][place] += mass * scale // size
+        return sum(weights) ** len(games) * scale, rows
+
+    def test_real_seasons_exact_support_mass_oracle_and_restore(self):
+        from league_schedule_outlook_app_publish import latest_snapshot
+        repo, league = TOOLS.parent, "nfl-reise"
+        seasons = mat.seasons_for_scope(repo, league, "all", None)
+        self.assertTrue(seasons)
+        with tempfile.TemporaryDirectory() as tmp:
+            for season in seasons:
+                inputs = source.load_season_inputs(repo, league, season)
+                outlook_model = mat.selected_model_id(repo, league, season)
+                by_model = {}
+                for model_id, weights in (("playoff-odds-v3", (1, 1, 1)), ("playoff-odds-v4", (99, 2, 99))):
+                    out = Path(tmp) / model_id
+                    initial = mat.materialize_season(repo, out, league, season, outlook_model,
+                                                     odds_model_id=model_id, mode="full")
+                    self.assertEqual(inputs.scored + 1, initial["Snapshots"])
+                    second = mat.materialize_season(repo, out, league, season, outlook_model,
+                                                    odds_model_id=model_id, mode="incremental")
+                    self.assertEqual((0, 0), (second["Written"], second["Recomputed"]))
+                    folder = mat.product_dir(out, league, season)
+                    documents = [json.loads((folder / mat.snapshot_name(w)).read_text(encoding="utf-8"))
+                                 for w in range(inputs.scored + 1)]
+                    self.assertEqual(documents[-1], latest_snapshot(out, league, season))
+                    support = []
+                    available = 0
+                    for week, doc in enumerate(documents):
+                        odds = doc["PlayoffOdds"]
+                        self.assertEqual(model_id, doc["Models"]["PlayoffOdds"])
+                        self.assertEqual(week, doc["AsOf"]["AfterWeek"])
+                        forecast = doc["RegularSeason"]["MatchupForecast"]
+                        self.assertEqual("schedule-matchup-forecast-v1", forecast["Model"])
+                        self.assertEqual(len(odds["Teams"]), len(forecast["Teams"]))
+                        if not odds["Available"]:
+                            self.assertIn(odds["Reason"], ("season-progress-too-low", "state-limit-exceeded",
+                                                           "transition-limit-exceeded", "ambiguous-final-playoff-boundary"))
+                            self.assertTrue(all(t["PlayoffProbability"] is None for t in odds["Teams"]))
+                            support.append((False, odds["Reason"]))
+                            continue
+                        available += 1
+                        prov, rows = odds["Provenance"], odds["Teams"]
+                        den = int(prov["PlaceMassDenominator"])
+                        masses = [[int(v) for v in row["PlaceMassNumerators"]] for row in rows]
+                        cut = prov["PlayoffTeams"]
+                        self.assertGreater(den, 0)
+                        self.assertTrue(all(sum(row) == den for row in masses))
+                        self.assertEqual(cut * den, sum(sum(row[:cut]) for row in masses))
+                        for team, row in zip(rows, masses):
+                            self.assertTrue(all(x >= 0 for x in row))
+                            self.assertEqual([p for p, mass in enumerate(row, 1) if mass], team["PossiblePlaces"])
+                            mass = sum(row[:cut])
+                            self.assertEqual("clinched" if mass == den else "eliminated" if mass == 0 else "alive", team["Status"])
+                            self.assertAlmostEqual(mass / den, team["PlayoffProbability"], places=15)
+                        if not prov["RegularSeasonComplete"]:
+                            self.assertTrue(all(sum(row[p] for row in masses) == den for p in range(len(rows))))
+                            games = doc["RegularSeason"]["UpcomingMatchups"]
+                            if len(games) <= 9:
+                                ref_den, ref_rows = self.oracle(rows, games, weights)
+                                self.assertEqual(ref_den, den)
+                                self.assertEqual(ref_rows, masses)
+                        else:
+                            legacy = source.snapshot(inputs, week, "playoff-odds-v2", model_id=outlook_model)["PlayoffOdds"]
+                            self.assertEqual({t["TeamID"]: t["PlayoffProbability"] for t in legacy["Teams"]},
+                                             {t["TeamID"]: t["PlayoffProbability"] for t in rows})
+                        support.append((True, [(t["TeamID"], t["PossiblePlaces"], t["Status"]) for t in rows]))
+                    by_model[model_id] = support
+                    print(f"Exact odds historical replay {season} {model_id}: {len(documents)} cutoffs, "
+                          f"{available} available; full restore, independent late-cut oracle, incremental no-op passed")
+                    if inputs.scored >= inputs.regular_end:
+                        self.assertGreater(available, 0)
+                self.assertEqual(by_model["playoff-odds-v3"], by_model["playoff-odds-v4"])
+
+
 if __name__ == "__main__":
     unittest.main()
