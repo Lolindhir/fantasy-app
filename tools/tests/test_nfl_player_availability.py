@@ -12,7 +12,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from derived_data_lib.nfl_player_availability import AvailabilityError, derive_nfl_player_availability  # noqa: E402
 import nfl_player_availability_materialize as materializer  # noqa: E402
-from derived_data_lib.nfl_player_availability import BYE_CARRY_STATUSES, RESERVE_STATUSES  # noqa: E402
+from derived_data_lib.nfl_player_availability import (  # noqa: E402
+    BYE_CARRY_STATUSES, RESERVE_STATUSES, expected_population_keys, population_keys_sha256,
+    verify_population_witness,
+)
 
 SEASON = 2031
 
@@ -493,6 +496,63 @@ class NonActiveAndByeTests(unittest.TestCase):
         self.assertIn("not-on-active-roster", doc["Quality"]["StateCounts"])
 
 
+class PopulationRevisionTests(unittest.TestCase):
+    def test_revised_existing_roster_changes_future_bye_without_new_partition(self):
+        p, q, r = player(1), player(2), player(3)
+        games = [game(1, "AAA", "BBB"), game(1, "CCC", "DDD"), game(2, "CCC", "BBB"), game(3, "AAA", "CCC")]
+        before = build([], {1: [roster(p, "CCC", "DEV", position="QB"),
+                                roster(q, "AAA", "ACT", position="DL")]}, games=games)
+        after_rows = {1: [roster(p, "AAA", "ACT", position="QB"),
+                          roster(q, "AAA", "RES", position="DL"),
+                          roster(r, "AAA", "DEV", position="TE")]}
+        after = build([], after_rows, games=games)
+        self.assertEqual(before["Quality"]["WeekCoverage"], after["Quality"]["WeekCoverage"])
+        old_keys = verify_population_witness(before)
+        new_keys = verify_population_witness(after)
+        self.assertNotIn((2, p), old_keys)
+        self.assertNotIn((2, q), old_keys)
+        for pid in (p, q, r):
+            self.assertIn((2, pid), new_keys)
+            rec = one(after, 2, pid)
+            self.assertEqual((rec["State"], rec["Available"], rec["Played"]), ("bye", "bye", None))
+        self.assertNotEqual(before["Quality"]["Population"]["RecordKeysSha256"],
+                            after["Quality"]["Population"]["RecordKeysSha256"])
+        expected = expected_population_keys(SEASON, injuries=None,
+            rosters={1: {"Week": 1, "Records": after_rows[1]}}, schedule={"Season": SEASON, "Games": games})
+        self.assertEqual(expected, new_keys)
+        self.assertEqual(materializer.serialize(after), materializer.serialize(build([], after_rows, games=games)))
+        # A stale, internally complete snapshot is different from a corrupted one.
+        damaged = copy.deepcopy(before)
+        damaged["Records"].pop()
+        damaged["Quality"]["RecordCount"] -= 1
+        with self.assertRaises(AvailabilityError):
+            verify_population_witness(damaged)
+
+    def test_same_size_key_substitution_is_not_a_valid_snapshot(self):
+        doc = build([], {1: [roster(player(1), "AAA", position="WR")]})
+        doc["Records"][0]["CanonicalPlayerID"] = player(99)
+        with self.assertRaises(AvailabilityError):
+            verify_population_witness(doc)
+
+    def test_full_source_sync_reuses_availability_writer_without_live_or_odds_trigger(self):
+        import yaml
+        repo = Path(__file__).resolve().parents[2]
+        workflow = yaml.safe_load((repo / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8"))
+        job = workflow["jobs"]["nfl_injuries_derived"]
+        self.assertEqual(job["needs"], "sync")
+        self.assertIn("needs.sync.result == 'success'", job["if"])
+        self.assertIn("inputs.materialization_scope == 'full' || !inputs.materialization_scope", job["if"])
+        self.assertIn("inputs.materialization_scope == 'injuries'", job["if"])
+        self.assertIn("needs.sync.outputs.injury_history_due == 'true'", job["if"])
+        self.assertNotIn("'game-finality'", job["if"])
+        self.assertNotIn("'schedule-odds'", job["if"])
+        step = next(s for s in job["steps"] if s["name"].startswith("Rebuild and publish NFL Player Availability"))
+        self.assertIn("--scope nfl-availability-derived", step["run"])
+        self.assertIn("--path data-derived/nfl-player-availability", step["run"])
+        self.assertIn("--all-seasons --write", step["run"])
+        self.assertIn("--all-seasons --check", step["run"])
+
+
 class PersistedStateGuard(unittest.TestCase):
     """Persisted v2/v3 season files have a record with Available and Played for every roster week of the position cut (no gaps).
 
@@ -518,34 +578,63 @@ class PersistedStateGuard(unittest.TestCase):
             for record in document["Records"]:
                 self.assertIn(record["Available"], ("yes", "no", "unknown", "bye"))
                 self.assertIn(record["Played"], (True, False, None))
+                if record["State"] == "bye":
+                    self.assertEqual((record["Available"], record["Played"]), ("bye", None))
+                    self.assertEqual(record["Participation"]["State"], "no-game")
+                    self.assertIsNone(record["GameID"])
+            nfl = repo / "data-source" / "nfl"
+            injuries_path = repo / "data-derived" / "nfl-injuries" / f"{season}.json"
+            injuries = json.loads(injuries_path.read_text(encoding="utf-8")) if injuries_path.is_file() else None
+            schedule = json.loads((nfl / "schedules" / f"{season}.json").read_text(encoding="utf-8"))
+            rosters = {int(p.stem): json.loads(p.read_text(encoding="utf-8"))
+                       for p in sorted((nfl / "weekly-rosters" / str(season)).glob("*.json"))}
+            expected = expected_population_keys(season, injuries=injuries, rosters=rosters, schedule=schedule,
+                                                healthy_positions=positions)
+            witness = population.get("RecordKeysSha256")
+            # Validate a new snapshot against its own exact, independently
+            # source-validated population. Compare current source expectation
+            # separately: an already-covered partition can still be revised.
+            if "RecordKeysSha256" in population:
+                self.assertEqual(recorded, verify_population_witness(document))
+                if witness == population_keys_sha256(expected):
+                    self.assertEqual(recorded, expected)
+            # A fresh population-only derivation covers every current source
+            # partition, including legacy-file rollout and source revisions.
+            # This checks the actual producer, not merely the stored checksum.
+            if witness != population_keys_sha256(expected):
+                current = derive_nfl_player_availability(
+                    season, injuries=injuries, rosters=rosters, snap_counts={}, player_stats={},
+                    schedule=schedule, finality={"Season": season, "Games": []}, healthy_positions=positions,
+                )
+                self.assertEqual(verify_population_witness(current), expected)
+            if "RecordKeysSha256" in population:
+                continue
+            # Legacy v2/v3 snapshots retain the original persisted-state guard until
+            # the existing writer first publishes the source-validated witness.
             if not population["RosterWeeksIncluded"]:
                 continue
             if not population.get("ByeWeeksIncluded"):
-                continue  # persisted before Issue #1616 (G1/G2): skipped until the writer regenerates it
-            schedule = json.loads((repo / "data-source" / "nfl" / "schedules" / f"{season}.json").read_text(encoding="utf-8"))
+                continue  # persisted before Issue #1616 (G1/G2)
             played = {(int(g["Week"]), t) for g in schedule["Games"] for t in (g["AwayTeam"], g["HomeTeam"])}
             last_regular = max(int(g["Week"]) for g in schedule["Games"] if g.get("GameType") == "REG")
-            # The guard compares persisted derived state with the live source, which a sync can advance before the derived writer runs:
-            # only roster weeks the persisted file itself marks as covered (WeekCoverage.RosterPartition) are checked.
             covered = {int(c["Week"]) for c in document["Quality"]["WeekCoverage"] if c["RosterPartition"]}
             rows_by_key = {}
-            for week_file in sorted((repo / "data-source" / "nfl" / "weekly-rosters" / str(season)).glob("*.json")):
-                if int(week_file.stem) not in covered:
+            for week, partition in sorted(rosters.items()):
+                if week not in covered:
                     continue
-                for row in json.loads(week_file.read_text(encoding="utf-8")).get("Records", []):
+                for row in partition.get("Records", []):
                     if row.get("CanonicalPlayerID"):
-                        rows_by_key[(int(week_file.stem), row["CanonicalPlayerID"])] = row
+                        rows_by_key[(week, row["CanonicalPlayerID"])] = row
             for (week, pid), row in rows_by_key.items():
                 nxt = (week + 1, pid)
                 if (row.get("Status") in BYE_CARRY_STATUSES and row.get("GameType") == "REG" and week + 1 <= last_regular and nxt not in rows_by_key
                         and (row.get("Status") in RESERVE_STATUSES or row.get("Position") in positions)
                         and (week + 1, row.get("Team")) not in played):
                     self.assertIn(nxt, recorded, f"{season} week {week + 1}: bye without a record")
-            for week_file in sorted((repo / "data-source" / "nfl" / "weekly-rosters" / str(season)).glob("*.json")):
-                week = int(week_file.stem)
+            for week, partition in sorted(rosters.items()):
                 if week not in covered:
                     continue
-                for row in json.loads(week_file.read_text(encoding="utf-8")).get("Records", []):
+                for row in partition.get("Records", []):
                     pid = row.get("CanonicalPlayerID")
                     if pid and row.get("Status") is not None and row.get("Position") in positions:
                         if row.get("GameType") != "REG" and (week, pid) not in recorded:

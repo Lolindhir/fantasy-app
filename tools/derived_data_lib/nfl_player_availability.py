@@ -13,6 +13,8 @@ derivation over those fields (see ``.ai-context/manual/nfl-player-availability.y
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from collections import Counter, defaultdict
 from typing import Any, Iterable, Mapping
 
@@ -129,6 +131,92 @@ def _partitions(documents: Iterable[Mapping[str, Any]] | Mapping[int, Mapping[st
     if isinstance(documents, Mapping):
         return dict(documents)
     return {int(document["Week"]): document for document in documents}
+
+
+def population_keys_sha256(keys: Iterable[tuple[int, str]]) -> str:
+    """Stable fingerprint of the exact required player-week set, not source freshness."""
+    payload = json.dumps(sorted(keys), ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def expected_population_keys(
+    season: int,
+    *,
+    injuries: Mapping[str, Any] | None,
+    rosters: Mapping[int, Mapping[str, Any]],
+    schedule: Mapping[str, Any],
+    healthy_positions: frozenset[str] | None = FANTASY_POSITIONS,
+) -> set[tuple[int, str]]:
+    """Independent source-side population oracle, without participation or finality.
+
+    Keep this validation separate from the record assembly. It checks the entire
+    expected key set, including report-only records, roster statuses and future
+    byes. A revised partition can change the expected set even if its week was
+    already present. It does not determine Availability, Played or State.
+    """
+    games = [g for g in schedule.get("Games", []) if isinstance(g, Mapping)]
+    scheduled = {(int(g["Week"]), t) for g in games for t in (g["AwayTeam"], g["HomeTeam"])}
+    teams = frozenset(t for _, t in scheduled)
+    last_regular = max((int(g["Week"]) for g in games if g.get("GameType") == REGULAR_GAME_TYPE), default=0)
+    roster_rows = {
+        (week, r["CanonicalPlayerID"]): r
+        for week, doc in sorted(_partitions(rosters).items())
+        for r in doc.get("Records", []) if r.get("CanonicalPlayerID")
+    }
+    reports = {
+        (int(r["Week"]), r["CanonicalPlayerID"]): r
+        for r in (injuries or {}).get("ObservedPlayerWeeks", []) if r.get("CanonicalPlayerID")
+    }
+
+    def eligible(row: Mapping[str, Any]) -> bool:
+        status = row.get("Status")
+        return status in RESERVE_STATUSES or (
+            status is not None and (healthy_positions is None or row.get("Position") in healthy_positions)
+        )
+
+    expected: set[tuple[int, str]] = set()
+    for key in reports.keys() | {k for k, row in roster_rows.items() if eligible(row)}:
+        week, _ = key
+        if week <= last_regular:
+            expected.add(key)
+            continue
+        # Outside the regular season a non-playing team has no record, not a bye.
+        row, report = roster_rows.get(key, {}), reports.get(key, {})
+        raw_team = row.get("Team")
+        if raw_team is None:
+            sources = report.get("SourceTeams") or []
+            raw_team = sources[0] if sources else None
+        game_type = row.get("GameType")
+        if game_type is None:
+            game_type = next((o.get("GameType") for o in report.get("Observations", []) if o.get("GameType")), None)
+        if game_type == REGULAR_GAME_TYPE or (week, _team(raw_team, teams, season)) in scheduled:
+            expected.add(key)
+
+    for (week, pid), row in roster_rows.items():
+        next_key = (week + 1, pid)
+        team = _team(row.get("Team"), teams, season)
+        if (
+            eligible(row) and row.get("Status") in BYE_CARRY_STATUSES
+            and row.get("GameType") == REGULAR_GAME_TYPE
+            and week < last_regular and next_key not in roster_rows
+            and next_key not in reports and team and (week + 1, team) not in scheduled
+        ):
+            expected.add(next_key)
+    return expected
+
+
+def verify_population_witness(document: Mapping[str, Any]) -> set[tuple[int, str]]:
+    """Validate the exact key set of an already-published snapshot."""
+    records = document["Records"]
+    keys = {(r["Week"], r["CanonicalPlayerID"]) for r in records}
+    witness = document["Quality"]["Population"].get("RecordKeysSha256")
+    if (
+        len(keys) != len(records)
+        or document["Quality"]["RecordCount"] != len(records)
+        or witness != population_keys_sha256(keys)
+    ):
+        raise AvailabilityError(f'{document["Season"]}: persisted population witness mismatch')
+    return keys
 
 
 def derive_nfl_player_availability(
@@ -338,6 +426,16 @@ def derive_nfl_player_availability(
             "Roster": None if roster is None else {"Status": roster_status, "Code": roster.get("StatusDescription")},
         })
 
+    # Validate against the source-side oracle before a materializer may publish.
+    expected_keys = expected_population_keys(
+        season, injuries=injuries, rosters=rosters, schedule=schedule, healthy_positions=healthy_positions,
+    )
+    actual_keys = {(r["Week"], r["CanonicalPlayerID"]) for r in records}
+    if actual_keys != expected_keys or len(actual_keys) != len(records):
+        missing = sorted(expected_keys - actual_keys)[:10]
+        extra = sorted(actual_keys - expected_keys)[:10]
+        raise AvailabilityError(f"{season}: population mismatch; missing={missing}, extra={extra}")
+
     state_counts = Counter(record["State"] for record in records)
     coverage = []
     for week in sorted({int(g["Week"]) for g in games}):
@@ -379,6 +477,7 @@ def derive_nfl_player_availability(
                 "RosterWeeksIncluded": roster_status_available,
                 "RosterWeekStatuses": sorted(ROSTER_WEEK_STATUSES) if roster_status_available else [],
                 "Positions": None if healthy_positions is None else sorted(healthy_positions),
+                "RecordKeysSha256": population_keys_sha256(expected_keys),
                 "ByeWeeksIncluded": roster_status_available,
                 "OtherRosterStatusesIncluded": roster_status_available,
                 "Rule": "report-or-reserve-weeks-of-all-positions-plus-roster-and-bye-weeks-of-the-position-cut-when-roster-status-exists" if roster_status_available

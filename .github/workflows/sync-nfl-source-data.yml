@@ -16,6 +16,8 @@ on:
       - "tools/derived_data_lib/nfl_game_detail_core.py"
       - "tools/derived_data_lib/nfl_pbp_accepted_season.py"
       - "tools/tests/test_nfl_source*.py"
+      - "tools/nfl_player_availability_materialize.py"
+      - "tools/derived_data_lib/nfl_player_availability.py"
   repository_dispatch:
     types:
       - scheduler-sync-nfl-source-data
@@ -1245,9 +1247,10 @@ jobs:
   nfl_injuries_derived:
     name: Publish isolated NFL Injury Shared Derived
     needs: sync
-    # Reuse the same Derived writer for an Injury Source update or a successful
-    # Monday full-Source historical Canonical reconciliation, never a new writer.
-    if: ${{ needs.sync.result == 'success' && (inputs.materialization_scope == 'injuries' || needs.sync.outputs.injury_history_due == 'true') }}
+    # Availability also depends on the daily full Source roster/stat/schedule inputs.
+    # Reuse the existing publisher after full Source success, not the frequent
+    # game-finality or odds-only scopes. Injury acquisition/derived gates stay unchanged.
+    if: ${{ needs.sync.result == 'success' && (inputs.materialization_scope == 'injuries' || needs.sync.outputs.injury_history_due == 'true' || inputs.materialization_scope == 'full' || !inputs.materialization_scope) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -1299,7 +1302,8 @@ jobs:
           --scope nfl-availability-derived
           --path data-derived/nfl-player-availability
           --
-          python3 tools/nfl_player_availability_materialize.py --all-seasons --write
+          bash -c 'python3 tools/nfl_player_availability_materialize.py --all-seasons --write &&
+          python3 tools/nfl_player_availability_materialize.py --all-seasons --check'
 
       - name: Audit frozen original Injury release revisions without repair
         if: ${{ needs.sync.outputs.injury_history_due == 'true' }}
