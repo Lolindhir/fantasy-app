@@ -133,7 +133,7 @@ describe('HallOfFamePageComponent', () => {
   it('renders the legacy tiles and the all-time standings; empty record groups are not shown', () => {
     const el = fixture.nativeElement as HTMLElement;
     const card = el.querySelector('app-hall-of-fame[heading="Team Awards"] .hof__card')!;
-    expect(card.textContent).toContain('All-Time Overall Leader');
+    expect(card.textContent).toContain('All-Time Leader');
     expect(card.textContent).toContain('Renamed Aces');
     expect(card.textContent).not.toContain('Ada');
     expect(card.querySelector('.hof__team-logo')?.getAttribute('src')).toBe('team.png');
@@ -199,7 +199,13 @@ describe('HallOfFamePageComponent with several champions', () => {
     expect(card.querySelector('.hof__matchup')?.textContent).toContain('Historical Opponent');
     expect(card.querySelector('.hof__matchup')?.textContent).toContain('163.08');
     expect(card.querySelector('.hof__matchup')?.textContent).toContain('139.92');
-    expect(card.querySelector('.hof__probability strong')?.textContent).toContain('9.54%');
+    const probability = card.querySelector('.hof__probability strong')!;
+    expect(probability.textContent).toContain('9.54%');
+    const matchup = card.querySelector('.hof__matchup')!;
+    expect(matchup.firstElementChild?.classList.contains('hof__probability')).toBeTrue();
+    expect(matchup.querySelectorAll('.hof__match-side').length).toBe(2);
+    expect(parseFloat(getComputedStyle(probability).fontSize))
+      .toBeGreaterThan(parseFloat(getComputedStyle(matchup.querySelector('.hof__score')!).fontSize));
   });
 
   it('opens the champion detail dialog from a tile', () => {

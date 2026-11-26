@@ -65,7 +65,7 @@ export function buildHallOfFameSections(
     const fact = facts.find(candidate => candidate.Key === item.key);
     const team = fact ? teamById.get(String(fact.TeamID)) : undefined;
     const display = item.key === 'ChampOfChamps'
-      ? { title: 'All-Time Overall Leader', valueDisplay: '#1 Overall standings' }
+      ? { title: 'All-Time Leader', valueDisplay: '#1 Overall standings' }
       : item.key === 'RegularSeasonKing'
         ? { valueDisplay: '#1 Regular season standings' }
         : item.key === 'PodiumMachine'
