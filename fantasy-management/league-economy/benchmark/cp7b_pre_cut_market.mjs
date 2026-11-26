@@ -52,7 +52,9 @@ function cutQuote(s,team,id,mode,year=2027){
  const opts={mode,year,salary:terms};
  if(mode==='retained_cycle'){
   opts.tenure=Math.max(0,year-c.start); // explicitly synthetic acquisition proxy
-  opts.floor=money(489862209*(player.year<=3?.0035:.0045));
+  const yr=player.year;
+  const minimumPercent=yr<=1?.0025:yr===2?.003:yr===3?.0035:yr===4?.004:yr<=7?.0045:.005;
+  opts.floor=money(434255984*minimumPercent); // same frozen archive/CP6r minimum anchor
  }else if(mode==='guaranteed_vintage'){
   opts.start=c.start;opts.guarantees=guarantee(c);
  }
@@ -228,7 +230,7 @@ function settleCuts(s,mode,cap){
 function summarizeScenario(base,mode,shock,waitProbability){
  const cap=money(base.cap*(1+shock)),s=clone(base);
  const roles=['all_in','rebuild','reload','flex','all_in','rebuild'];
- s.teams.forEach(t=>{t.strategy=roles[(t.id+base.seed)%6];});
+ s.teams.forEach(t=>{t.strategy=roles[(t.id+Math.floor(base.seed/7))%6];});
  const before=s.teams.map(t=>({team:t.id,capUsed:due(t,s),roster:t.players.length,
   index:lineup(t.players,s.world).score,overBy:Math.max(0,due(t,s)-cap)}));
  const market=tryTrades(s,mode,cap,{waitProbability});
