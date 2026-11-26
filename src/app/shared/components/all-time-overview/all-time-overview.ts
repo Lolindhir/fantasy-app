@@ -25,6 +25,8 @@ export class AllTimeOverviewComponent {
   @Input({ required: true }) overallStandings: AllTimeStandingRow[] | null | undefined;
   @Input({ required: true }) regularSeasonStandings: AllTimeRegularSeasonStandingRow[] | null | undefined;
 
+  @Input() crest: string | null = null;
+
   activeTab: AllTimeTab = 'overall';
 
   selectTab(tab: AllTimeTab): void {
