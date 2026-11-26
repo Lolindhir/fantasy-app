@@ -3431,3 +3431,25 @@ decisions:
         - Until steps 2 to 4 land the existing consumers and publishers keep their current paths.
         - Owner changes of a roster inside a season are not represented (snapshot per season).
 
+  - id: ADR-099
+    title: Exact neutral W/T/L playoff scenarios replace strength-weighted odds from the 2026 selection
+    status: accepted
+    amends: [ADR-090, ADR-093]
+    context: >-
+      Issue #1693 identified false certainty in finite Monte Carlo samples and inconsistent independently rounded place shares.
+    decision: >-
+      Robert authorized A1/A2 through production on 2026-11-26. A1 (playoff-odds-v3) is the equally weighted exact reference;
+      A2 (playoff-odds-v4) is selected in nfl-reise 2026, with a fixed global 1 percent tie assumption (not an empirical rate).
+      Earlier seasons preserve their selected immutable v2 model. Before completion only records and remaining pairings determine
+      exact integer place masses; equal records share occupied places. The official standings model resolves completed seasons.
+      The dynamic progress gate and deterministic state/transition limits fail closed. MatchupForecast separately retains analytic
+      strength-based single-game forecasts. Angular displays authoritative exact support and jointly rounded place labels without
+      computing domain probabilities. Existing league-live and update-history publication paths remain unchanged; rollback is
+      metadata selection to v2 and normal regeneration. Release requires real historical source replay, CI and live/no-op checks.
+    consequences:
+      positive:
+        - Mathematical support and status no longer depend on a finite sample.
+        - Existing schedule forecasts and historical model selections remain reproducible.
+      negative:
+        - A2 is a neutral scenario model, not an empirically calibrated team forecast.
+        - Early or computationally excessive cuts explicitly report unavailable odds.
