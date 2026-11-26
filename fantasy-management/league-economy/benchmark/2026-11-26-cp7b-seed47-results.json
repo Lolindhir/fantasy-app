@@ -1,5 +1,5 @@
 {
-  "schema": "cp7b-precut-six-team-v1",
+  "schema": "cp7b-precut-six-team-v2",
   "date": "2026-11-26",
   "asOf": "2026-10-05",
   "seed": 47,
@@ -8,23 +8,19 @@
     -0.1,
     -0.2
   ],
-  "status": "synthetic 2027 owner/contract vintage, cap-only one-year market, no real trades",
+  "status": "synthetic one-season 2027 contract/owner snapshot, no real trade offers",
   "assumptions": {
     "maxRegularSlots": 45,
     "noTaxi": true,
     "noIR": true,
     "identicalFrozenCriticalityPrices": true,
-    "shocks": [
-      0,
-      -0.1,
-      -0.2
-    ],
     "waitProbability": 0.5,
-    "trade": "1:1 whole current and future contracts, buyer currently cap/positions legal, both proxy utilities positive",
-    "tenure": "synthetic acquisition proxy initially, resets on intra-benchmark trade",
-    "market": "pre-cut greedy maximum six league trades, min20, same-position FA replacement for cuts",
-    "future": "2028/29 annual salary transfer audited with frozen cap counterfactual, not true future buyer solvency",
-    "exclusions": "no actual owners/consent, rookie draft, pick bundles, IR, postcut waiver claims or multiyear cap settlement"
+    "tenure": "synthetic CP6r contract start proxy for acquisition, transfer resets to 2027",
+    "trade": "1:1 full contract, buyer current cap/roster legal, both proxy utilities positive",
+    "cut": "same-position FA replacement; P1 cutplayers available at discounted salary; P2 cutplayers excluded (new FA price undefined)",
+    "salary": "archived fixed criticality-based salary, cap-only shocks 0/-10/-20%, no salary reprice",
+    "future": "2028/29 buyer/seller salary conservation and frozen-cap stress only; future buyer financing unproven",
+    "exclusions": "real consent/ownership history, 2027 rookie draft, picks/trade bundles, injuries, IR, actual waiver claims, 5-year franchise result"
   },
   "starts": {
     "cap": 489862209,
@@ -1842,9 +1838,9 @@
         },
         {
           "team": 3,
-          "capUsed": 386725882,
+          "capUsed": 379247205,
           "roster": 20,
-          "index": 179.98100000000002,
+          "index": 177.27100000000002,
           "overBy": 0
         },
         {
@@ -2102,34 +2098,22 @@
           },
           {
             "team": 3,
-            "player": "4892",
-            "replacement": "11560",
-            "oldSalary": 45237263,
-            "replacementSalary": 20102181,
-            "deadNow": 11309316,
-            "deadFuture": 0,
-            "salaryAfterRelease": null,
-            "netRelief": 13825766,
-            "afterUsed": 403562024
-          },
-          {
-            "team": 3,
             "player": "9221",
-            "replacement": "5850",
+            "replacement": "12489",
             "oldSalary": 62088556,
-            "replacementSalary": 29730275,
+            "replacementSalary": 8425832,
             "deadNow": 15522139,
             "deadFuture": 0,
             "salaryAfterRelease": null,
-            "netRelief": 16836142,
-            "afterUsed": 386725882
+            "netRelief": 38140585,
+            "afterUsed": 379247205
           }
         ],
         "failed": [],
-        "steps": 10
+        "steps": 9
       },
       "debt": {
-        "now": 117700709,
+        "now": 106391393,
         "future": 16581722,
         "ledger": [
           {
@@ -2197,13 +2181,6 @@
           },
           {
             "owner": 3,
-            "player": "4892",
-            "year": 2027,
-            "amount": 11309316,
-            "signYear": 2025
-          },
-          {
-            "owner": 3,
             "player": "9221",
             "year": 2027,
             "amount": 15522139,
@@ -2263,14 +2240,15 @@
   "validation": {
     "scenarios": 9,
     "legal": 9,
-    "greedyUncured": [],
+    "uncuredGreedy": [],
     "trades": 10,
-    "cuts": 22,
+    "cuts": 21,
     "futureTradeSchedulesAudited": 20,
-    "issues": []
+    "retainedDiscountedReplacementCount": 0,
+    "allInvariantsPassed": true
   },
   "provenance": {
-    "sourceBlob": "30937b747102f89073093f9384e24d7ee5ae1148",
+    "sourceBlob": "42b3cf71681ee22df7bfa395839473f656475807",
     "coreBlob": "f5346b7a82f2fda6e97bea929cc4e7dc08620d67",
     "cutProbeBlob": "053c027050339255e3f3df013fb16d4e09ca9ab2",
     "archiveBlob": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
