@@ -1,0 +1,2123 @@
+{
+  "schema": "cp7b-precut-six-team-v0",
+  "date": "2026-11-26",
+  "asOf": "2026-10-05",
+  "status": "synthetic 2027 frozen snapshot only, not a full 5-year backtest or real offers",
+  "assumptions": {
+    "seeds": [
+      47
+    ],
+    "shocks": [
+      0,
+      -0.1,
+      -0.2
+    ],
+    "waitProbability": 0.5,
+    "modes": [
+      "none",
+      "retained_cycle",
+      "guaranteed_vintage"
+    ],
+    "regularSlotsMax": 45,
+    "minimumResearchSlots": 20,
+    "cap": "frozen 2027 Top120/6 cap times shock; separate from salary reprice",
+    "salary": "same CP6r frozen dynamic Criticality archival price in all models",
+    "tenure": "synthetic acquisition proxy uses synthetic CP6r vintage, not real historical tenure",
+    "trade": "one-for-one full-contract salary exchange before forced cuts; buyer financially and position legal; both proxy utility improvements; at most six league trades per world",
+    "cut": "same-position free-agent replacement with retained current or multiyear dead cap; reject unresolvable cases",
+    "freeAgent": "P1 released active Salary discounted, P2 new deal price unspecified; no postcut waiver claims or real human consent",
+    "limits": "no real owner history, IR/Taxi, draft picks, other trade bundles, renewals, injuries, true 2027+ NFL, playoff/championship odds"
+  },
+  "starts": [
+    {
+      "seed": 47,
+      "cap": 489862209,
+      "teams": [
+        {
+          "team": 0,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "initialSalary": 479519327
+        },
+        {
+          "team": 1,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "initialSalary": 470083023
+        },
+        {
+          "team": 2,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "initialSalary": 423774799
+        },
+        {
+          "team": 3,
+          "roster": 20,
+          "index": 187.871,
+          "initialSalary": 417387790
+        },
+        {
+          "team": 4,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "initialSalary": 283857218
+        },
+        {
+          "team": 5,
+          "roster": 20,
+          "index": 160.63,
+          "initialSalary": 247652843
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "shock": 0,
+      "models": [
+        {
+          "mode": "none",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 0,
+          "cuts": 0,
+          "hardFailures": 0,
+          "totalCurrentDead": 0,
+          "totalFutureDead": 0,
+          "candidatesScreened": 0,
+          "waiverWaitBlocks": 0
+        },
+        {
+          "mode": "retained_cycle",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 0,
+          "cuts": 0,
+          "hardFailures": 0,
+          "totalCurrentDead": 0,
+          "totalFutureDead": 0,
+          "candidatesScreened": 0,
+          "waiverWaitBlocks": 0
+        },
+        {
+          "mode": "guaranteed_vintage",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 0,
+          "cuts": 0,
+          "hardFailures": 0,
+          "totalCurrentDead": 0,
+          "totalFutureDead": 0,
+          "candidatesScreened": 0,
+          "waiverWaitBlocks": 0
+        }
+      ]
+    },
+    {
+      "shock": -0.1,
+      "models": [
+        {
+          "mode": "none",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 1,
+          "cuts": 1,
+          "hardFailures": 0,
+          "totalCurrentDead": 0,
+          "totalFutureDead": 0,
+          "candidatesScreened": 954,
+          "waiverWaitBlocks": 0
+        },
+        {
+          "mode": "retained_cycle",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 2,
+          "cuts": 0,
+          "hardFailures": 0,
+          "totalCurrentDead": 0,
+          "totalFutureDead": 0,
+          "candidatesScreened": 954,
+          "waiverWaitBlocks": 1
+        },
+        {
+          "mode": "guaranteed_vintage",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 2,
+          "cuts": 0,
+          "hardFailures": 0,
+          "totalCurrentDead": 0,
+          "totalFutureDead": 0,
+          "candidatesScreened": 954,
+          "waiverWaitBlocks": 0
+        }
+      ]
+    },
+    {
+      "shock": -0.2,
+      "models": [
+        {
+          "mode": "none",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 1,
+          "cuts": 5,
+          "hardFailures": 0,
+          "totalCurrentDead": 0,
+          "totalFutureDead": 0,
+          "candidatesScreened": 1173,
+          "waiverWaitBlocks": 0
+        },
+        {
+          "mode": "retained_cycle",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 2,
+          "cuts": 6,
+          "hardFailures": 0,
+          "totalCurrentDead": 52179104,
+          "totalFutureDead": 0,
+          "candidatesScreened": 1734,
+          "waiverWaitBlocks": 15
+        },
+        {
+          "mode": "guaranteed_vintage",
+          "scenarios": 1,
+          "legal": 1,
+          "trades": 2,
+          "cuts": 10,
+          "hardFailures": 0,
+          "totalCurrentDead": 117700709,
+          "totalFutureDead": 16581722,
+          "candidatesScreened": 1734,
+          "waiverWaitBlocks": 0
+        }
+      ]
+    }
+  ],
+  "results": [
+    {
+      "seed": 47,
+      "mode": "none",
+      "shock": 0,
+      "cap": 489862209,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [],
+        "screened": {
+          "pairs": 0,
+          "capBlocked": 0,
+          "rosterBlocked": 0,
+          "noMutualUtility": 0,
+          "waiverWaitBlocked": 0
+        },
+        "examinedSellerPlayers": 0
+      },
+      "cutPhase": {
+        "events": [],
+        "failed": [],
+        "steps": 0
+      },
+      "debt": {
+        "now": 0,
+        "future": 0,
+        "ledger": []
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "retained_cycle",
+      "shock": 0,
+      "cap": 489862209,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [],
+        "screened": {
+          "pairs": 0,
+          "capBlocked": 0,
+          "rosterBlocked": 0,
+          "noMutualUtility": 0,
+          "waiverWaitBlocked": 0
+        },
+        "examinedSellerPlayers": 0
+      },
+      "cutPhase": {
+        "events": [],
+        "failed": [],
+        "steps": 0
+      },
+      "debt": {
+        "now": 0,
+        "future": 0,
+        "ledger": []
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "guaranteed_vintage",
+      "shock": 0,
+      "cap": 489862209,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [],
+        "screened": {
+          "pairs": 0,
+          "capBlocked": 0,
+          "rosterBlocked": 0,
+          "noMutualUtility": 0,
+          "waiverWaitBlocked": 0
+        },
+        "examinedSellerPlayers": 0
+      },
+      "cutPhase": {
+        "events": [],
+        "failed": [],
+        "steps": 0
+      },
+      "debt": {
+        "now": 0,
+        "future": 0,
+        "ledger": []
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "none",
+      "shock": -0.1,
+      "cap": 440875988,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 38643339
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 29207035
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 427870429,
+          "roster": 20,
+          "index": 200.659,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 434214443,
+          "roster": 20,
+          "index": 191.71800000000002,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 319725798,
+          "roster": 20,
+          "index": 172.987,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [
+          {
+            "from": 1,
+            "to": 4,
+            "playerSold": "3198",
+            "playerGiven": "12474",
+            "salarySold": 38178021,
+            "salaryGiven": 2309441,
+            "capReliefSeller": 35868580,
+            "sellerBefore": 470083023,
+            "sellerAfter": 434214443,
+            "buyerBefore": 283857218,
+            "buyerAfter": 319725798,
+            "cutAlternative": {
+              "mode": "none",
+              "year": 2027,
+              "annual": 38178021,
+              "dead": {},
+              "now": 0,
+              "relief": 38178021,
+              "activeAfterCut": null,
+              "futureDebt": 0,
+              "nextFAContractPrice": null,
+              "player": "3198",
+              "seller": 1,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "9753",
+            "cutAlternativeSellerRelief": 27849830,
+            "sellerTradeVsCutRelief": 8018750,
+            "sellerUtilityVsCut": 0.713,
+            "buyerUtilityVsStay": 2.439,
+            "buyerWaiverWaitOpportunity": 0,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          }
+        ],
+        "screened": {
+          "pairs": 954,
+          "capBlocked": 483,
+          "rosterBlocked": 298,
+          "noMutualUtility": 172,
+          "waiverWaitBlocked": 0
+        },
+        "examinedSellerPlayers": 18
+      },
+      "cutPhase": {
+        "events": [
+          {
+            "team": 0,
+            "player": "7564",
+            "replacement": "9756",
+            "oldSalary": 67031250,
+            "replacementSalary": 15382352,
+            "deadNow": 0,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 51648898,
+            "afterUsed": 427870429
+          }
+        ],
+        "failed": [],
+        "steps": 1
+      },
+      "debt": {
+        "now": 0,
+        "future": 0,
+        "ledger": []
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "retained_cycle",
+      "shock": -0.1,
+      "cap": 440875988,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 38643339
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 29207035
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 432359494,
+          "roster": 20,
+          "index": 196.43599999999998,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 434073572,
+          "roster": 20,
+          "index": 191.23200000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 367026502,
+          "roster": 20,
+          "index": 178.159,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [
+          {
+            "from": 0,
+            "to": 4,
+            "playerSold": "6786",
+            "playerGiven": "12474",
+            "salarySold": 49469274,
+            "salaryGiven": 2309441,
+            "capReliefSeller": 47159833,
+            "sellerBefore": 479519327,
+            "sellerAfter": 432359494,
+            "buyerBefore": 283857218,
+            "buyerAfter": 331017051,
+            "cutAlternative": {
+              "mode": "retained_cycle",
+              "year": 2027,
+              "annual": 49469274,
+              "dead": {
+                "2027": 24734637
+              },
+              "now": 24734637,
+              "relief": 24734637,
+              "activeAfterCut": 24734637,
+              "futureDebt": 0,
+              "nextFAContractPrice": 24734637,
+              "player": "6786",
+              "seller": 0,
+              "teamTenureProxy": 0
+            },
+            "cutReplacement": "11631",
+            "cutAlternativeSellerRelief": 16108712,
+            "sellerTradeVsCutRelief": 31051121,
+            "sellerUtilityVsCut": 3.475,
+            "buyerUtilityVsStay": 3.311,
+            "buyerWaiverWaitOpportunity": 1.237,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          },
+          {
+            "from": 1,
+            "to": 4,
+            "playerSold": "3198",
+            "playerGiven": "11576",
+            "salarySold": 38178021,
+            "salaryGiven": 2168570,
+            "capReliefSeller": 36009451,
+            "sellerBefore": 470083023,
+            "sellerAfter": 434073572,
+            "buyerBefore": 331017051,
+            "buyerAfter": 367026502,
+            "cutAlternative": {
+              "mode": "retained_cycle",
+              "year": 2027,
+              "annual": 38178021,
+              "dead": {
+                "2027": 11453406
+              },
+              "now": 11453406,
+              "relief": 26724615,
+              "activeAfterCut": 26724615,
+              "futureDebt": 0,
+              "nextFAContractPrice": 26724615,
+              "player": "3198",
+              "seller": 1,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "12455",
+            "cutAlternativeSellerRelief": 25239243,
+            "sellerTradeVsCutRelief": 10770208,
+            "sellerUtilityVsCut": 2.573,
+            "buyerUtilityVsStay": 2.522,
+            "buyerWaiverWaitOpportunity": 0.573,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          }
+        ],
+        "screened": {
+          "pairs": 954,
+          "capBlocked": 480,
+          "rosterBlocked": 303,
+          "noMutualUtility": 134,
+          "waiverWaitBlocked": 1
+        },
+        "examinedSellerPlayers": 18
+      },
+      "cutPhase": {
+        "events": [],
+        "failed": [],
+        "steps": 0
+      },
+      "debt": {
+        "now": 0,
+        "future": 0,
+        "ledger": []
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "guaranteed_vintage",
+      "shock": -0.1,
+      "cap": 440875988,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 38643339
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 29207035
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 415188844,
+          "roster": 20,
+          "index": 194.42399999999998,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 399712530,
+          "roster": 20,
+          "index": 187.05700000000004,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 418558194,
+          "roster": 20,
+          "index": 183.99999999999997,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [
+          {
+            "from": 0,
+            "to": 4,
+            "playerSold": "7564",
+            "playerGiven": "9492",
+            "salarySold": 67031250,
+            "salaryGiven": 2700767,
+            "capReliefSeller": 64330483,
+            "sellerBefore": 479519327,
+            "sellerAfter": 415188844,
+            "buyerBefore": 283857218,
+            "buyerAfter": 348187701,
+            "cutAlternative": {
+              "mode": "guaranteed_vintage",
+              "year": 2027,
+              "annual": 67031250,
+              "dead": {
+                "2027": 67031250,
+                "2028": 41894532,
+                "2029": 25136719
+              },
+              "now": 67031250,
+              "relief": 0,
+              "activeAfterCut": null,
+              "futureDebt": 67031251,
+              "nextFAContractPrice": null,
+              "player": "7564",
+              "seller": 0,
+              "teamTenureProxy": 0
+            },
+            "cutReplacement": "11631",
+            "cutAlternativeSellerRelief": -8625925,
+            "sellerTradeVsCutRelief": 72956408,
+            "sellerUtilityVsCut": 17.326,
+            "buyerUtilityVsStay": 4.704,
+            "buyerWaiverWaitOpportunity": 0,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          },
+          {
+            "from": 1,
+            "to": 4,
+            "playerSold": "4034",
+            "playerGiven": "11576",
+            "salarySold": 72539063,
+            "salaryGiven": 2168570,
+            "capReliefSeller": 70370493,
+            "sellerBefore": 470083023,
+            "sellerAfter": 399712530,
+            "buyerBefore": 348187701,
+            "buyerAfter": 418558194,
+            "cutAlternative": {
+              "mode": "guaranteed_vintage",
+              "year": 2027,
+              "annual": 72539063,
+              "dead": {
+                "2027": 36269532,
+                "2028": 21761719
+              },
+              "now": 36269532,
+              "relief": 36269531,
+              "activeAfterCut": null,
+              "futureDebt": 21761719,
+              "nextFAContractPrice": null,
+              "player": "4034",
+              "seller": 1,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "9753",
+            "cutAlternativeSellerRelief": 25941340,
+            "sellerTradeVsCutRelief": 44429153,
+            "sellerUtilityVsCut": 5.633,
+            "buyerUtilityVsStay": 5.341,
+            "buyerWaiverWaitOpportunity": 0,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          }
+        ],
+        "screened": {
+          "pairs": 954,
+          "capBlocked": 473,
+          "rosterBlocked": 309,
+          "noMutualUtility": 109,
+          "waiverWaitBlocked": 0
+        },
+        "examinedSellerPlayers": 18
+      },
+      "cutPhase": {
+        "events": [],
+        "failed": [],
+        "steps": 0
+      },
+      "debt": {
+        "now": 0,
+        "future": 0,
+        "ledger": []
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "none",
+      "shock": -0.2,
+      "cap": 391889767,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 87629560
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 78193256
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 31885032
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 25498023
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 384170268,
+          "roster": 20,
+          "index": 194.17700000000002,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 373028766,
+          "roster": 20,
+          "index": 183.49500000000003,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 361888439,
+          "roster": 20,
+          "index": 182.63199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 377071200,
+          "roster": 20,
+          "index": 182.73600000000002,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 354086840,
+          "roster": 20,
+          "index": 177.16199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [
+          {
+            "from": 1,
+            "to": 4,
+            "playerSold": "4034",
+            "playerGiven": "12474",
+            "salarySold": 72539063,
+            "salaryGiven": 2309441,
+            "capReliefSeller": 70229622,
+            "sellerBefore": 470083023,
+            "sellerAfter": 399853401,
+            "buyerBefore": 283857218,
+            "buyerAfter": 354086840,
+            "cutAlternative": {
+              "mode": "none",
+              "year": 2027,
+              "annual": 72539063,
+              "dead": {},
+              "now": 0,
+              "relief": 72539063,
+              "activeAfterCut": null,
+              "futureDebt": 0,
+              "nextFAContractPrice": null,
+              "player": "4034",
+              "seller": 1,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "12455",
+            "cutAlternativeSellerRelief": 71053691,
+            "sellerTradeVsCutRelief": -824069,
+            "sellerUtilityVsCut": 1.786,
+            "buyerUtilityVsStay": 5.266,
+            "buyerWaiverWaitOpportunity": 0,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          }
+        ],
+        "screened": {
+          "pairs": 1173,
+          "capBlocked": 105,
+          "rosterBlocked": 672,
+          "noMutualUtility": 389,
+          "waiverWaitBlocked": 0
+        },
+        "examinedSellerPlayers": 35
+      },
+      "cutPhase": {
+        "events": [
+          {
+            "team": 0,
+            "player": "4881",
+            "replacement": "11566",
+            "oldSalary": 55346678,
+            "replacementSalary": 11646517,
+            "deadNow": 0,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 43700161,
+            "afterUsed": 435819166
+          },
+          {
+            "team": 0,
+            "player": "7564",
+            "replacement": "9756",
+            "oldSalary": 67031250,
+            "replacementSalary": 15382352,
+            "deadNow": 0,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 51648898,
+            "afterUsed": 384170268
+          },
+          {
+            "team": 1,
+            "player": "4046",
+            "replacement": "11560",
+            "oldSalary": 46926816,
+            "replacementSalary": 20102181,
+            "deadNow": 0,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 26824635,
+            "afterUsed": 373028766
+          },
+          {
+            "team": 2,
+            "player": "4984",
+            "replacement": "9758",
+            "oldSalary": 83322043,
+            "replacementSalary": 21435683,
+            "deadNow": 0,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 61886360,
+            "afterUsed": 361888439
+          },
+          {
+            "team": 3,
+            "player": "6904",
+            "replacement": "6770",
+            "oldSalary": 63177899,
+            "replacementSalary": 22861309,
+            "deadNow": 0,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 40316590,
+            "afterUsed": 377071200
+          }
+        ],
+        "failed": [],
+        "steps": 5
+      },
+      "debt": {
+        "now": 0,
+        "future": 0,
+        "ledger": []
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "retained_cycle",
+      "shock": -0.2,
+      "cap": 391889767,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 87629560
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 78193256
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 31885032
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 25498023
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 384223560,
+          "roster": 20,
+          "index": 186.09599999999998,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 376826573,
+          "roster": 20,
+          "index": 181.29600000000002,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 384451682,
+          "roster": 20,
+          "index": 184.36599999999999,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 379214749,
+          "roster": 20,
+          "index": 180.48600000000002,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 371481517,
+          "roster": 20,
+          "index": 181.16799999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [
+          {
+            "from": 1,
+            "to": 4,
+            "playerSold": "4034",
+            "playerGiven": "9492",
+            "salarySold": 72539063,
+            "salaryGiven": 2700767,
+            "capReliefSeller": 69838296,
+            "sellerBefore": 470083023,
+            "sellerAfter": 400244727,
+            "buyerBefore": 283857218,
+            "buyerAfter": 353695514,
+            "cutAlternative": {
+              "mode": "retained_cycle",
+              "year": 2027,
+              "annual": 72539063,
+              "dead": {
+                "2027": 21761719
+              },
+              "now": 21761719,
+              "relief": 50777344,
+              "activeAfterCut": 50777344,
+              "futureDebt": 0,
+              "nextFAContractPrice": 50777344,
+              "player": "4034",
+              "seller": 1,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "12455",
+            "cutAlternativeSellerRelief": 49291972,
+            "sellerTradeVsCutRelief": 20546324,
+            "sellerUtilityVsCut": 8.473,
+            "buyerUtilityVsStay": 5.916,
+            "buyerWaiverWaitOpportunity": 1.088,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          },
+          {
+            "from": 0,
+            "to": 4,
+            "playerSold": "4217",
+            "playerGiven": "5844",
+            "salarySold": 29263022,
+            "salaryGiven": 11477019,
+            "capReliefSeller": 17786003,
+            "sellerBefore": 479519327,
+            "sellerAfter": 461733324,
+            "buyerBefore": 353695514,
+            "buyerAfter": 371481517,
+            "cutAlternative": {
+              "mode": "retained_cycle",
+              "year": 2027,
+              "annual": 29263022,
+              "dead": {
+                "2027": 8778907
+              },
+              "now": 8778907,
+              "relief": 20484115,
+              "activeAfterCut": 20484115,
+              "futureDebt": 0,
+              "nextFAContractPrice": 20484115,
+              "player": "4217",
+              "seller": 0,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "12506",
+            "cutAlternativeSellerRelief": 16723768,
+            "sellerTradeVsCutRelief": 1062235,
+            "sellerUtilityVsCut": 2.465,
+            "buyerUtilityVsStay": 4.23,
+            "buyerWaiverWaitOpportunity": 0.439,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          }
+        ],
+        "screened": {
+          "pairs": 1734,
+          "capBlocked": 341,
+          "rosterBlocked": 886,
+          "noMutualUtility": 421,
+          "waiverWaitBlocked": 15
+        },
+        "examinedSellerPlayers": 35
+      },
+      "cutPhase": {
+        "events": [
+          {
+            "team": 0,
+            "player": "4881",
+            "replacement": "11566",
+            "oldSalary": 55346678,
+            "replacementSalary": 11646517,
+            "deadNow": 8302002,
+            "deadFuture": 0,
+            "salaryAfterRelease": 47044676,
+            "netRelief": 35398159,
+            "afterUsed": 426335165
+          },
+          {
+            "team": 0,
+            "player": "9493",
+            "replacement": "11631",
+            "oldSalary": 55272408,
+            "replacementSalary": 8625925,
+            "deadNow": 16581722,
+            "deadFuture": 0,
+            "salaryAfterRelease": 38690686,
+            "netRelief": 30064761,
+            "afterUsed": 396270404
+          },
+          {
+            "team": 0,
+            "player": "11533",
+            "replacement": "11792",
+            "oldSalary": 16370778,
+            "replacementSalary": 1868317,
+            "deadNow": 2455617,
+            "deadFuture": 0,
+            "salaryAfterRelease": 13915161,
+            "netRelief": 12046844,
+            "afterUsed": 384223560
+          },
+          {
+            "team": 1,
+            "player": "9488",
+            "replacement": "11635",
+            "oldSalary": 39150496,
+            "replacementSalary": 9859768,
+            "deadNow": 5872574,
+            "deadFuture": 0,
+            "salaryAfterRelease": 33277922,
+            "netRelief": 23418154,
+            "afterUsed": 376826573
+          },
+          {
+            "team": 2,
+            "player": "7547",
+            "replacement": "9756",
+            "oldSalary": 64359375,
+            "replacementSalary": 15382352,
+            "deadNow": 9653906,
+            "deadFuture": 0,
+            "salaryAfterRelease": 54705469,
+            "netRelief": 39323117,
+            "afterUsed": 384451682
+          },
+          {
+            "team": 3,
+            "player": "9221",
+            "replacement": "4137",
+            "oldSalary": 62088556,
+            "replacementSalary": 14602232,
+            "deadNow": 9313283,
+            "deadFuture": 0,
+            "salaryAfterRelease": 52775273,
+            "netRelief": 38173041,
+            "afterUsed": 379214749
+          }
+        ],
+        "failed": [],
+        "steps": 6
+      },
+      "debt": {
+        "now": 52179104,
+        "future": 0,
+        "ledger": [
+          {
+            "owner": 0,
+            "player": "4881",
+            "year": 2027,
+            "amount": 8302002,
+            "signYear": 2025
+          },
+          {
+            "owner": 0,
+            "player": "9493",
+            "year": 2027,
+            "amount": 16581722,
+            "signYear": 2026
+          },
+          {
+            "owner": 0,
+            "player": "11533",
+            "year": 2027,
+            "amount": 2455617,
+            "signYear": 2025
+          },
+          {
+            "owner": 1,
+            "player": "9488",
+            "year": 2027,
+            "amount": 5872574,
+            "signYear": 2025
+          },
+          {
+            "owner": 2,
+            "player": "7547",
+            "year": 2027,
+            "amount": 9653906,
+            "signYear": 2025
+          },
+          {
+            "owner": 3,
+            "player": "9221",
+            "year": 2027,
+            "amount": 9313283,
+            "signYear": 2025
+          }
+        ]
+      },
+      "waiverDiscounts": [
+        {
+          "player": "4881",
+          "discountFromOriginal": 8302002,
+          "salaryAfterRelease": 47044676
+        },
+        {
+          "player": "9493",
+          "discountFromOriginal": 16581722,
+          "salaryAfterRelease": 38690686
+        },
+        {
+          "player": "11533",
+          "discountFromOriginal": 2455617,
+          "salaryAfterRelease": 13915161
+        },
+        {
+          "player": "9488",
+          "discountFromOriginal": 5872574,
+          "salaryAfterRelease": 33277922
+        },
+        {
+          "player": "7547",
+          "discountFromOriginal": 9653906,
+          "salaryAfterRelease": 54705469
+        },
+        {
+          "player": "9221",
+          "discountFromOriginal": 9313283,
+          "salaryAfterRelease": 52775273
+        }
+      ],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    },
+    {
+      "seed": 47,
+      "mode": "guaranteed_vintage",
+      "shock": -0.2,
+      "cap": 391889767,
+      "waitProbability": 0.5,
+      "legal": true,
+      "before": [
+        {
+          "team": 0,
+          "capUsed": 479519327,
+          "roster": 20,
+          "index": 208.18999999999997,
+          "overBy": 87629560
+        },
+        {
+          "team": 1,
+          "capUsed": 470083023,
+          "roster": 20,
+          "index": 202.13800000000003,
+          "overBy": 78193256
+        },
+        {
+          "team": 2,
+          "capUsed": 423774799,
+          "roster": 20,
+          "index": 191.32699999999997,
+          "overBy": 31885032
+        },
+        {
+          "team": 3,
+          "capUsed": 417387790,
+          "roster": 20,
+          "index": 187.871,
+          "overBy": 25498023
+        },
+        {
+          "team": 4,
+          "capUsed": 283857218,
+          "roster": 20,
+          "index": 168.85199999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "after": [
+        {
+          "team": 0,
+          "capUsed": 383428616,
+          "roster": 20,
+          "index": 177.432,
+          "overBy": 0
+        },
+        {
+          "team": 1,
+          "capUsed": 379507780,
+          "roster": 20,
+          "index": 181.53400000000002,
+          "overBy": 0
+        },
+        {
+          "team": 2,
+          "capUsed": 385365036,
+          "roster": 20,
+          "index": 182.45799999999997,
+          "overBy": 0
+        },
+        {
+          "team": 3,
+          "capUsed": 386725882,
+          "roster": 20,
+          "index": 179.98100000000002,
+          "overBy": 0
+        },
+        {
+          "team": 4,
+          "capUsed": 371481517,
+          "roster": 20,
+          "index": 181.16799999999998,
+          "overBy": 0
+        },
+        {
+          "team": 5,
+          "capUsed": 247652843,
+          "roster": 20,
+          "index": 160.63,
+          "overBy": 0
+        }
+      ],
+      "market": {
+        "events": [
+          {
+            "from": 1,
+            "to": 4,
+            "playerSold": "4034",
+            "playerGiven": "9492",
+            "salarySold": 72539063,
+            "salaryGiven": 2700767,
+            "capReliefSeller": 69838296,
+            "sellerBefore": 470083023,
+            "sellerAfter": 400244727,
+            "buyerBefore": 283857218,
+            "buyerAfter": 353695514,
+            "cutAlternative": {
+              "mode": "guaranteed_vintage",
+              "year": 2027,
+              "annual": 72539063,
+              "dead": {
+                "2027": 36269532,
+                "2028": 21761719
+              },
+              "now": 36269532,
+              "relief": 36269531,
+              "activeAfterCut": null,
+              "futureDebt": 21761719,
+              "nextFAContractPrice": null,
+              "player": "4034",
+              "seller": 1,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "12455",
+            "cutAlternativeSellerRelief": 34784159,
+            "sellerTradeVsCutRelief": 35054137,
+            "sellerUtilityVsCut": 16.38,
+            "buyerUtilityVsStay": 5.916,
+            "buyerWaiverWaitOpportunity": 0,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          },
+          {
+            "from": 0,
+            "to": 4,
+            "playerSold": "4217",
+            "playerGiven": "5844",
+            "salarySold": 29263022,
+            "salaryGiven": 11477019,
+            "capReliefSeller": 17786003,
+            "sellerBefore": 479519327,
+            "sellerAfter": 461733324,
+            "buyerBefore": 353695514,
+            "buyerAfter": 371481517,
+            "cutAlternative": {
+              "mode": "guaranteed_vintage",
+              "year": 2027,
+              "annual": 29263022,
+              "dead": {
+                "2027": 14631511,
+                "2028": 8778907
+              },
+              "now": 14631511,
+              "relief": 14631511,
+              "activeAfterCut": null,
+              "futureDebt": 8778907,
+              "nextFAContractPrice": null,
+              "player": "4217",
+              "seller": 0,
+              "teamTenureProxy": 1
+            },
+            "cutReplacement": "12506",
+            "cutAlternativeSellerRelief": 10871164,
+            "sellerTradeVsCutRelief": 6914839,
+            "sellerUtilityVsCut": 5.245,
+            "buyerUtilityVsStay": 4.23,
+            "buyerWaiverWaitOpportunity": 0,
+            "transactionCreatesDeadCap": 0,
+            "actualHumanConsent": "unobserved",
+            "buyerPaidFullContract": true
+          }
+        ],
+        "screened": {
+          "pairs": 1734,
+          "capBlocked": 341,
+          "rosterBlocked": 886,
+          "noMutualUtility": 397,
+          "waiverWaitBlocked": 0
+        },
+        "examinedSellerPlayers": 35
+      },
+      "cutPhase": {
+        "events": [
+          {
+            "team": 0,
+            "player": "4881",
+            "replacement": "11566",
+            "oldSalary": 55346678,
+            "replacementSalary": 11646517,
+            "deadNow": 13836670,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 29863491,
+            "afterUsed": 431869833
+          },
+          {
+            "team": 0,
+            "player": "11533",
+            "replacement": "11792",
+            "oldSalary": 16370778,
+            "replacementSalary": 1868317,
+            "deadNow": 4092695,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 10409766,
+            "afterUsed": 421460067
+          },
+          {
+            "team": 0,
+            "player": "8138",
+            "replacement": "4137",
+            "oldSalary": 36497572,
+            "replacementSalary": 14602232,
+            "deadNow": 9124393,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 12770947,
+            "afterUsed": 408689120
+          },
+          {
+            "team": 0,
+            "player": "5844",
+            "replacement": "12506",
+            "oldSalary": 11477019,
+            "replacementSalary": 3760347,
+            "deadNow": 2869255,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 4847417,
+            "afterUsed": 403841703
+          },
+          {
+            "team": 0,
+            "player": "5850",
+            "replacement": "7594",
+            "oldSalary": 29730275,
+            "replacementSalary": 14138471,
+            "deadNow": 7432569,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 8159235,
+            "afterUsed": 395682468
+          },
+          {
+            "team": 0,
+            "player": "9493",
+            "replacement": "9756",
+            "oldSalary": 55272408,
+            "replacementSalary": 15382352,
+            "deadNow": 27636204,
+            "deadFuture": 16581722,
+            "salaryAfterRelease": null,
+            "netRelief": 12253852,
+            "afterUsed": 383428616
+          },
+          {
+            "team": 1,
+            "player": "9488",
+            "replacement": "11631",
+            "oldSalary": 39150496,
+            "replacementSalary": 8625925,
+            "deadNow": 9787624,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 20736947,
+            "afterUsed": 379507780
+          },
+          {
+            "team": 2,
+            "player": "7547",
+            "replacement": "11635",
+            "oldSalary": 64359375,
+            "replacementSalary": 9859768,
+            "deadNow": 16089844,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 38409763,
+            "afterUsed": 385365036
+          },
+          {
+            "team": 3,
+            "player": "4892",
+            "replacement": "11560",
+            "oldSalary": 45237263,
+            "replacementSalary": 20102181,
+            "deadNow": 11309316,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 13825766,
+            "afterUsed": 403562024
+          },
+          {
+            "team": 3,
+            "player": "9221",
+            "replacement": "5850",
+            "oldSalary": 62088556,
+            "replacementSalary": 29730275,
+            "deadNow": 15522139,
+            "deadFuture": 0,
+            "salaryAfterRelease": null,
+            "netRelief": 16836142,
+            "afterUsed": 386725882
+          }
+        ],
+        "failed": [],
+        "steps": 10
+      },
+      "debt": {
+        "now": 117700709,
+        "future": 16581722,
+        "ledger": [
+          {
+            "owner": 0,
+            "player": "4881",
+            "year": 2027,
+            "amount": 13836670,
+            "signYear": 2025
+          },
+          {
+            "owner": 0,
+            "player": "11533",
+            "year": 2027,
+            "amount": 4092695,
+            "signYear": 2025
+          },
+          {
+            "owner": 0,
+            "player": "8138",
+            "year": 2027,
+            "amount": 9124393,
+            "signYear": 2025
+          },
+          {
+            "owner": 0,
+            "player": "5844",
+            "year": 2027,
+            "amount": 2869255,
+            "signYear": 2025
+          },
+          {
+            "owner": 0,
+            "player": "5850",
+            "year": 2027,
+            "amount": 7432569,
+            "signYear": 2025
+          },
+          {
+            "owner": 0,
+            "player": "9493",
+            "year": 2027,
+            "amount": 27636204,
+            "signYear": 2026
+          },
+          {
+            "owner": 0,
+            "player": "9493",
+            "year": 2028,
+            "amount": 16581722,
+            "signYear": 2026
+          },
+          {
+            "owner": 1,
+            "player": "9488",
+            "year": 2027,
+            "amount": 9787624,
+            "signYear": 2025
+          },
+          {
+            "owner": 2,
+            "player": "7547",
+            "year": 2027,
+            "amount": 16089844,
+            "signYear": 2025
+          },
+          {
+            "owner": 3,
+            "player": "4892",
+            "year": 2027,
+            "amount": 11309316,
+            "signYear": 2025
+          },
+          {
+            "owner": 3,
+            "player": "9221",
+            "year": 2027,
+            "amount": 15522139,
+            "signYear": 2025
+          }
+        ]
+      },
+      "waiverDiscounts": [],
+      "finalOwnershipUnique": true,
+      "finalRostersValid": true,
+      "syntheticData": true,
+      "syntheticContractTenureProxy": true
+    }
+  ],
+  "validation": {
+    "pairedInitialWorlds": true,
+    "scenarioCount": 9,
+    "legal": 9,
+    "uncuredGreedyPaths": [],
+    "tradeEvents": 10,
+    "cutEvents": 22,
+    "invariantsPassed": true,
+    "issues": []
+  },
+  "provenance": {
+    "benchmarkBlob": "f029d8d502cb141082600d4dfbfc8ac7ff5076ad",
+    "coreBlob": "f5346b7a82f2fda6e97bea929cc4e7dc08620d67",
+    "cutProbeBlob": "053c027050339255e3f3df013fb16d4e09ca9ab2",
+    "archiveBlob": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
+  }
+}
