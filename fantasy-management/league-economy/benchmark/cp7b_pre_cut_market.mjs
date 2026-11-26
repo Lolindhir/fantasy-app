@@ -19,13 +19,18 @@ const money=x=>Math.floor(x+.5),M=1000000;
 function assert(v,n){if(!v)throw Error(n);}
 function clone(base){
  return {world:base.world,teams:base.teams.map(t=>({...t,players:[...t.players]})),
-  contracts:new Map([...base.contracts].map(([id,c])=>[id,{...c}])),
+  contracts:new Map([...base.contracts].map(([id,c])=>[id,{...c,acquiredYear:c.start}])),
   debt:[],released:new Map(),pickedFA:new Set()};
 }
 function salary(contract,year=2027){return annual(contract,year,.25);}
 function due(team,s,year=2027){return team.players.reduce((sum,id)=>sum+(s.contracts.has(id)?
   salary(s.contracts.get(id),year):s.world.get(id).price),0)+
   s.debt.filter(d=>d.owner===team.id&&d.year===year).reduce((sum,d)=>sum+d.amount,0);}
+function futureDue(team,s,year){
+ return team.players.reduce((sum,id)=>sum+(s.contracts.has(id)?
+  salary(s.contracts.get(id),year):0),0)+
+  s.debt.filter(d=>d.owner===team.id&&d.year===year).reduce((sum,d)=>sum+d.amount,0);
+}
 function u(ids,team,s,cap,year=2027){
  const line=lineup(ids,s.world);if(!line.valid)return -Infinity;
  const weight=W[team.strategy]||W.reload;const chosen=new Set(line.ids);
@@ -51,7 +56,7 @@ function cutQuote(s,team,id,mode,year=2027){
  const player=s.world.get(id);
  const opts={mode,year,salary:terms};
  if(mode==='retained_cycle'){
-  opts.tenure=Math.max(0,year-c.start); // explicitly synthetic acquisition proxy
+  opts.tenure=Math.max(0,year-(c.acquiredYear??c.start)); // proxy, reset on transfer
   const yr=player.year;
   const minimumPercent=yr<=1?.0025:yr===2?.003:yr===3?.0035:yr===4?.004:yr<=7?.0045:.005;
   opts.floor=money(434255984*minimumPercent); // same frozen archive/CP6r minimum anchor
@@ -60,7 +65,7 @@ function cutQuote(s,team,id,mode,year=2027){
  }
  // Frozen archive 2027 contract; nominal P1 min is a synthetic price anchor.
  const q=cut(opts);
- return {...q,player:id,seller:team.id,teamTenureProxy:year-c.start};
+ return {...q,player:id,seller:team.id,teamTenureProxy:year-(c.acquiredYear??c.start)};
 }
 function alternativeCut(s,team,id,mode,cap,free){
  const old=team.players;const quote=cutQuote(s,team,id,mode);
@@ -167,10 +172,24 @@ function tryTrades(s,mode,cap,{waitProbability=.5,maxTrades=6}={}){
   if(!best)break;
   const {seller,buyer,outgoing,incoming,outCost,giveCost,alt}=best;
   const sumBefore=s.teams.reduce((v,t)=>v+due(t,s),0);
+  const futureBefore=[2028,2029].map(y=>({year:y,seller:futureDue(seller,s,y),
+   buyer:futureDue(buyer,s,y),sellerOutgoing:salary(s.contracts.get(outgoing.id),y),
+   buyerOutgoing:salary(s.contracts.get(incoming.id),y)}));
   seller.players=seller.players.map(id=>id===outgoing.id?incoming.id:id);
   buyer.players=buyer.players.map(id=>id===incoming.id?outgoing.id:id);
   s.contracts.get(outgoing.id).owner=buyer.id;
+  s.contracts.get(outgoing.id).acquiredYear=2027;
   s.contracts.get(incoming.id).owner=seller.id;
+  s.contracts.get(incoming.id).acquiredYear=2027;
+  const futureTransfers=futureBefore.map(x=>{
+   const sAfter=futureDue(seller,s,x.year),bAfter=futureDue(buyer,s,x.year);
+   assert(x.seller+x.buyer===sAfter+bAfter,'future trade salaries conserved');
+   return {year:x.year,sellerBefore:x.seller,buyerBefore:x.buyer,
+    sellerAfter:sAfter,buyerAfter:bAfter,
+    salaryToBuyer:x.sellerOutgoing,salaryToSeller:x.buyerOutgoing,
+    frozenCapStressBuyerHeadroom:cap-bAfter,
+    frozenCapStressSellerHeadroom:cap-sAfter};
+  });
   const afterSeller=due(seller,s),afterBuyer=due(buyer,s);
   assert(afterSeller===best.sellerDue-outCost+giveCost,'seller cost');
   assert(afterBuyer===best.buyerDue-giveCost+outCost,'buyer cost');
@@ -187,6 +206,7 @@ function tryTrades(s,mode,cap,{waitProbability=.5,maxTrades=6}={}){
    sellerUtilityVsCut:+best.sellerBenefit.toFixed(3),
    buyerUtilityVsStay:+best.buyerBenefit.toFixed(3),
    buyerWaiverWaitOpportunity:+best.waitPremium.toFixed(3),
+   futureTransfers,contractBuyerFundingBeyond2027:'not established: future cap unknown',
    transactionCreatesDeadCap:0,actualHumanConsent:'unobserved',buyerPaidFullContract:true});
  }
  return {events,screened,examinedSellerPlayers:examinedSellers.size};
@@ -210,7 +230,7 @@ function settleCuts(s,mode,cap){
    s.contracts.delete(b.player);
    const newPlayer=s.world.get(b.replacement);
    s.contracts.set(newPlayer.id,{player:newPlayer.id,owner:team.id,start:2027,end:2029,
-    kind:'veteran',base:newPlayer.price,pendingRenewal:false});
+    kind:'veteran',base:newPlayer.price,pendingRenewal:false,acquiredYear:2027});
    for(const [yr,amount] of Object.entries(b.quote.dead))if(amount>0)
     s.debt.push({owner:team.id,player:b.player,year:Number(yr),amount,signYear:contract.start});
    if(mode==='retained_cycle')s.released.set(b.player,b.quote.activeAfterCut);
