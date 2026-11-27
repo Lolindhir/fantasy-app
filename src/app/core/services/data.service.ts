@@ -282,7 +282,7 @@ export class DataService {
    */
   getPlayerJourneySources(): Observable<PlayerJourneySources> {
     this.playerJourneySources$ ??= this.getLeagueWithPlayers().pipe(
-      switchMap(({ league, drafts, teams }) =>
+      switchMap(({ league, drafts, teams, players }) =>
         this.getPastSeasonsIndex().pipe(
           // All-or-nothing (Issue #1425): a failed index or past file must surface as an error, never as a
           // silently shorter journey. shareReplay resets on error, so the next request retries.
@@ -298,7 +298,9 @@ export class DataService {
               ? forkJoin(draftPaths.map(path => this.getPastDraftsRaw(path)))
               : of([] as RawDraft[][]);
             return forkJoin({
-              transactions: this.getTransactionsForSources(true, transactionPaths),
+              transactions: this.loadCompletedRawTransactions(true, transactionPaths).pipe(
+                map(raw => mapRawTransactions(raw, teams, players))
+              ),
               pastDrafts: pastDrafts$
             }).pipe(
               map(({ transactions, pastDrafts }) => ({
@@ -347,6 +349,18 @@ export class DataService {
     historicalPaths: string[],
     sortFields: SortField[] = ['NameLast']
   ): Observable<Transaction[]> {
+    return forkJoin({
+      context: this.getLeagueWithPlayers(sortFields),
+      raw: this.loadCompletedRawTransactions(includeCurrent, historicalPaths)
+    }).pipe(map(({ context, raw }) =>
+      mapRawTransactions(raw, context.teams, context.players)));
+  }
+
+  /** Source selection and completed-transaction merge are shared by Moves and Player Journey. */
+  private loadCompletedRawTransactions(
+    includeCurrent: boolean,
+    historicalPaths: string[]
+  ): Observable<RawTransaction[]> {
     const normalizedHistoricalPaths = Array.from(new Set(
       (historicalPaths ?? []).filter(path => !!path)
     ));
@@ -358,21 +372,7 @@ export class DataService {
       ? forkJoin(transactionSources)
       : of([] as RawTransaction[][]);
 
-    return forkJoin({
-      leagueData: this.dataApiService.getLeagueData(),
-      transactionLists: transactionLists$
-    }).pipe(
-      map(({ leagueData, transactionLists }) => {
-        const mappedLeagueData = this.mapLeagueData(leagueData, sortFields);
-        const transactionsRaw = mergeCompletedRawTransactions(transactionLists);
-
-        return mapRawTransactions(
-          transactionsRaw,
-          mappedLeagueData.teams,
-          mappedLeagueData.players
-        );
-      })
-    );
+    return transactionLists$.pipe(map(mergeCompletedRawTransactions));
   }
 
   /** Weekly player award history; null when the file is unavailable so callers hide the feature. */

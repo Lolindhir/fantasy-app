@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, of, throwError } from 'rxjs';
+import { defer, firstValueFrom, of, throwError } from 'rxjs';
 
 import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
 import type { RawFantasyTeam, RawLeague } from '../models/league.models';
 import type { RawPlayer } from '../models/player.models';
+import type { RawDraft } from '../models/draft.models';
 import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type {
   PlayerWeekFantasyProjectionStatus,
@@ -27,6 +28,10 @@ describe('DataService', () => {
       'getPlayersRaw',
       'getNflTeamsRaw',
       'getLeagueData',
+      'getPastSeasonsIndex',
+      'getTransactionsRaw',
+      'getPastTransactionsRaw',
+      'getPastDraftsRaw',
       'getTimestamps',
       'getFantasyGameContextRaw',
       'getPlayerWeekFantasyRaw',
@@ -126,6 +131,98 @@ describe('DataService', () => {
     expect(await firstValueFrom(service.getPlayerIdentitySummaries([]))).toEqual([]);
     expect(dataApiService.getPlayersRaw).not.toHaveBeenCalled();
     expect(dataApiService.getNflTeamsRaw).not.toHaveBeenCalled();
+  });
+
+  describe('player journey source reuse', () => {
+    const transactionPath = 'data/past_seasons/2025/Transactions.json';
+    const draftPath = 'data/past_seasons/2025/Drafts.json';
+    const currentDraft = { DraftKey: 'current', Season: '2026', Picks: [] } as unknown as RawDraft;
+    const pastDraft = { DraftKey: 'past', Season: '2025', Picks: [] } as unknown as RawDraft;
+    let bundleSubscriptions: number;
+
+    beforeEach(() => {
+      bundleSubscriptions = 0;
+      const raw = createRawLeague();
+      raw.Teams = [{
+        TeamID: 1, Team: 'Example', Owner: 'Manager', OwnerID: 'owner-1',
+        Roster: [], Reserve: [], Taxi: [], Starter: [],
+        Placements: {
+          Current: { Regular: { Place: 1 } },
+          Previous: {},
+          AllTime: { Playoffs: { Place: 1 }, Regular: { Place: 1 } }
+        }
+      }] as unknown as RawFantasyTeam[];
+      dataApiService.getLeagueData.and.returnValue(defer(() => {
+        bundleSubscriptions++;
+        return of({ leagueRaw: raw, playersRaw: [], nflTeamsRaw: [], draftsRaw: [currentDraft] });
+      }));
+      dataApiService.getPastSeasonsIndex.and.returnValue(of({
+        GeneratedAt: null,
+        Seasons: [
+          { Season: '2025', Resources: {
+            Transactions: { Exists: true, Path: transactionPath },
+            Drafts: { Exists: true, Path: draftPath }
+          } },
+          { Season: '2024', Resources: { Transactions: { Exists: true, Path: transactionPath } } },
+          { Season: '2023', Resources: { Transactions: { Exists: false, Path: 'not-published' } } },
+          { Season: '2026', Resources: { Transactions: { Exists: true, Path: 'current-archive' } } },
+          { Season: '2027', Resources: { Transactions: { Exists: true, Path: 'future-archive' } } }
+        ]
+      }));
+      dataApiService.getTransactionsRaw.and.returnValue(of([createRawTransaction()]));
+      const past = { ...createRawTransaction(), Season: '2025', CreatedAt: 1 };
+      dataApiService.getPastTransactionsRaw.and.returnValue(of([
+        past, { ...past }, { ...past, TransactionID: 'pending', Status: 'pending' }
+      ]));
+      dataApiService.getPastDraftsRaw.and.returnValue(of([pastDraft]));
+    });
+
+    it('uses one cold context for all historical sources and replays successful journeys', async () => {
+      const first = await firstValueFrom(service.getPlayerJourneySources());
+      const second = await firstValueFrom(service.getPlayerJourneySources());
+
+      expect(bundleSubscriptions).toBe(1);
+      expect(dataApiService.getLeagueData).toHaveBeenCalledTimes(1);
+      expect(freeAgentMarketService.enrich).toHaveBeenCalledTimes(1);
+      expect(dataApiService.getTransactionsRaw).toHaveBeenCalledTimes(1);
+      expect(dataApiService.getPastTransactionsRaw).toHaveBeenCalledOnceWith(transactionPath);
+      expect(dataApiService.getPastDraftsRaw).toHaveBeenCalledOnceWith(draftPath);
+      expect(first.transactions.map(tx => [tx.Season, tx.TransactionID])).toEqual([
+        ['2026', 'transaction-1'], ['2025', 'transaction-1']
+      ]);
+      expect(first.transactions[0].Participants[0].Team).toBe(first.teams[0]);
+      expect(first.transactions[1].Participants[0].Team).toBe(first.teams[0]);
+      expect(first.drafts).toEqual([currentDraft, pastDraft]);
+      expect(second).toBe(first);
+    });
+
+    it('fails the whole journey on an unreadable historical transaction file and retries', async () => {
+      const failure = new Error('archive unavailable');
+      dataApiService.getPastTransactionsRaw.and.returnValue(throwError(() => failure));
+      await expectAsync(firstValueFrom(service.getPlayerJourneySources())).toBeRejectedWith(failure);
+
+      dataApiService.getPastTransactionsRaw.and.returnValue(of([]));
+      const recovered = await firstValueFrom(service.getPlayerJourneySources());
+      expect(bundleSubscriptions).toBe(2);
+      expect(freeAgentMarketService.enrich).toHaveBeenCalledTimes(2);
+      expect(recovered.transactions.length).toBe(1);
+      expect(recovered.drafts).toEqual([currentDraft, pastDraft]);
+    });
+
+    it('fails the whole journey when an indexed draft file cannot be loaded', async () => {
+      const failure = new Error('draft unavailable');
+      dataApiService.getPastDraftsRaw.and.returnValue(throwError(() => failure));
+      await expectAsync(firstValueFrom(service.getPlayerJourneySources())).toBeRejectedWith(failure);
+      expect(bundleSubscriptions).toBe(1);
+    });
+
+    it('preserves the independent transaction selector and archive-only semantics', async () => {
+      const transactions = await firstValueFrom(service.getTransactionsForSources(false, [transactionPath, '', transactionPath]));
+      expect(bundleSubscriptions).toBe(1);
+      expect(dataApiService.getTransactionsRaw).not.toHaveBeenCalled();
+      expect(dataApiService.getPastTransactionsRaw).toHaveBeenCalledOnceWith(transactionPath);
+      expect(transactions.map(tx => tx.Season)).toEqual(['2025']);
+    });
   });
 
   it('exposes the transaction timestamp and includes it in the latest timestamp', async () => {
