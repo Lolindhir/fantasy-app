@@ -45,5 +45,5 @@ publication:
   class: rebuild-and-retry
   writePrefix: data-derived/league-records
   failure: Warn and retain previous record on missing or invalid evidence; no consumer cutover until readback.
-  check: Second invocation is read-only and must be a semantic no-op.
+  check: Second invocation is read-only and must be a semantic no-op; a failed check aborts the rebuild transaction.
   schedule: Existing League Live cadence and weekly historical reconciliation, no new trigger.

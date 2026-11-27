@@ -61,8 +61,9 @@ jobs:
              echo "::warning title=team-injury-impact not materialized::kept the last product"; } &&
            python3 tools/injury_impact_app_publish.py write &&
            { if python3 tools/derived_data.py materialize --product season-statistics --scope all > /dev/null; then
-               { python3 tools/league_records_materialize.py --write && python3 tools/league_records_materialize.py --check > /dev/null; } ||
-                 echo "::warning title=league-records not verified::see materializer output";
+               if python3 tools/league_records_materialize.py --write; then
+                 python3 tools/league_records_materialize.py --check > /dev/null || exit 1;
+                 else echo "::warning title=league-records not materialized::kept the last valid product"; fi;
              else echo "::warning title=season-statistics not materialized::kept the last product; league-records not refreshed"; fi; } &&
            python3 tools/season_statistics_app_publish.py write --scope all &&
            python3 tools/league_schedule_outlook_materialize.py --scope all --mode full --fail-on-error &&
