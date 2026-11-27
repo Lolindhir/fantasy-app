@@ -146,6 +146,7 @@ readingOrder:
   - .ai-context/manual/player-valuation.yaml
   - .ai-context/manual/league-standings.yaml
   - .ai-context/manual/season-statistics.yaml
+  - .ai-context/manual/league-records.yaml
   - .ai-context/manual/league-rivalry.yaml
   - .ai-context/manual/league-lifecycle.yaml
   - .ai-context/manual/decision-windows.yaml
@@ -184,6 +185,7 @@ shortContext:
   .ai-context/manual/derived-models.yaml: Kanonischer Vertrag fuer zentrale, ligaunabhaengige, versionierte Derivationsmodelle (salary-v1, salary-cap-v1, grading-v1) mit Registry, Unveraenderlichkeit nach erstem produktiven Einsatz, Modellwahl je Liga und Saison ueber data-meta und exakter Paritaet zum PowerShell-Verhalten (ADR-055, #919)
   .ai-context/manual/player-valuation.yaml: Shared-Derived-Vertrag fuer PlayerValuation (Salary, SalaryProjected, Ranking, Rank-Grading, Salary Cap) mit voller Historie je Liga, Saison und Woche; Python materialisiert und publiziert mit dem Players-Consumer, RequestLeague liest den neuesten Saison-Snapshot ueber den schlanken PowerShell-Leseadapter (ADR-055, #919, #1238)
   .ai-context/manual/league-standings.yaml: Shared-Derived-Vertrag fuer die Liga-Standings (Regular-Season-Tabelle mit Tiebreaks, Wochentabellen und Weekly Movement, Playoff-Platzierungen, Awards, All-Time) als Produkt league-standings mit einer Datei je Liga und Saison unter data-derived; zentrale Modelle standings-v1/awards-v1 mit Modellwahl je Saison in data-meta, Wochenbasis LeagueScoredWeek, Cutover elevated (ADR-072, #987)
+  .ai-context/manual/league-records.yaml: Consumer-neutral versioned cross-season league records (ADR-100, #1672), one document per league; v1 Biggest Upset, coverage and season-specific roster IDs; no new record semantics.
   .ai-context/manual/league-rivalry.yaml: Shared-Derived-Vertrag fuer die Rivalry-Statistik (Head-to-Head je Team und Gegner, Filter all/regular/playoffs, Einzelspiele) als Produkt league-rivalry mit einer Datei je Liga unter data-derived; zentrale Modelle rivalry-v1 (historisch) und rivalry-v2 (alle finalen Duelle inkl. Losers Bracket, ab #1470) mit Modellwahl je Saison in data-meta, Bracket-Label (championship/placement/consolation) im Matchup-Kontext aus den kanonischen Winners-/Losers-Brackets statt der Frontend-Heuristik, E1 Platzierungsspiele zaehlen, E2 Playoffs zaehlen nach Saisonende (ADR-083, #1455)
   .ai-context/manual/season-statistics.yaml: Shared-Derived-Vertrag fuer die Saisonstatistik (Expected Wins, Luck, All-Play, Staerke, Gegner-Timing, Projektion vs. Ergebnis, Upsets) je Liga und Saison unter data-derived/season-statistics; zentrales Modell season-stats-v1 mit Modellwahl je Saison in data-meta, Consumer-Generator tools/season_statistics_app_publish.py (ADR-082, #506)
   .ai-context/manual/league-teams.yaml: Shared-Derived-Vertrag fuer die Teamidentitaet je Saison (Produkt league-teams, eine Datei je Liga mit allen Saisons): Manager-Felder (OwnerID, Owner, OwnerAvatar) strikt getrennt von Team-Feldern (TeamName mit TeamNameSource, TeamAbbr, TeamAvatar), eine Python-Implementierung der Namens- und Kuerzelregel, Snapshot je Saison ohne Projektion spaeterer Namen oder Logos (ADR-098, #774)

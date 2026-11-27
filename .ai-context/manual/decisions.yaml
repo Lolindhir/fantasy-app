@@ -3453,3 +3453,26 @@ decisions:
       negative:
         - A2 is a neutral scenario model, not an empirically calibrated team forecast.
         - Early or computationally excessive cuts explicitly report unavailable odds.
+
+  - id: ADR-100
+    title: Cross-season league records have a dedicated Shared Derived owner
+    status: accepted
+    context: >-
+      The existing BiggestUpsetAllTime is selected by the season statistics App generator.
+      Issue #1672 requires a reusable owner before more All-Time Bests are added.
+    decision: >-
+      Robert approved the bounded league-records migration on 2026-11-27, including the
+      new data-derived/league-records write prefix in the existing League Live and History
+      rebuild-and-retry writers. One versioned document per league contains season coverage,
+      model provenance and season-specific roster identity. V1 preserves the existing minimum
+      pregame probability and earlier season/week tie rule over regular-season source records.
+      Existing published App fields stay unchanged until the first product publication is
+      verified; then App delivery and the compatibility field read the shared product.
+      No new record definition, source acquisition, workflow, permission or trigger is approved.
+    consequences:
+      positive:
+        - A single reusable record owner for App and other consumers.
+        - No domain selection in Angular or new consumer-specific record logic.
+      negative:
+        - Additional small derived document and two existing writer steps.
+        - Incomplete chance coverage remains visible; no claim of all-game coverage.

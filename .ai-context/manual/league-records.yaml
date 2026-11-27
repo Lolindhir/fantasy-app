@@ -1,6 +1,6 @@
 schemaVersion: 1
 product: league-records
-status: foundation-pending-production-activation
+status: first-publication-pending
 trackingIssue: 1672
 model: league-records-v1
 logicalLayer: Shared Derived Data
@@ -30,9 +30,20 @@ contract:
 materializer: tools/league_records_materialize.py
 validation:
   - Existing season-statistics regression suite includes selection, missing data, identity, read-only preview, no-op and legacy parity.
-  - Full restore-probe integration and live publication parity are activation gates.
+  - Restore probe rebuilds league-records after season-statistics; first live publication and exact parity are required before consumer cutover.
 activation:
-  status: not-active
+  status: writers-configured-first-publication-pending
   approvedScope: Existing league-live and update-history rebuild-and-retry writers; only new league-records prefix and additive App delivery.
-  next: Integrate inventory and restore probe, bounded writers, then verify first publication before consumer cutover.
+  next: Verify CI and the first real publication, remove the temporary inventory first-fill exception, then cut over consumers.
   rollback: Remove new writer calls and path allowances; retain inert generated files; restore prior consumer selection if cut over.
+writers:
+  - workflow: .github/workflows/league-live.yml
+    scope: all expected seasons, after successful current season-statistics materialization
+  - workflow: .github/workflows/update-history.yml
+    scope: all expected seasons, after successful full season-statistics materialization
+publication:
+  class: rebuild-and-retry
+  writePrefix: data-derived/league-records
+  failure: Warn and retain previous record on missing or invalid evidence; no consumer cutover until readback.
+  check: Second invocation is read-only and must be a semantic no-op.
+  schedule: Existing League Live cadence and weekly historical reconciliation, no new trigger.

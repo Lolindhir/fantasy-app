@@ -40,6 +40,7 @@ from derived_data import (
     LEAGUE_DRAFTS, LEAGUE_RIVALRY, LEAGUE_STANDINGS, LEAGUE_TEAMS, LEAGUE_TRANSACTIONS, SEASON_STATISTICS,
     materialize_league_history, materialize_league_rivalry, materialize_league_standings, materialize_league_teams, materialize_player_valuation, materialize_season_statistics, serialize,
 )
+from league_records_materialize import PRODUCT as LEAGUE_RECORDS, materialize as materialize_league_records
 from historical_pwf_batch import materialize_historical
 from league_metadata import list_league_ids, load_league_metadata
 from league_schedule_outlook_preview import preview_all
@@ -68,7 +69,7 @@ NFL_PLAYER_AVAILABILITY = "nfl-player-availability"
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS,
     PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, NFL_PLAYER_AVAILABILITY, SEASON_STATISTICS,
-    LEAGUE_STANDINGS, LEAGUE_RIVALRY, LEAGUE_TEAMS, MATCHUP_CONTEXT, WEEKLY_RECAPS,
+    LEAGUE_RECORDS, LEAGUE_STANDINGS, LEAGUE_RIVALRY, LEAGUE_TEAMS, MATCHUP_CONTEXT, WEEKLY_RECAPS,
 )
 GLOBAL_PRODUCTS = frozenset({NFL_GAMES, NFL_INJURIES, NFL_PLAYER_AVAILABILITY})
 
@@ -176,6 +177,8 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
         return _written(materialize_league_standings(root, output, league, None, False)), 0
     if product == LEAGUE_RIVALRY:
         return _written(materialize_league_rivalry(root, output, league, None, False)), 0
+    if product == LEAGUE_RECORDS:
+        return int(materialize_league_records(root, output, league, write=True)["Written"]), 0
     if product == LEAGUE_TEAMS:
         return _written(materialize_league_teams(root, output, league, None, False)), 0
     if product == SEASON_STATISTICS:
