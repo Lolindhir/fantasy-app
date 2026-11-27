@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "scope": "AC6A checkpoint 2: bounded Python call-site rules for fixture-tested historical reads and delivery/comparison. Not a complete dependency inventory. Expand on actual runtime evidence; unknown/ambiguous reads fail closed.",
+  "rules": [
+    {
+      "id": "recaps-pwf",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:_pwf_projections",
+      "role": "input",
+      "note": "Conditional player projection for historical team-range assembly."
+    },
+    {
+      "id": "recaps-roster",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:_weekly_roster_rows",
+      "role": "input",
+      "note": "Weekly identity and position evidence."
+    },
+    {
+      "id": "recaps-matchups",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:_load_matchup_rows",
+      "role": "input",
+      "note": "Recorded matchup facts."
+    },
+    {
+      "id": "stats-twp",
+      "root": "derived",
+      "pattern": "team-week-performance/*/*/*.json",
+      "reader": "tools/derived_data_lib/season_statistics.py:_efficiency_actual",
+      "caller": null,
+      "role": "input",
+      "note": "Persisted actual lineup efficiency, not a new computation."
+    },
+    {
+      "id": "recaps-noop",
+      "root": "derived",
+      "pattern": "weekly-recaps/*/*.json",
+      "reader": "tools/weekly_recaps_materialize.py:materialize_season",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing bytes checked only after computing candidate."
+    },
+    {
+      "id": "recaps-app-delivery",
+      "root": "derived",
+      "pattern": "weekly-recaps/*/*.json",
+      "reader": "tools/weekly_recaps_materialize.py:read_model",
+      "caller": "tools/weekly_recaps_app_publish.py:_model",
+      "role": "delivery",
+      "note": "Read persisted Recap model at App adaptation boundary."
+    },
+    {
+      "id": "pwf-app-noop",
+      "root": "app",
+      "pattern": "PlayerWeekFantasy.json",
+      "reader": "tools/player_week_fantasy_app_publish.py:write_json_if_changed",
+      "caller": null,
+      "role": "comparison",
+      "note": "N3: compare App candidate after calculation, never a forecast input."
+    }
+  ]
+}
