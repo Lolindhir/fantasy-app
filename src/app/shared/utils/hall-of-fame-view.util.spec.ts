@@ -78,7 +78,7 @@ describe('hall of fame view util', () => {
   });
 
   it('uses the historical identity for a historical upset, not a current team logo', () => {
-    const records = { Records: { BiggestUpset: { Season: 2024, Week: 3, WinnerTeamID: 1, LoserTeamID: 2,
+    const records = { CanonicalLeagueID: 'l', Records: { BiggestUpset: { Season: 2024, Week: 3, WinnerTeamID: 1, LoserTeamID: 2,
       WinnerPoints: 100, LoserPoints: 90, WinnerPregameWinProbability: 0.1,
       WinnerCanonicalLeagueRosterID: 'r', LoserCanonicalLeagueRosterID: 'r2' } } } as LeagueRecordsReadModel;
     const standings = [{ Season: '2024', Playoffs: [playoff(2, 2, 'Other Team', null)] }];
@@ -94,6 +94,29 @@ describe('hall of fame view util', () => {
     expect(award.upset?.season).toBe('2024');
     expect(award.upset?.week).toBe(3);
     expect(award.upset?.pregameProbability).toBe(0.1);
+  });
+
+  it('requires canonical roster identity and matching current manager before linking a record', () => {
+    const records = { CanonicalLeagueID: 'l', Records: { BiggestUpset: { Season: 2026, Week: 3, WinnerTeamID: 1, LoserTeamID: 2,
+      WinnerPoints: 100, LoserPoints: 90, WinnerPregameWinProbability: 0.1,
+      WinnerCanonicalLeagueRosterID: 'r-current', LoserCanonicalLeagueRosterID: 'r2' } } } as LeagueRecordsReadModel;
+    const snapshot = { ...teamSeasons.Seasons[0].Teams[0], CanonicalLeagueRosterID: 'r-current', TeamName: 'Current snapshot' };
+    const lookup = new TeamSeasonLookup({ ...teamSeasons, Seasons: [...teamSeasons.Seasons, { Season: '2026', Teams: [snapshot] }] });
+    const current = [{ TeamID: 1, OwnerID: 'o', Team: 'Current team',
+      Placements: { AllTime: { Playoffs: { Place: 999 }, Regular: { Place: 999 } } } }] as unknown as FantasyTeam[];
+    const league = leagueWith([], '2026', false);
+    const side = (input: LeagueRecordsReadModel, teams = current, evidence = lookup) =>
+      buildHallOfFameSections(league, teams, input, null, [], evidence).bests[0].upset!.winner;
+    expect(side(records).interactive).toBeTrue();
+    expect(side(records).team.Team).toBe('Current snapshot');
+    expect(side(records, [{ ...current[0], OwnerID: 'new-manager' }]).interactive).toBeFalse();
+    const conflict = { ...records, Records: { BiggestUpset: { ...records.Records.BiggestUpset!, WinnerCanonicalLeagueRosterID: 'wrong-roster' } } };
+    expect(side(conflict).interactive).toBeFalse();
+    expect(side(conflict).team.Team).toBe('Team 1');
+    expect(side({ ...records, CanonicalLeagueID: 'other-league' }).team.Team).toBe('Team 1');
+    const historical = { ...records, Records: { BiggestUpset: { ...records.Records.BiggestUpset!, Season: 2024, WinnerCanonicalLeagueRosterID: 'r' } } };
+    expect(side(historical).team.Team).toBe('Season Team');
+    expect(side(historical).interactive).toBeFalse();
   });
 
   it('uses the current team identity for season-spanning team awards', () => {

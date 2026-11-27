@@ -26,6 +26,11 @@ rules:
 contract:
   fields: [SchemaVersion, Product, CanonicalLeagueID, Model, Coverage, Records]
   records: Records.BiggestUpset is null or the existing event fields plus season-specific canonical roster IDs.
+  consumerIdentity: >-
+    Join the record to the same canonical league and season roster ID in TeamSeasons. Contradictory witnesses cannot
+    substitute another identity. Same-season standings snapshot fallback is display-only when evidence is unavailable.
+    Current team navigation requires a verified current-season roster and matching current manager; historical events
+    do not establish franchise continuity (Issue #777).
   coverage: Per season source schema/model, scored and completed weeks, regular season length, known chance game counts by team and source threshold.
 materializer: tools/league_records_materialize.py
 validation:

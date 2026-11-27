@@ -80,18 +80,27 @@ export function buildHallOfFameSections(
   if (upsetFact) {
     const season = String(upsetFact.Season);
     const standings = league.Standings?.find(standing => standing.Season === season);
-    const side = (teamId: number, points: number): HallOfFameUpsetSide => {
-      const playoff = standings?.Playoffs?.find(team => String(team.TeamID) === String(teamId));
-      const regular = standings?.RegularSeason?.find(team => String(team.TeamID) === String(teamId));
-      const team = lookup?.identity(season, teamId)
-        ?? (season === String(league.Season) ? teamById.get(String(teamId)) : undefined)
+    const side = (teamId: number, rosterId: string, points: number): HallOfFameUpsetSide => {
+      const sameLeague = !!records?.CanonicalLeagueID && lookup?.canonicalLeagueID === records.CanonicalLeagueID;
+      const witness = sameLeague ? lookup?.roster(season, teamId) : null;
+      const verified = !!rosterId && witness?.CanonicalLeagueRosterID === rosterId;
+      // A contradictory witness must not silently fall back to another identity.
+      const contradictory = !!lookup && (!sameLeague || (!!witness && !verified));
+      const playoff = contradictory ? undefined : standings?.Playoffs?.find(team => String(team.TeamID) === String(teamId));
+      const regular = contradictory ? undefined : standings?.RegularSeason?.find(team => String(team.TeamID) === String(teamId));
+      const team = (verified ? lookup?.identity(season, teamId) : null)
         ?? { TeamID: teamId, Team: playoff?.TeamName || regular?.TeamName || `Team ${teamId}`,
              Owner: playoff?.Owner || regular?.Owner || '',
              Avatar: playoff?.TeamAvatar || DEFAULT_TEAM_AVATAR_SRC };
-      return { team, points, interactive: teamById.has(String(teamId)) };
+      const current = teamById.get(String(teamId));
+      // A season roster ID is not a franchise ID. Only a verified current-season
+      // identity can open today's team dialog; historical records remain readable.
+      const interactive = verified && season === String(league.Season) &&
+        lookup?.currentSeason === season && !!witness?.OwnerID && current?.OwnerID === witness.OwnerID;
+      return { team, points, interactive };
     };
-    const winner = side(upsetFact.WinnerTeamID, upsetFact.WinnerPoints);
-    const loser = side(upsetFact.LoserTeamID, upsetFact.LoserPoints);
+    const winner = side(upsetFact.WinnerTeamID, upsetFact.WinnerCanonicalLeagueRosterID, upsetFact.WinnerPoints);
+    const loser = side(upsetFact.LoserTeamID, upsetFact.LoserCanonicalLeagueRosterID, upsetFact.LoserPoints);
     const chance = Math.round(upsetFact.WinnerPregameWinProbability * 100);
     bests.push({
       key: 'biggest-upset', icon: '💥', title: 'Biggest Upset', owner: winner.team.Owner || '',
