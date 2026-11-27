@@ -37,6 +37,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from data_roots import DATA_DERIVED_ROOT  # noqa: E402
 import league_standings_sources as standings_sources  # noqa: E402
 from derived_data_lib.models.standings.v1 import format_win_percentage  # noqa: E402
 from derived_data import LEAGUE_STANDINGS, build_league_standings, league_history_path, materialize_league_standings  # noqa: E402
@@ -306,7 +307,7 @@ def load_product_documents(repo_root: Path, league_id: str) -> dict[int, dict[st
     seasons = standings_sources.manifest_seasons(standings_sources.manifest(repo_root, league_id))
     documents: dict[int, dict[str, Any]] = {}
     for season in seasons:
-        path = league_history_path(repo_root / "data-derived", LEAGUE_STANDINGS, league_id, season)
+        path = league_history_path(repo_root / DATA_DERIVED_ROOT, LEAGUE_STANDINGS, league_id, season)
         if not path.is_file():
             raise FileNotFoundError(f"league-standings product missing for {league_id} {season}: {path}")
         documents[season] = _load(path)

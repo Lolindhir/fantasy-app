@@ -187,7 +187,7 @@ def reconcile(
         "Season": season,
         "Week": week,
         "ScoringProfile": {"SettingsHash": scoring_hash},
-        "LeagueSource": f"data-source/leagues/{league}/seasons/{season}/matchups/week-{week}.json",
+        "LeagueSource": f"{DATA_SOURCE_ROOT}/leagues/{league}/seasons/{season}/matchups/week-{week}.json",
         "CalculatedSource": pwf_path.relative_to(root).as_posix(),
         "State": state,
         "Compared": compared,

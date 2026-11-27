@@ -14,16 +14,17 @@ import tempfile
 from pathlib import Path
 from typing import Sequence
 
+from data_roots import DATA_DERIVED_ROOT, DATA_META_ROOT, DATA_SOURCE_ROOT
 from historical_pwf_batch import discover_scored_weeks, materialize_historical
 from team_week_performance_materialize import materialize as materialize_twp
 
 Target = tuple[str, int, int]
 _WEEK_INPUT = re.compile(
-    r"^data-source/(?:nfl/(?:weekly-rosters|player-stats)/(\d{4})/(\d{2})\.json|"
+    r"^" + re.escape(DATA_SOURCE_ROOT) + r"/(?:nfl/(?:weekly-rosters|player-stats)/(\d{4})/(\d{2})\.json|"
     r"leagues/([A-Za-z0-9_-]+)/seasons/(\d{4})/matchups/week-(\d+)\.json)$"
 )
 _SEASON_INPUT = re.compile(
-    r"^data-source/(?:nfl/(?:game-finality|rosters|schedules)/(\d{4})\.json|"
+    r"^" + re.escape(DATA_SOURCE_ROOT) + r"/(?:nfl/(?:game-finality|rosters|schedules)/(\d{4})\.json|"
     r"leagues/([A-Za-z0-9_-]+)/seasons/(\d{4})/league\.json)$"
 )
 
@@ -83,15 +84,15 @@ def select_targets(
 
 def _stage(root: Path, destination: Path) -> None:
     """Symlink immutable input readers; copy only owned Derived output products."""
-    for name in ("data-source", "data-meta", "public"):
+    for name in (DATA_SOURCE_ROOT, DATA_META_ROOT, "public"):
         source = root / name
         if not source.is_dir():
             raise ValueError(f"Missing source input directory: {source}")
         (destination / name).symlink_to(source, target_is_directory=True)
-    derived = destination / "data-derived"
+    derived = destination / DATA_DERIVED_ROOT
     derived.mkdir()
     for product in ("player-week-fantasy", "team-week-performance"):
-        original = root / "data-derived" / product
+        original = root / DATA_DERIVED_ROOT / product
         if original.is_dir():
             shutil.copytree(original, derived / product)
 
@@ -139,7 +140,7 @@ def _run_twp(stage: Path, selected: Sequence[Target]) -> tuple[int, int]:
 
 def _output(root: Path, product: str, target: Target) -> Path:
     league, season, week = target
-    return (root / "data-derived" / product / league / str(season) / f"{week:02d}.json")
+    return (root / DATA_DERIVED_ROOT / product / league / str(season) / f"{week:02d}.json")
 
 
 def _different(first: Path, second: Path) -> bool:
