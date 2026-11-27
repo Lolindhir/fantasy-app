@@ -20,6 +20,7 @@ import sys
 
 import yaml
 
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_franchise_aliases import franchise_equal as _franchise_equal
 
 
@@ -446,14 +447,14 @@ def main() -> int:
     parser.add_argument("--metadata-json", type=Path, default=None)
     parser.add_argument(
         "--game-index-json", type=Path, default=None,
-        help="Optional canonical data-derived/nfl-games/<season>.json schedule/finality join",
+        help=f"Optional canonical {DATA_DERIVED_ROOT}/nfl-games/<season>.json schedule/finality join",
     )
     parser.add_argument("--expected-sha256", default=None)
     args = parser.parse_args()
     repo = args.repo_root.resolve()
     catalog = args.catalog or repo / ".ai-context/manual/nfl-games-pbp-metrics.yaml"
     archived = args.metadata_json or (
-        repo / "data-source/providers/nflverse/special-teams-fumble-events"
+        repo / f"{DATA_SOURCE_ROOT}/providers/nflverse/special-teams-fumble-events"
         / f"metadata-{args.season}.json"
     )
     try:

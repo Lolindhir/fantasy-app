@@ -26,6 +26,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+from data_roots import DATA_SOURCE_ROOT
 from nfl_source_data_lib.common import current_source_season, download, load_json, write_json_if_changed
 from nfl_source_data_lib.pbp_original import audit_original_pbp
 
@@ -33,7 +34,7 @@ _SOURCE_REPOSITORY = "nflverse/nflverse-data"
 _PBP_RELEASE = "pbp"
 _DEST_REPOSITORY = "Lolindhir/fantasy-app"
 _SOURCE_MANIFEST_DIR = Path(
-    "data-source/providers/nflverse/play-by-play-original"
+    f"{DATA_SOURCE_ROOT}/providers/nflverse/play-by-play-original"
 )
 _SHA = re.compile(r"^sha256:([0-9a-f]{64})$")
 

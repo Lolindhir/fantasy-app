@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from nfl_pbp_metric_field_audit import _catalog, audit
 from nfl_pbp_source_archive import EXPECTED_SHA256, EXPECTED_SIZE, MANIFEST_PATH, sha256
 from nfl_pbp_team_metric_reconcile import reconcile
@@ -173,12 +174,12 @@ def run(repo: Path) -> dict[str, Any]:
         if original.stat().st_size != EXPECTED_SIZE or sha256(original) != EXPECTED_SHA256:
             raise ValueError("Accepted 2025 release download failed original byte identity")
         catalog = repo / ".ai-context/manual/nfl-games-pbp-metrics.yaml"
-        archived = repo / "data-source/providers/nflverse/special-teams-fumble-events/metadata-2025.json"
+        archived = repo / f"{DATA_SOURCE_ROOT}/providers/nflverse/special-teams-fumble-events/metadata-2025.json"
         field = audit(
             path=original, season=2025, catalog_path=catalog,
             metadata_path=archived if archived.is_file() else None,
             expected_sha256=EXPECTED_SHA256,
-            game_index_path=repo / "data-derived/nfl-games/2025.json",
+            game_index_path=repo / f"{DATA_DERIVED_ROOT}/nfl-games/2025.json",
         )
         metrics = reconcile(repo, original, 2025, EXPECTED_SHA256)
         return summarize(field, metrics)
