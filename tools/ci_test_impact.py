@@ -33,7 +33,8 @@ VALID_STATES = {"added", "modified", "changed", "renamed", "removed", "deleted",
 # Frozen 2026-10-20; retired #1199 Matchup/FGC/WeeklyRecaps PowerShell tests and #1238 DecisionWindowRegressionLegacyTest on 2026-10-31. Remaining debt: #1113.
 # This is a drift detector, not a security hash. To retire legacy debt or replace
 # it with actual PR coverage, review the inventory change and update this anchor.
-LEGACY_UNCOVERED_FNV32 = "4a038e26"
+# #1618 M2a: root parity/literal tests are now executed by Core.
+LEGACY_UNCOVERED_FNV32 = "88688eb2"
 
 
 def uncovered_baseline_fingerprint(paths: list[str]) -> str:

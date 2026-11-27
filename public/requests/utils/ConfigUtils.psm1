@@ -1,6 +1,8 @@
 # Data root directories (Issue #788, step 0). The only place in PowerShell that spells out the root names;
 # tools/data_roots.py is the Python counterpart and tools/tests/test_data_roots.py keeps both in sync.
 $script:DataSourceRootName = 'data-source'
+# Reserved in #1618 M2a; not an active publication destination.
+$script:DataCanonicalRootName = 'data-canonical'
 $script:DataDerivedRootName = 'data-derived'
 $script:DataMetaRootName = 'data-meta'
 
@@ -9,6 +11,11 @@ Import-Module "$PSScriptRoot\LeagueMetadataUtils.psm1" -ErrorAction Stop
 function Get-DataSourceRoot {
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
     return (Join-Path $RepoRoot $script:DataSourceRootName)
+}
+
+function Get-DataCanonicalRoot {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    return (Join-Path $RepoRoot $script:DataCanonicalRootName)
 }
 
 function Get-DataDerivedRoot {
@@ -30,6 +37,7 @@ function Get-Config {
     $DataDir = "$PSScriptRoot\..\..\data"
     $RepoRootDir = Join-Path $PSScriptRoot "..\..\.."
     $DataSourceDir = Get-DataSourceRoot -RepoRoot $RepoRootDir
+    $DataCanonicalDir = Get-DataCanonicalRoot -RepoRoot $RepoRootDir
     $DataDerivedDir = Get-DataDerivedRoot -RepoRoot $RepoRootDir
     $DataMetaDir = Get-DataMetaRoot -RepoRoot $RepoRootDir
     $BackupDir = Join-Path $DataDir "backup"
@@ -172,6 +180,7 @@ function Get-Config {
 
         DataDir                          = $DataDir
         DataSourceDir                    = $DataSourceDir
+        DataCanonicalDir                 = $DataCanonicalDir
         DataDerivedDir                   = $DataDerivedDir
         DataMetaDir                      = $DataMetaDir
         BackupDir                        = $BackupDir

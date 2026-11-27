@@ -206,6 +206,17 @@ sourceDataTarget:
 dataPlatformTarget:
   architectureDecision: ADR-037
   status: logical-target-current-paths-transitional
+  canonicalRootPreparation:
+    issue: 1618
+    checkpoint: M2a
+    root: data-canonical
+    status: reserved-inactive
+    locator: tools/data_roots.py::canonical_partition_path
+    rules:
+      - Only the Combine family is modeled; all production paths remain unchanged.
+      - No production callers or write-scope expansion until separately approved cutover.
+      - An explicit route selects exactly one location for reads and writes; no existence fallback.
+      - Missing expected or migrated partitions fail closed; creation requires explicit new-partition evidence.
 
   principle: >
     Repository location does not define domain ownership. Data that can serve

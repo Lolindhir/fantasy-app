@@ -10,7 +10,9 @@ from __future__ import annotations
 import ast
 import re
 import sys
+import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -20,8 +22,8 @@ sys.path.insert(0, str(TOOLS))
 import data_roots  # noqa: E402
 
 CONFIG_UTILS = REPO_ROOT / "public/requests/utils/ConfigUtils.psm1"
-PY_PATH_LITERAL = re.compile(r"(?<![\w-])(data-source|data-derived)(?=$|[/\\])")
-PS_PATH_LITERAL = re.compile(r"(?<![\w-])(data-source|data-derived)(?=[\"'/\\])")
+PY_PATH_LITERAL = re.compile(r"(?<![\w-])(data-source|data-derived|data-canonical)(?=$|[/\\])")
+PS_PATH_LITERAL = re.compile(r"(?<![\w-])(data-source|data-derived|data-canonical)(?=[\"'/\\])")
 
 
 def python_production_files() -> list[Path]:
@@ -82,6 +84,8 @@ class DataRootsTests(unittest.TestCase):
     def test_detectors_flag_path_literals_but_not_prose(self) -> None:
         self.assertTrue(PY_PATH_LITERAL.search("data-source/nfl"))
         self.assertTrue(PY_PATH_LITERAL.search("data-derived"))
+        self.assertTrue(PY_PATH_LITERAL.search("data-canonical/nfl"))
+        self.assertTrue(PS_PATH_LITERAL.search('Join-Path $r "data-canonical/nfl"'))
         self.assertFalse(PY_PATH_LITERAL.search("fantasy-app-source-data/1"))
         self.assertFalse(PY_PATH_LITERAL.search("canonical data-source layer"))
         self.assertTrue(PS_PATH_LITERAL.search('Join-Path $r "data-source\\nfl"'))
@@ -91,6 +95,7 @@ class DataRootsTests(unittest.TestCase):
         text = CONFIG_UTILS.read_text(encoding="utf-8")
         expected = {
             "DataSourceRootName": data_roots.DATA_SOURCE_ROOT,
+            "DataCanonicalRootName": data_roots.DATA_CANONICAL_ROOT,
             "DataDerivedRootName": data_roots.DATA_DERIVED_ROOT,
             "DataMetaRootName": data_roots.DATA_META_ROOT,
         }
@@ -98,9 +103,9 @@ class DataRootsTests(unittest.TestCase):
             match = re.search(rf"\$script:{variable}\s*=\s*'([^']+)'", text)
             self.assertIsNotNone(match, variable)
             self.assertEqual(value, match.group(1), variable)
-        for function in ("Get-DataSourceRoot", "Get-DataDerivedRoot", "Get-DataMetaRoot"):
+        for function in ("Get-DataSourceRoot", "Get-DataDerivedRoot", "Get-DataMetaRoot", "Get-DataCanonicalRoot"):
             self.assertIn(f"function {function}", text)
-        for key in ("DataSourceDir", "DataDerivedDir", "DataMetaDir"):
+        for key in ("DataSourceDir", "DataDerivedDir", "DataMetaDir", "DataCanonicalDir"):
             self.assertIn(f"{key} ", text)
 
     def test_python_helpers_resolve_below_repo_root(self) -> None:
@@ -108,6 +113,72 @@ class DataRootsTests(unittest.TestCase):
         self.assertEqual(root / data_roots.DATA_SOURCE_ROOT, data_roots.data_source_dir(root))
         self.assertEqual(root / data_roots.DATA_DERIVED_ROOT, data_roots.data_derived_dir(root))
         self.assertEqual(root / data_roots.DATA_META_ROOT, data_roots.data_meta_dir(root))
+        self.assertEqual(root / data_roots.DATA_CANONICAL_ROOT, data_roots.data_canonical_dir(root))
+
+
+class CanonicalPartitionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.dataset = "nflverse.combine"
+        relative = Path("nfl/combine/2024.json")
+        self.legacy = data_roots.data_source_dir(self.root) / relative
+        self.canonical = data_roots.data_canonical_dir(self.root) / relative
+
+    def write_fixture(self, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"{}")
+
+    def resolve(self, *, allow_create: bool = False) -> Path:
+        return data_roots.canonical_partition_path(
+            self.root, self.dataset, 2024, allow_create=allow_create)
+
+    def test_production_migration_set_is_empty(self) -> None:
+        self.assertEqual(frozenset(), data_roots._MIGRATED_PARTITIONS)
+
+    def test_legacy_route_and_explicit_new_partition(self) -> None:
+        with self.assertRaises(FileNotFoundError):
+            self.resolve()
+        new_path = data_roots.canonical_partition_path(
+            self.root, self.dataset, 2027, allow_create=True)
+        self.assertEqual(self.legacy.with_name("2027.json"), new_path)
+        self.assertFalse(new_path.exists())
+        self.write_fixture(self.legacy)
+        self.assertEqual(self.legacy, self.resolve())
+        self.assertFalse(self.canonical.exists())
+
+    def test_unexpected_and_duplicate_canonical_files_fail_closed(self) -> None:
+        self.write_fixture(self.canonical)
+        with self.assertRaises(ValueError):
+            self.resolve(allow_create=True)
+        self.write_fixture(self.legacy)
+        with self.assertRaises(ValueError):
+            self.resolve()
+
+    def test_migrated_route_no_fallback_or_recreation(self) -> None:
+        with mock.patch.object(data_roots, "_MIGRATED_PARTITIONS",
+                               frozenset({(self.dataset, 2024)})):
+            with self.assertRaises(FileNotFoundError):
+                self.resolve(allow_create=True)
+            self.write_fixture(self.legacy)
+            with self.assertRaises(ValueError):
+                self.resolve()
+            self.legacy.unlink()
+            self.write_fixture(self.canonical)
+            self.assertEqual(self.canonical, self.resolve())
+            self.write_fixture(self.legacy)
+            with self.assertRaises(ValueError):
+                self.resolve()
+
+    def test_unknown_dataset_invalid_season_and_nonfile(self) -> None:
+        for dataset, season in (("../providers", 2024), (self.dataset, "../2024"),
+                                (self.dataset, True), (self.dataset, 10000)):
+            with self.subTest(dataset=dataset, season=season), self.assertRaises(ValueError):
+                data_roots.canonical_partition_path(self.root, dataset, season)
+        self.legacy.mkdir(parents=True)
+        with self.assertRaises(ValueError):
+            self.resolve()
 
 
 if __name__ == "__main__":
