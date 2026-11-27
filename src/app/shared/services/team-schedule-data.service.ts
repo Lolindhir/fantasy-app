@@ -47,7 +47,12 @@ export class TeamScheduleDataService {
       .pipe(catchError(() => of([] as FantasyGameContextReadModel[])));
 
     return combineLatest({ matchups: matchups$, recaps: recaps$, contexts: contexts$ }).pipe(
-      map(({ matchups, recaps, contexts }) => ({ season: option.season, matchups, recaps, contexts }))
+      map(({ matchups, recaps, contexts }) => ({
+        season: option.season,
+        matchups: matchups && String(matchups.Season) === option.season ? matchups : null,
+        recaps: recaps && String(recaps.Season) === option.season ? recaps : null,
+        contexts: contexts.filter(context => String(context.Season) === option.season)
+      }))
     );
   }
 }

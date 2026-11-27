@@ -3,7 +3,7 @@
     @if (schedule(); as sum) {
       <p class="schedule-summary">
         <span class="schedule-summary-item">
-          <span class="schedule-summary-label">Regular season</span>
+          <span class="schedule-summary-label" title="Individually final regular-season matchup results; official standings may use a different cutoff">Regular season results</span>
           <strong>{{ seasonRecordLabel() }}</strong>
         </span>
         @if (remainingLabel(); as remaining) {
@@ -33,6 +33,10 @@
       </mat-form-field>
     }
   </div>
+
+  @if (historicalTeamLabel(); as historicalTeam) {
+    <p class="schedule-note">Season team: {{ historicalTeam }}</p>
+  }
 
   @if (loading()) {
     <p class="schedule-note">Loading schedule…</p>
@@ -92,7 +96,7 @@
       <p class="schedule-note">No games available for this season.</p>
     }
     <p class="schedule-note">
-      Upcoming games start with the nearest week, played games with the latest. Opponent records are final regular-season results of the selected season.@if (outlook()) { Opponent strength compares the points a team has scored with the league average; the longer the season runs, the less last season counts. }
+      Upcoming games start with the nearest week, played games with the latest. Records count individually final regular-season matchups of the selected season; official Standings may have a different cutoff. A dash means the record is unavailable.@if (outlook()) { Opponent strength compares the points a team has scored with the league average; the longer the season runs, the less last season counts. }
     </p>
   }
 </div>
