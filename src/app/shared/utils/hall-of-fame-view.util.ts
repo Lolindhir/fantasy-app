@@ -2,12 +2,12 @@ import type { Player } from '../../core/models/player.models';
 import type { TeamIdentitySubject } from '../components/team-identity/team-identity';
 import type { FantasyTeam, League } from '../../core/models/league.models';
 import type { PlayerAwardHistoryReadModel } from '../../core/models/player-award-history.models';
-import type { SeasonStatisticsReadModel } from '../../core/models/season-statistics.models';
+import type { LeagueRecordsReadModel } from '../../core/models/league-records.models';
 import type { TeamSeasonLookup } from '../services/team-season.service';
 import { DEFAULT_TEAM_AVATAR_SRC, getSeasonRingSrc } from './championship.util';
 import { buildLeagueLegacy, buildSeasonHistory, type LeagueLegacyHighlight } from './league-standings-view.util';
 import { buildPlayerAwardHighlights, PLAYER_AWARD_DISPLAY } from './player-award-view.util';
-import { buildBiggestUpsetHighlight } from './season-statistics-view.util';
+import { formatDecimal } from './season-statistics-view.util';
 
 /** Display identities only: published award IDs and order remain authoritative. */
 export interface HallOfFamePlayerIdentity {
@@ -53,8 +53,7 @@ export interface HallOfFameSections {
 export function buildHallOfFameSections(
   league: League,
   teams: FantasyTeam[],
-  current: SeasonStatisticsReadModel | null,
-  bySeason: ReadonlyMap<string, SeasonStatisticsReadModel>,
+  records: LeagueRecordsReadModel | null,
   awards: PlayerAwardHistoryReadModel | null,
   players: readonly Player[] = [],
   lookup: TeamSeasonLookup | null = null
@@ -76,27 +75,30 @@ export function buildHallOfFameSections(
     return { ...item, ...display, team, teamInteractive: !!team };
   });
 
-  const upset = buildBiggestUpsetHighlight(current, bySeason);
-  const upsetFact = current?.BiggestUpsetAllTime;
+  const upsetFact = records?.Records.BiggestUpset;
   const bests: HallOfFameHighlight[] = [];
-  if (upset && upsetFact) {
+  if (upsetFact) {
     const season = String(upsetFact.Season);
-    const doc = upsetFact.Season === current?.Season ? current : bySeason.get(season);
     const standings = league.Standings?.find(standing => standing.Season === season);
     const side = (teamId: number, points: number): HallOfFameUpsetSide => {
-      const row = doc?.Teams.find(team => String(team.TeamID) === String(teamId));
       const playoff = standings?.Playoffs?.find(team => String(team.TeamID) === String(teamId));
       const regular = standings?.RegularSeason?.find(team => String(team.TeamID) === String(teamId));
       const team = lookup?.identity(season, teamId)
         ?? (season === String(league.Season) ? teamById.get(String(teamId)) : undefined)
-        ?? { TeamID: teamId, Team: row?.TeamName || playoff?.TeamName || regular?.TeamName || `Team ${teamId}`,
-             Owner: row?.Owner || playoff?.Owner || regular?.Owner || '',
+        ?? { TeamID: teamId, Team: playoff?.TeamName || regular?.TeamName || `Team ${teamId}`,
+             Owner: playoff?.Owner || regular?.Owner || '',
              Avatar: playoff?.TeamAvatar || DEFAULT_TEAM_AVATAR_SRC };
       return { team, points, interactive: teamById.has(String(teamId)) };
     };
     const winner = side(upsetFact.WinnerTeamID, upsetFact.WinnerPoints);
     const loser = side(upsetFact.LoserTeamID, upsetFact.LoserPoints);
-    bests.push({ ...upset, team: winner.team, teamInteractive: winner.interactive,
+    const chance = Math.round(upsetFact.WinnerPregameWinProbability * 100);
+    bests.push({
+      key: 'biggest-upset', icon: '💥', title: 'Biggest Upset', owner: winner.team.Owner || '',
+      valueDisplay: `${chance}% win chance`,
+      reason: `${season} Week ${upsetFact.Week}: ${winner.team.Team} beat ${loser.team.Team} `
+        + `${formatDecimal(upsetFact.WinnerPoints, 2)}-${formatDecimal(upsetFact.LoserPoints, 2)} with a ${formatDecimal(upsetFact.WinnerPregameWinProbability * 100, 2)}% pregame win chance.`,
+      team: winner.team, teamInteractive: winner.interactive,
       upset: { season, week: upsetFact.Week, winner, loser,
         pregameProbability: upsetFact.WinnerPregameWinProbability } });
   }

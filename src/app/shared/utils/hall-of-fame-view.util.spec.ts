@@ -1,6 +1,6 @@
 import type { Player } from '../../core/models/player.models';
 import type { PlayerAwardHistoryReadModel } from '../../core/models/player-award-history.models';
-import type { SeasonStatisticsReadModel } from '../../core/models/season-statistics.models';
+import type { LeagueRecordsReadModel } from '../../core/models/league-records.models';
 import type { FantasyTeam, League } from '../../core/models/league.models';
 import type { TeamSeasonsReadModel } from '../../core/models/team-season.models';
 import { TeamSeasonLookup } from '../services/team-season.service';
@@ -69,7 +69,7 @@ describe('hall of fame view util', () => {
       { PlayerID: 'c', Name: 'Third', Count: 4 }
     ] }, Players: [{ PlayerID: 'b', Picture: 'historic.png' }] } as unknown as PlayerAwardHistoryReadModel;
     const current = [{ ID: 'a', Name: 'Different display name', Picture: 'current.png', TeamNFL: { Logo: 'nfl.png', Abv: 'NYG' } }] as unknown as Player[];
-    const [award] = buildHallOfFameSections(leagueWith([], '2026', false), [], null, new Map(), history, current).playerLegends;
+    const [award] = buildHallOfFameSections(leagueWith([], '2026', false), [], null, history, current).playerLegends;
     expect(award.valueDisplay).toBe('4×');
     expect(award.players?.map(player => player.name)).toEqual(['First', 'Second', 'Third']);
     expect(award.players?.map(player => player.picture)).toEqual(['current.png', 'historic.png', null]);
@@ -78,9 +78,11 @@ describe('hall of fame view util', () => {
   });
 
   it('uses the historical identity for a historical upset, not a current team logo', () => {
-    const current = { Season: 2026, BiggestUpsetAllTime: { Season: 2024, Week: 3, WinnerTeamID: 1, LoserTeamID: 2, WinnerPoints: 100, LoserPoints: 90, WinnerPregameWinProbability: 0.1 } } as unknown as SeasonStatisticsReadModel;
-    const old = { Season: 2024, Teams: [{ TeamID: 1, Owner: 'Season Owner', TeamName: 'Season Team' }, { TeamID: 2, Owner: 'Other', TeamName: 'Other Team' }] } as unknown as SeasonStatisticsReadModel;
-    const [award] = buildHallOfFameSections(leagueWith([], '2026', false), [], current, new Map([['2024', old]]), null, [], new TeamSeasonLookup(teamSeasons)).bests;
+    const records = { Records: { BiggestUpset: { Season: 2024, Week: 3, WinnerTeamID: 1, LoserTeamID: 2,
+      WinnerPoints: 100, LoserPoints: 90, WinnerPregameWinProbability: 0.1,
+      WinnerCanonicalLeagueRosterID: 'r', LoserCanonicalLeagueRosterID: 'r2' } } } as LeagueRecordsReadModel;
+    const standings = [{ Season: '2024', Playoffs: [playoff(2, 2, 'Other Team', null)] }];
+    const [award] = buildHallOfFameSections(leagueWith(standings, '2026', false), [], records, null, [], new TeamSeasonLookup(teamSeasons)).bests;
     expect(award.team?.Team).toBe('Season Team');
     expect(award.team?.Avatar).toBe('assets/default-team-avatar.png');
     expect(award.valueDisplay).toBe('10% win chance');
@@ -97,15 +99,20 @@ describe('hall of fame view util', () => {
   it('uses the current team identity for season-spanning team awards', () => {
     const league = leagueWith([{ Season: 'AllTime', LegacyHighlights: [{ Key: 'ChampOfChamps', TeamID: 1 }] }], '2026', false);
     const teams = [{ TeamID: 1, Team: 'Renamed Team', Owner: 'Manager One', OwnerAvatar: 'manager.png', Avatar: 'team.png', Placements: { AllTime: { Playoffs: { Place: 999 }, Regular: { Place: 999 } } } }] as unknown as FantasyTeam[];
-    const [award] = buildHallOfFameSections(league, teams, null, new Map(), null).legacy;
+    const [award] = buildHallOfFameSections(league, teams, null, null).legacy;
     expect(award.team?.Team).toBe('Renamed Team');
     expect(award.title).toBe('All-Time Leader');
     expect(award.valueDisplay).toBe('#1 Overall standings');
     expect(award.team?.Avatar).toBe('team.png');
   });
 
+  it('does not manufacture a record when the shared product has no qualifying upset', () => {
+    const records = { Records: { BiggestUpset: null } } as LeagueRecordsReadModel;
+    expect(buildHallOfFameSections(leagueWith([], '2026', false), [], records, null).bests).toEqual([]);
+  });
+
   it('builds empty sections when nothing is available', () => {
-    const sections = buildHallOfFameSections(leagueWith([], '2026', false), [], null, new Map(), null);
+    const sections = buildHallOfFameSections(leagueWith([], '2026', false), [], null, null);
     expect(sections).toEqual({ legacy: [], bests: [], playerLegends: [] });
   });
 });

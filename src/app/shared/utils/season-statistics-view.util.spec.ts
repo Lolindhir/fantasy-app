@@ -1,5 +1,5 @@
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../core/models/season-statistics.models';
-import { buildBiggestUpsetHighlight, buildSeasonUpsetCard, formatExpectedRecord, formatPercent, formatSigned, statisticsByTeam } from './season-statistics-view.util';
+import { buildSeasonUpsetCard, formatExpectedRecord, formatPercent, formatSigned, statisticsByTeam } from './season-statistics-view.util';
 
 function team(id: number, owner: string): SeasonStatisticsTeam {
   return {
@@ -27,19 +27,6 @@ describe('season statistics view util', () => {
 
   it('indexes teams by TeamID text', () => {
     expect(statisticsByTeam([team(1, 'Ann')]).get('1')?.Owner).toBe('Ann');
-  });
-
-  it('renders the generator-chosen biggest upset from the season of the game', () => {
-    const upset = { Season: 2025, Week: 3, WinnerTeamID: 2, LoserTeamID: 1, WinnerPoints: 228.72, LoserPoints: 177.86, WinnerPregameWinProbability: 0.1125 };
-    const current = doc(2026, { IsCompleted: false, BiggestUpsetAllTime: upset });
-    const highlight = buildBiggestUpsetHighlight(current, new Map([['2025', doc(2025)]]));
-    expect(highlight?.owner).toBe('Bob');
-    expect(highlight?.valueDisplay).toBe('11% win chance');
-  });
-
-  it('returns nothing without an all-time upset or a resolvable winner', () => {
-    expect(buildBiggestUpsetHighlight(doc(2026), new Map())).toBeNull();
-    expect(buildBiggestUpsetHighlight(doc(2026, { BiggestUpsetAllTime: { Season: 2020, Week: 1, WinnerTeamID: 9, LoserTeamID: 1, WinnerPoints: 1, LoserPoints: 0, WinnerPregameWinProbability: 0.1 } }), new Map())).toBeNull();
   });
 
   it('formats percentages and keeps unknown visible', () => {

@@ -25,7 +25,7 @@ describe('HallOfFamePageComponent', () => {
   beforeEach(async () => {
     const dataService = {
       getLeagueWithPlayers: () => of({ league, teams: [{ TeamID: 1, Owner: 'Ada', OwnerAvatar: 'ada.png', Avatar: 'team.png', Team: 'Renamed Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }], players: [] }),
-      getAllSeasonStatistics: () => of({ current: null, bySeason: new Map() }),
+      getLeagueRecords: () => of(null),
       getPlayerAwardHistory: () => of({
         Leaders: { MVP: [
           { PlayerID: 'a', Name: 'First Long Player Name', Count: 4 },
@@ -146,7 +146,7 @@ describe('HallOfFamePageComponent with several champions', () => {
   function season(year: string, teamName: string) {
     return {
       Season: year,
-      Playoffs: [{ TeamID: 1, Place: 1, PlaceOrdinal: '1.', Owner: 'Ada', TeamName: teamName, OwnerAvatar: null, TeamAvatar: 'logo.png' }],
+      Playoffs: [{ TeamID: 1, Place: 1, PlaceOrdinal: '1.', Owner: 'Ada', TeamName: teamName, OwnerAvatar: null, TeamAvatar: 'logo.png' }, { TeamID: 2, Place: 2, PlaceOrdinal: '2.', Owner: 'Other', TeamName: 'Historical Opponent', OwnerAvatar: null, TeamAvatar: null }],
       RegularSeason: [{ TeamID: 1, Place: 1, PlaceOrdinal: '1.', Owner: 'Ada', TeamName: teamName, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, WinPercentageDisplay: '' }],
       Awards: []
     };
@@ -158,10 +158,7 @@ describe('HallOfFamePageComponent with several champions', () => {
     const multi = { Season: '2026', IsFinished: false, Standings: [season('2025', 'Aces'), season('2024', 'Kings'), { Season: 'AllTime', RegularSeason: [] }] };
     const dataService = {
       getLeagueWithPlayers: () => of({ league: multi, teams: [], players: [] }),
-      getAllSeasonStatistics: () => of({
-        current: { Season: 2026, BiggestUpsetAllTime: { Season: 2024, Week: 10, WinnerTeamID: 1, LoserTeamID: 2, WinnerPoints: 163.08, LoserPoints: 139.92, WinnerPregameWinProbability: 0.0954 } },
-        bySeason: new Map([['2024', { Season: 2024, Teams: [{ TeamID: 1, Owner: 'Ada', TeamName: 'Kings' }, { TeamID: 2, Owner: 'Other', TeamName: 'Historical Opponent' }] }]])
-      }),
+      getLeagueRecords: () => of({ Records: { BiggestUpset: { Season: 2024, Week: 10, WinnerTeamID: 1, LoserTeamID: 2, WinnerPoints: 163.08, LoserPoints: 139.92, WinnerPregameWinProbability: 0.0954, WinnerCanonicalLeagueRosterID: 'r1', LoserCanonicalLeagueRosterID: 'r2' } } }),
       getPlayerAwardHistory: () => of(null),
       getTeamSeasons: () => throwError(() => new Error('unavailable'))
     };
