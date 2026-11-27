@@ -4,7 +4,7 @@ import { DraftCapitalOverviewComponent } from './draft-capital-overview';
 
 describe('DraftCapitalOverviewComponent inputs', () => {
   it('uses the parent draft and team objects, recomputes on input change and hides other phases', () => {
-    const draft = { DraftKey: '2026-rookie', Season: '2026', DraftNo: 1, DisplayDraftType: 'Rookie', DisplayDraftKey: 'Rookie' } as RawDraft;
+    const draft = { DraftKey: '2026-rookie', Season: '2026', DraftNo: 1, DisplayDraftType: 'Rookie', DisplayDraftKey: 'Rookie', DisplayAbrDraftKey: '2026 R' } as RawDraft;
     const pick = {
       DraftKey: draft.DraftKey, Season: '2026', Round: 1, DisplayPick: '1.01',
       Status: 'Open', SleeperPickNo: null, Draft: draft

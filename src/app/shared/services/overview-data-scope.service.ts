@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, defer, map, of, shareReplay } from 'rxjs';
 
 import type { DecisionWindowsReadModel } from '../../core/models/decision-window.models';
@@ -23,7 +24,8 @@ export class OverviewDataScope {
   private readonly decisionWindowsResult$ = defer(() => this.dataService.getDecisionWindows()).pipe(
     map((model): DecisionWindowsResult => ({ ok: true, model })),
     catchError((error: unknown) => of<DecisionWindowsResult>({ ok: false, error })),
-    shareReplay({ bufferSize: 1, refCount: true })
+    takeUntilDestroyed(),
+    shareReplay({ bufferSize: 1, refCount: false })
   );
   readonly decisionWindows$ = this.decisionWindowsResult$.pipe(
     map(result => {
