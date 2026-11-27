@@ -3,6 +3,7 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 
 import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
 import type { RawFantasyTeam, RawLeague } from '../models/league.models';
+import type { RawPlayer } from '../models/player.models';
 import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type {
   PlayerWeekFantasyProjectionStatus,
@@ -23,6 +24,8 @@ describe('DataService', () => {
     dataApiService = jasmine.createSpyObj<DataApiService>('DataApiService', [
       'getMovesData',
       'getLeagueRaw',
+      'getPlayersRaw',
+      'getNflTeamsRaw',
       'getLeagueData',
       'getTimestamps',
       'getFantasyGameContextRaw',
@@ -95,6 +98,34 @@ describe('DataService', () => {
     expect(fullSummary).toEqual(summary.Teams[0]);
     expect(full.league.Standings).toEqual(summary.Standings);
     expect(freeAgentMarketService.enrich).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads only requested player identity summaries from Players and NFL Teams', async () => {
+    dataApiService.getPlayersRaw.and.returnValue(of([
+      { ID: 'a', Picture: 'a.png', TeamID: '7', IsFreeAgent: false },
+      { ID: 'b', Picture: 'b.png', TeamID: 'AAA', IsFreeAgent: true },
+      { ID: 'c', Picture: 'c.png', TeamID: 'missing', IsFreeAgent: false },
+      { ID: 'other', Picture: 'other.png', TeamID: 'AAA', IsFreeAgent: false }
+    ] as RawPlayer[]));
+    const nfl = { ID: 'AAA', Name: 'Alphas', Abv: 'AAA', Logo: 'aaa.png', LegacyIDs: ['7'] };
+    dataApiService.getNflTeamsRaw.and.returnValue(of([nfl]));
+
+    const identities = await firstValueFrom(service.getPlayerIdentitySummaries(['a', 'b', 'c', 'a', 'absent']));
+    expect(identities.map(player => player.ID)).toEqual(['a', 'b', 'c']);
+    expect(identities[0]).toEqual({ ID: 'a', Picture: 'a.png', TeamNFL: nfl });
+    expect(identities[1].TeamNFL.ID).toBe('FA');
+    expect(identities[2].TeamNFL.Name).toBe('Unknown team');
+    expect(dataApiService.getPlayersRaw).toHaveBeenCalledTimes(1);
+    expect(dataApiService.getNflTeamsRaw).toHaveBeenCalledTimes(1);
+    expect(dataApiService.getLeagueData).not.toHaveBeenCalled();
+    expect(dataApiService.getLeagueRaw).not.toHaveBeenCalled();
+    expect(freeAgentMarketService.enrich).not.toHaveBeenCalled();
+  });
+
+  it('does not request player or team products without award leader IDs', async () => {
+    expect(await firstValueFrom(service.getPlayerIdentitySummaries([]))).toEqual([]);
+    expect(dataApiService.getPlayersRaw).not.toHaveBeenCalled();
+    expect(dataApiService.getNflTeamsRaw).not.toHaveBeenCalled();
   });
 
   it('exposes the transaction timestamp and includes it in the latest timestamp', async () => {

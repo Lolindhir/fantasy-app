@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { MatDialog } from '@angular/material/dialog';
+import { HallOfFameComponent } from '../../shared/components/hall-of-fame/hall-of-fame';
 import { of, throwError } from 'rxjs';
 
 import { DataService } from '../../core/services/data.service';
@@ -21,10 +24,19 @@ const league = {
 
 describe('HallOfFamePageComponent', () => {
   let fixture: ComponentFixture<HallOfFamePageComponent>;
+  let getLeagueWithPlayers: jasmine.Spy;
+  let getPlayerIdentitySummaries: jasmine.Spy;
+  const fullPlayer = { ID: 'a', Name: 'Full Player', Salary: 123 };
 
   beforeEach(async () => {
+    getLeagueWithPlayers = jasmine.createSpy('getLeagueWithPlayers').and.returnValue(of({ players: [fullPlayer] }));
+    getPlayerIdentitySummaries = jasmine.createSpy('getPlayerIdentitySummaries').and.returnValue(of([
+      { ID: 'a', Picture: 'first.png', TeamNFL: { ID: 'NYG', Name: 'Giants', Abv: 'NYG', Logo: 'nfl.png' } }
+    ]));
     const dataService = {
-      getLeagueWithPlayers: () => of({ league, teams: [{ TeamID: 1, Owner: 'Ada', OwnerAvatar: 'ada.png', Avatar: 'team.png', Team: 'Renamed Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }], players: [] }),
+      getLeagueWithPlayers,
+      getPlayerIdentitySummaries,
+      getLeagueSummary: () => of({ ...league, Teams: [{ TeamID: 1, Owner: 'Ada', OwnerAvatar: 'ada.png', Avatar: 'team.png', Team: 'Renamed Aces', Placements: { AllTime: { Playoffs: { Place: 1, Championships: 1, RunnerUps: 0, Thirds: 0, PlaceAverage: 1 }, Regular: { Place: 1, Wins: 10, Losses: 4, Ties: 0, Points: 1, PointsAgainst: 1, RegularSeasonWins: 1 } } } }] }),
       getLeagueRecords: () => of(null),
       getPlayerAwardHistory: () => of({
         Leaders: { MVP: [
@@ -52,6 +64,36 @@ describe('HallOfFamePageComponent', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(HallOfFamePageComponent);
     fixture.detectChanges();
+  });
+
+  it('loads only award leader identities initially and opens full player details on demand', async () => {
+    expect(getLeagueWithPlayers).not.toHaveBeenCalled();
+    expect(getPlayerIdentitySummaries).toHaveBeenCalledTimes(1);
+    expect(getPlayerIdentitySummaries.calls.mostRecent().args[0]).toContain('a');
+    const awards = fixture.debugElement.queryAll(By.directive(HallOfFameComponent))
+      .map(element => element.componentInstance as HallOfFameComponent)
+      .find(component => component.heading === 'Player Awards')!;
+    const [current, historical] = awards.highlights![0].players!;
+    expect(current.interactive).toBeTrue();
+    expect(historical.interactive).toBeFalse();
+    const open = spyOn(TestBed.inject(MatDialog), 'open').and.stub();
+    await awards.openPlayer(historical);
+    expect(getLeagueWithPlayers).not.toHaveBeenCalled();
+    await awards.openPlayer(current);
+    expect(getLeagueWithPlayers).toHaveBeenCalledTimes(1);
+    expect(open.calls.mostRecent().args[1]?.data).toBe(fullPlayer);
+  });
+
+  it('keeps player detail loading retryable when the full context fails', async () => {
+    const awards = fixture.debugElement.queryAll(By.directive(HallOfFameComponent))
+      .map(element => element.componentInstance as HallOfFameComponent)
+      .find(component => component.heading === 'Player Awards')!;
+    getLeagueWithPlayers.and.returnValue(throwError(() => new Error('unavailable')));
+    const open = spyOn(TestBed.inject(MatDialog), 'open').and.stub();
+    await awards.openPlayer(awards.highlights![0].players![0]);
+    expect(open).not.toHaveBeenCalled();
+    expect(awards.playerOpenError).toBeTrue();
+    expect(awards.openingPlayerId).toBeNull();
   });
 
   it('shows a single champion as a normal tile with ring, without banner, even when the team identity file is unavailable', () => {
@@ -157,7 +199,8 @@ describe('HallOfFamePageComponent with several champions', () => {
   beforeEach(async () => {
     const multi = { Season: '2026', IsFinished: false, Standings: [season('2025', 'Aces'), season('2024', 'Kings'), { Season: 'AllTime', RegularSeason: [] }] };
     const dataService = {
-      getLeagueWithPlayers: () => of({ league: multi, teams: [], players: [] }),
+      getLeagueSummary: () => of({ ...multi, Teams: [] }),
+      getPlayerIdentitySummaries: () => of([]),
       getLeagueRecords: () => of({ Records: { BiggestUpset: { Season: 2024, Week: 10, WinnerTeamID: 1, LoserTeamID: 2, WinnerPoints: 163.08, LoserPoints: 139.92, WinnerPregameWinProbability: 0.0954, WinnerCanonicalLeagueRosterID: 'r1', LoserCanonicalLeagueRosterID: 'r2' } } }),
       getPlayerAwardHistory: () => of(null),
       getTeamSeasons: () => throwError(() => new Error('unavailable'))

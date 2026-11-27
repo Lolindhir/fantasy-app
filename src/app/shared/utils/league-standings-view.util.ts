@@ -43,8 +43,8 @@ export interface SeasonResultsViewModel {
   regularSeasonChampion?: RegularSeasonAchievementSubject;
 }
 
-export interface AllTimeStandingRow {
-  team: FantasyTeam;
+export interface AllTimeStandingRow<T extends FantasyTeamSummary = FantasyTeamSummary> {
+  team: T;
   place: number;
   owner: string;
   championships: number;
@@ -54,8 +54,8 @@ export interface AllTimeStandingRow {
   placeAverage: number;
 }
 
-export interface AllTimeRegularSeasonStandingRow {
-  team: FantasyTeam;
+export interface AllTimeRegularSeasonStandingRow<T extends FantasyTeamSummary = FantasyTeamSummary> {
+  team: T;
   place: number;
   owner: string;
   wins: number;
@@ -87,10 +87,10 @@ export interface LeagueLegacyHighlight {
   reason: string;
 }
 
-export interface LeagueLegacyViewModel {
+export interface LeagueLegacyViewModel<T extends FantasyTeamSummary = FantasyTeamSummary> {
   highlights: LeagueLegacyHighlight[];
-  overallStandings: AllTimeStandingRow[];
-  regularSeasonStandings: AllTimeRegularSeasonStandingRow[];
+  overallStandings: AllTimeStandingRow<T>[];
+  regularSeasonStandings: AllTimeRegularSeasonStandingRow<T>[];
   awardLegend: AwardLegendItem[];
 }
 
@@ -223,7 +223,7 @@ export function buildSeasonResults(teams: FantasyTeam[], league?: League): Seaso
   };
 }
 
-export function buildAllTimeStandings(teams: FantasyTeam[]): AllTimeStandingRow[] {
+export function buildAllTimeStandings<T extends FantasyTeamSummary>(teams: T[]): AllTimeStandingRow<T>[] {
   return teams
     .filter(team => team.Placements.AllTime.Playoffs.Place < 999)
     .map(team => ({
@@ -239,7 +239,7 @@ export function buildAllTimeStandings(teams: FantasyTeam[]): AllTimeStandingRow[
     .sort((a, b) => a.place - b.place);
 }
 
-export function buildAllTimeRegularSeasonStandings(teams: FantasyTeam[]): AllTimeRegularSeasonStandingRow[] {
+export function buildAllTimeRegularSeasonStandings<T extends FantasyTeamSummary>(teams: T[]): AllTimeRegularSeasonStandingRow<T>[] {
   return teams
     .filter(team => team.Placements.AllTime.Regular.Place < 999)
     .map(team => {
@@ -263,7 +263,7 @@ export function buildAllTimeRegularSeasonStandings(teams: FantasyTeam[]): AllTim
 }
 
 /** UI-only projection of the generator-owned legend; no aggregation of season awards. */
-export function buildAwardLegend(league: League): AwardLegendItem[] {
+export function buildAwardLegend(league: Pick<League, 'Standings'>): AwardLegendItem[] {
   const facts = league.Standings?.find(standing => standing.Season === 'AllTime')?.AwardLegend ?? [];
   return facts.map(fact => ({
     key: fact.Key,
@@ -276,7 +276,7 @@ export function buildAwardLegend(league: League): AwardLegendItem[] {
   }));
 }
 
-export function buildLeagueLegacy(league: League, teams: FantasyTeam[]): LeagueLegacyViewModel {
+export function buildLeagueLegacy<T extends FantasyTeamSummary>(league: Pick<League, 'Standings'>, teams: T[]): LeagueLegacyViewModel<T> {
   const overallStandings = buildAllTimeStandings(teams);
   const regularSeasonStandings = buildAllTimeRegularSeasonStandings(teams);
   const awardLegend = buildAwardLegend(league);
@@ -379,7 +379,7 @@ export function getCurrentSeasonAwards(league: League): AwardInStanding[] {
 /** The source publishes winner identity and counts; Angular owns labels and visual styling only. */
 function projectLegacyHighlight(
   fact: LegacyHighlightFact,
-  teamById: Map<string, FantasyTeam>
+  teamById: ReadonlyMap<string, FantasyTeamSummary>
 ): LeagueLegacyHighlight | null {
   const owner = teamById.get(String(fact.TeamID))?.Owner ?? `Team ${fact.TeamID}`;
   switch (fact.Key) {

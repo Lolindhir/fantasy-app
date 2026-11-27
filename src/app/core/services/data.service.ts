@@ -3,7 +3,7 @@ import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 
 import { mapRawLeagueData, mapRawLeagueSummary } from '../mappers/league.mapper';
-import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
+import { mapRawPlayerIdentity, mapRawPlayerToPlayer } from '../mappers/player.mapper';
 import { mapRawTransactions } from '../mappers/transaction.mapper';
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
@@ -22,6 +22,7 @@ import type {
 import type {
   NFLTeam,
   Player,
+  PlayerIdentitySummary,
   SortField,
   TopPlayersSalaryResult
 } from '../models/player.models';
@@ -228,6 +229,18 @@ export class DataService {
   /** Standings and identity only; full team/player detail remains a separate explicit load. */
   getLeagueSummary(): Observable<LeagueSummary> {
     return this.dataApiService.getLeagueRaw().pipe(map(mapRawLeagueSummary));
+  }
+
+  /** Display-only lookup by published player IDs; no league, draft or cap context is required. */
+  getPlayerIdentitySummaries(playerIds: readonly string[]): Observable<PlayerIdentitySummary[]> {
+    const ids = new Set(playerIds.map(String));
+    if (ids.size === 0) return of([]);
+    return forkJoin({
+      players: this.dataApiService.getPlayersRaw(),
+      nflTeams: this.dataApiService.getNflTeamsRaw()
+    }).pipe(map(({ players, nflTeams }) => players
+      .filter(player => ids.has(String(player.ID)))
+      .map(player => mapRawPlayerIdentity(player, nflTeams))));
   }
 
   getLeague(sortFields: SortField[] = ['NameLast']): Observable<League> {

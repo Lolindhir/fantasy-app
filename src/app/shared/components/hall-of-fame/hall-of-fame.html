@@ -3,6 +3,7 @@
     <span class="hof__crest" aria-hidden="true">{{ crest }}</span>
     <h2 class="hof__title">{{ heading }}</h2>
   </header>
+  <p *ngIf="playerOpenError" role="status">Player details could not be loaded. Please try again.</p>
 
   <ul class="hof__grid" [class.hof__grid--compact]="compact">
     <li *ngFor="let item of highlights; trackBy: trackHighlight" class="hof__card" [class.hof__card--matchup]="!!item.upset">
@@ -68,7 +69,8 @@
 </section>
 
 <ng-template #playerIdentity let-player>
-  <button class="hof__identity" type="button" [disabled]="!player.player" (click)="openPlayer(player)">
+  <button class="hof__identity" type="button" [disabled]="!player.interactive || openingPlayerId !== null"
+          [attr.aria-busy]="openingPlayerId === player.id ? 'true' : null" (click)="openPlayer(player)">
     <ng-container *ngTemplateOutlet="playerPortrait; context: { $implicit: player }"></ng-container>
     <span class="hof__owner">{{ player.name }}<span *ngIf="player.teamAbbr" class="hof__sr-only">, {{ player.teamAbbr }}</span></span>
   </button>

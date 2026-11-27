@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, Injector, Input, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { firstValueFrom } from 'rxjs';
+import { DataService } from '../../../core/services/data.service';
 
 import { GlyphComponent } from '../glyph/glyph';
 import { DEFAULT_TEAM_AVATAR_SRC } from '../../utils/championship.util';
@@ -22,6 +24,9 @@ export class HallOfFameComponent {
 
   private readonly dialog = inject(MatDialog);
   private readonly injector = inject(Injector);
+  private readonly dataService = inject(DataService);
+  openingPlayerId: string | null = null;
+  playerOpenError = false;
   readonly defaultTeamAvatar = DEFAULT_TEAM_AVATAR_SRC;
   readonly directWinnerLimit = 2;
   trackHighlight = (_: number, item: HallOfFameHighlight): string => item.key;
@@ -39,13 +44,27 @@ export class HallOfFameComponent {
       this.injector.get(TeamDetailDialogService).open(teamId));
   }
 
-  openPlayer(identity: HallOfFamePlayerIdentity): void {
-    const player = identity.player;
-    if (!player) return;
-    void import('../player-detail-dialog/player-detail-dialog').then(({ PlayerDetailDialogComponent }) =>
+  async openPlayer(identity: HallOfFamePlayerIdentity): Promise<void> {
+    if (!identity.interactive || this.openingPlayerId !== null) return;
+    this.openingPlayerId = identity.id;
+    this.playerOpenError = false;
+    try {
+      // The detail dialog needs the fully enriched Player, never a partial display identity.
+      const { players } = await firstValueFrom(this.dataService.getLeagueWithPlayers());
+      const player = players.find(candidate => String(candidate.ID) === identity.id);
+      if (!player) {
+        this.playerOpenError = true;
+        return;
+      }
+      const { PlayerDetailDialogComponent } = await import('../player-detail-dialog/player-detail-dialog');
       this.dialog.open(PlayerDetailDialogComponent, {
         data: player, width: '800px', maxHeight: '90vh', panelClass: 'player-dialog'
-      }));
+      });
+    } catch {
+      this.playerOpenError = true;
+    } finally {
+      this.openingPlayerId = null;
+    }
   }
 
   valueMain(item: HallOfFameHighlight): string {
