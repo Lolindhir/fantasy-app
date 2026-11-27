@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 
-import { mapRawLeagueData } from '../mappers/league.mapper';
+import { mapRawLeagueData, mapRawLeagueSummary } from '../mappers/league.mapper';
 import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
 import { mapRawTransactions } from '../mappers/transaction.mapper';
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
@@ -12,7 +12,7 @@ import type {
   FantasyGameContextReadModel,
   HistoricalFantasyGameContextSeason
 } from '../models/fantasy-game-context.models';
-import type { FantasyTeam, League, RawLeague } from '../models/league.models';
+import type { FantasyTeam, League, LeagueSummary, RawLeague } from '../models/league.models';
 import type { MatchupProjectionMatchup, MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type { MatchupsReadModel } from '../models/matchup.models';
 import type {
@@ -223,6 +223,11 @@ export class DataService {
 
   getAllPlayers(sortFields: SortField[] = ['NameLast']): Observable<Player[]> {
     return this.getLeagueWithPlayers(sortFields).pipe(map(res => res.players));
+  }
+
+  /** Standings and identity only; full team/player detail remains a separate explicit load. */
+  getLeagueSummary(): Observable<LeagueSummary> {
+    return this.dataApiService.getLeagueRaw().pipe(map(mapRawLeagueSummary));
   }
 
   getLeague(sortFields: SortField[] = ['NameLast']): Observable<League> {

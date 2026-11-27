@@ -31,8 +31,9 @@ import {
 export class StandingsPageComponent {
   private dataService = inject(DataService);
 
-  vm$ = forkJoin({ data: this.dataService.getLeagueWithPlayers(), outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null))), stats: this.dataService.getSeasonStatistics().pipe(catchError(() => of(null))), injury: this.dataService.getInjuryImpact() }).pipe(
-    map(({ data: { league, teams }, outlook, stats, injury }) => {
+  vm$ = forkJoin({ league: this.dataService.getLeagueSummary(), outlook: this.dataService.getScheduleOutlook().pipe(catchError(() => of(null))), stats: this.dataService.getSeasonStatistics().pipe(catchError(() => of(null))), injury: this.dataService.getInjuryImpact() }).pipe(
+    map(({ league, outlook, stats, injury }) => {
+      const teams = league.Teams;
       const configuredPlayoffTeams = league.Settings?.['playoff_teams'];
       const playoffTeams = typeof configuredPlayoffTeams === 'number'
         && Number.isInteger(configuredPlayoffTeams)

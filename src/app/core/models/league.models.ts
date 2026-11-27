@@ -290,3 +290,7 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' |
   Thirds: number;
   RegularSeasonWins: number;
 }
+
+/** League.json-only display context; resolved rosters, picks and cap evidence are deliberately absent. */
+export type FantasyTeamSummary = Omit<FantasyTeam, 'Roster' | 'Reserve' | 'Taxi' | 'Starter' | 'DraftPicks' | 'CapOutlook' | 'CapOutlookAsOfWeek'>;
+export type LeagueSummary = Omit<League, 'Teams'> & { Teams: FantasyTeamSummary[] };
