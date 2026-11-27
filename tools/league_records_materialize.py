@@ -11,7 +11,7 @@ from typing import Any
 from data_roots import data_derived_dir, data_meta_dir
 from league_metadata import list_league_ids
 from league_standings_sources import manifest, manifest_seasons, current_season
-from derived_data_lib.league_records import PRODUCT, build
+from derived_data_lib.league_records import PRODUCT, SCHEMA_VERSION, MODEL_ID, build, legacy_biggest_upset
 
 
 def resolve(repo_root: Path, out_root: Path, league_id: str) -> dict[str, Any]:
@@ -27,6 +27,18 @@ def resolve(repo_root: Path, out_root: Path, league_id: str) -> dict[str, Any]:
         path = out_root / "season-statistics" / league_id / f"{year}.json"
         documents[year] = json.loads(path.read_text(encoding="utf-8"))
     return build(league_id, seasons, documents)
+
+
+def read_persisted(out_root: Path, league_id: str) -> dict[str, Any]:
+    """Read the published shared contract, never select a record in a consumer."""
+    path = out_root / PRODUCT / f"{league_id}.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    if (doc["Product"], doc["SchemaVersion"], doc["CanonicalLeagueID"], doc["Model"]) != (PRODUCT, SCHEMA_VERSION, league_id, MODEL_ID):
+        raise ValueError(f"{league_id}: incompatible league-records snapshot")
+    if not isinstance(doc["Coverage"], list) or not doc["Coverage"]:
+        raise ValueError(f"{league_id}: missing league-records coverage")
+    legacy_biggest_upset(doc)  # validate the required compatibility fields
+    return doc
 
 
 def materialize(repo_root: Path, out_root: Path, league_id: str, *, write: bool = False) -> dict[str, Any]:

@@ -47,3 +47,10 @@ publication:
   failure: Warn and retain previous record on missing or invalid evidence; no consumer cutover until readback.
   check: Second invocation is read-only and must be a semantic no-op; a failed check aborts the rebuild transaction.
   schedule: Existing League Live cadence and weekly historical reconciliation, no new trigger.
+appDelivery:
+  path: public/data/LeagueRecords.json
+  publisher: tools/league_records_app_publish.py
+  timestampsKey: LeagueRecords
+  shape: Unchanged persisted shared product.
+  compatibility: SeasonStatistics.json.BiggestUpsetAllTime is a field-only projection of the same shared record, absent if its input is unavailable; no duplicate record selection.
+  activation: App delivery and alias must be published and verified before the Hall of Fame switches to the new file.

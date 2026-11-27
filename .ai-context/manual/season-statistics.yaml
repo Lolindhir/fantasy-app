@@ -92,7 +92,7 @@ contract:
     }
   rounding: four decimals, -0.0 normalized to 0.0
   appDelivery:
-    current: public/data/SeasonStatistics.json is the product document of the current season plus BiggestUpsetAllTime ({ Season } + BiggestUpset fields), chosen by the generator from the persisted products of every season; both the current and the past_seasons App files carry an additive TeamAbbr per team row, derived by the generator (tools/team_abbreviation.py, same rule as League.json TeamAbbr) from the team name of that season (Issue #1621)
+    current: public/data/SeasonStatistics.json is the product document of the current season plus BiggestUpsetAllTime ({ Season } + BiggestUpset fields), a compatibility projection of the persisted league-records product (ADR-100); omitted if that input is unavailable; both the current and the past_seasons App files carry an additive TeamAbbr per team row, derived by the generator (tools/team_abbreviation.py, same rule as League.json TeamAbbr) from the team name of that season (Issue #1621)
     history: public/data/past_seasons/SeasonStatistics/SeasonStatistics_<season>.json is the product document of a completed earlier season; indexed by PastSeasonsIndex.json (ConfigUtils PastSeasonResources key SeasonStatistics)
     frontendRule: Angular displays the values and selects nothing and calculates nothing (Regel 4). Strength of schedule is not displayed.
 

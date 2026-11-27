@@ -242,6 +242,7 @@ jobs:
           { if python3 tools/derived_data.py materialize --product season-statistics --scope current > /dev/null; then
               if python3 tools/league_records_materialize.py --write; then
                 python3 tools/league_records_materialize.py --check > /dev/null || exit 1;
+                python3 tools/league_records_app_publish.py write;
                 else echo "::warning title=league-records not materialized::kept the last valid product"; fi;
             else echo "::warning title=season-statistics not materialized::kept the last product; league-records not refreshed"; fi; } &&
           python3 tools/season_statistics_app_publish.py write --scope current &&

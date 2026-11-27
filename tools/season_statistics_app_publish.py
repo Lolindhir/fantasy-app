@@ -9,9 +9,7 @@
 Usage:
   season_statistics_app_publish.py write [--league ID] [--scope current|history|all] [--fail-on-error]
 
-The App files carry the product document unchanged; additions are ``TeamAbbr`` per team row (season-specific team name, Issue #1621) and ``BiggestUpsetAllTime`` in the current file, chosen here (not in
-the frontend) from the persisted products of every season: the win with the lowest pregame chance (earlier season, then earlier week on
-a tie). Files are written only on a semantic difference and Timestamps.json[SeasonStatistics] is stamped for the current file only. A
+The App files carry the product document unchanged; additions are ``TeamAbbr`` per team row (season-specific team name, Issue #1621) and ``BiggestUpsetAllTime`` in the current file, a compatibility projection from the persisted league-records product (ADR-100). Files are written only on a semantic difference and Timestamps.json[SeasonStatistics] is stamped for the current file only. A
 season whose canonical evidence is incomplete keeps its last file and raises a warning; the current season fails the run with
 --fail-on-error. Without --league more than one league fails closed (the App files carry no league dimension).
 """
@@ -34,6 +32,8 @@ from league_metadata import LeagueMetadataError, list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
 from app_delivery import Writer, history_matchup_seasons, warn  # noqa: E402
 from derived_data_lib.league_teams import team_abbreviation  # noqa: E402
+from derived_data_lib.league_records import legacy_biggest_upset  # noqa: E402
+from league_records_materialize import read_persisted  # noqa: E402
 
 EXPECTED_ERRORS = (SeasonStatisticsError, LifecycleError, StandingsSourceError, LeagueMetadataError)
 
@@ -41,19 +41,6 @@ EXPECTED_ERRORS = (SeasonStatisticsError, LifecycleError, StandingsSourceError, 
 def persisted_documents(out_root: Path, league_id: str) -> dict[int, dict[str, Any]]:
     folder = out_root / SEASON_STATISTICS / league_id
     return {int(p.stem): json.loads(p.read_text(encoding="utf-8")) for p in sorted(folder.glob("*.json")) if p.stem.isdigit()}
-
-
-def biggest_upset_all_time(documents: dict[int, dict[str, Any]]) -> dict[str, Any] | None:
-    """The lowest pregame chance of any season's BiggestUpset; ties by earlier season, then earlier week."""
-    best: tuple[Any, dict[str, Any]] | None = None
-    for season, document in sorted(documents.items()):
-        upset = document.get("BiggestUpset")
-        if upset is None:
-            continue
-        key = (upset["WinnerPregameWinProbability"], season, upset["Week"])
-        if best is None or key < best[0]:
-            best = (key, {"Season": season, **upset})
-    return None if best is None else best[1]
 
 
 def with_team_abbreviations(document: dict[str, Any]) -> dict[str, Any]:
@@ -79,7 +66,12 @@ def publish(repo_root: Path, league_id: str, scope: str, writer: Writer) -> None
     if scope in ("current", "all"):
         if current not in stored:
             raise SeasonStatisticsError(f"season-statistics product missing for {league_id} {current}; materialize it first")
-        rendered = {**with_team_abbreviations(stored[current]), "BiggestUpsetAllTime": biggest_upset_all_time(stored)}
+        rendered = with_team_abbreviations(stored[current])
+        try:
+            rendered["BiggestUpsetAllTime"] = legacy_biggest_upset(read_persisted(out_root, league_id))
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            # Unknown record input is not a proven null record; keep other season fields publishable.
+            warn("BiggestUpsetAllTime unavailable", str(error))
         writer.put("SeasonStatistics.json", rendered, "SeasonStatistics")
     if scope in ("history", "all"):
         for season in history:

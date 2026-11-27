@@ -1221,7 +1221,7 @@ consumerReadClassification:
         legacy:past_seasons: app-output-owner
         legacy:SeasonStatistics: app-output-owner
         legacy:Timestamps: app-output-owner
-      note: 'Consumer generator of the season statistics (Issue #506). write renders SeasonStatistics.json from the persisted Shared Derived product season-statistics (materialized beforehand by derived_data.py materialize --product season-statistics --scope ..., Issue #1571 L4) and renders and the past_seasons SeasonStatistics files from it, only on a semantic difference. It reads the existing App file only to detect that difference and updates the SeasonStatistics key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+      note: 'Consumer generator of the season statistics (Issue #506). write renders SeasonStatistics.json from the persisted Shared Derived product season-statistics (materialized beforehand by derived_data.py materialize --product season-statistics --scope ..., Issue #1571 L4) and renders the past_seasons SeasonStatistics files from it, only on a semantic difference. The BiggestUpsetAllTime compatibility field is projected from the persisted league-records product (ADR-100). It reads the existing App file only to detect that difference and updates the SeasonStatistics key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/league_schedule_outlook_app_publish.py:
       reads:
         legacy:ScheduleOutlook: app-output-owner
@@ -1232,6 +1232,11 @@ consumerReadClassification:
         legacy:Rivalry: app-output-owner
         legacy:Timestamps: app-output-owner
       note: 'Consumer generator of the rivalry statistic (Issue #1455). write renders Rivalry.json from the persisted Shared Derived product league-rivalry (materialized beforehand by derived_data.py materialize --product league-rivalry, Issue #1571 L4), only on a semantic difference. It reads the existing App file only to detect that difference and updates the Rivalry key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+    tools/league_records_app_publish.py:
+      reads:
+        legacy:LeagueRecords: app-output-owner
+        legacy:Timestamps: app-output-owner
+      note: 'ADR-100, #1672: renders LeagueRecords.json from persisted Shared Derived league-records only; existing App output and timestamps are used solely for semantic no-op delivery.'
     tools/team_seasons_app_publish.py:
       reads:
         legacy:TeamSeasons: app-output-owner
