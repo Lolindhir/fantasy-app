@@ -66,6 +66,7 @@ export interface PlayerJourneySources {
 
 export interface LeagueWithPlayersAndTransactions extends LeagueWithPlayers {
   transactions: Transaction[];
+  nflTeams: NFLTeam[];
 }
 
 function buildProjectionByPlayerID(
@@ -485,6 +486,7 @@ export class DataService {
 
         return {
           ...mappedLeagueData,
+          nflTeams: data.nflTeamsRaw,
           transactions
         };
       })

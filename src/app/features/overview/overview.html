@@ -194,10 +194,10 @@
       </div>
     </section>
 
-    <app-draft-capital-overview></app-draft-capital-overview>
+    <app-draft-capital-overview [league]="vm.league" [drafts]="vm.drafts"></app-draft-capital-overview>
   </ng-container>
 
-  <app-league-matchups [league]="vm.league"></app-league-matchups>
+  <app-league-matchups *ngIf="!vm.league.Status || vm.activeLeague" [league]="vm.league"></app-league-matchups>
 
   <ng-container *ngIf="vm.activeLeague">
     <section
@@ -406,7 +406,7 @@
 
     </ng-container>
 
-    <app-draft-capital-overview></app-draft-capital-overview>
+    <app-draft-capital-overview [league]="vm.league" [drafts]="vm.drafts"></app-draft-capital-overview>
 
   </section>
 

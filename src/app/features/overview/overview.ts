@@ -13,7 +13,7 @@ import type {
   RawDraft,
   Transaction
 } from '../../core/models/fantasy.models';
-import { DataService } from '../../core/services/data.service';
+import { OverviewDataScope } from '../../shared/services/overview-data-scope.service';
 import { getMoveCategory } from '../league-activity/moves-view-model.util';
 import { AllTimeStandingsComponent } from '../../shared/components/all-time-standings/all-time-standings';
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
@@ -130,12 +130,13 @@ interface SeasonLeaderCard {
     PositionStylePipe
   ],
   standalone: true,
+  providers: [OverviewDataScope],
   templateUrl: './overview.html',
   styleUrls: ['./overview.scss', './active-overview.scss']
 })
 export class OverviewComponent {
 
-  private dataService = inject(DataService);
+  private readonly dataScope = inject(OverviewDataScope);
   private dialog = inject(MatDialog);
   readonly moveCategory = getMoveCategory;
   expandedTeamId: number | null = null;
@@ -145,7 +146,7 @@ export class OverviewComponent {
       this.expandedTeamId === teamId ? null : teamId;
   }
 
-  vm$ = this.dataService.getLeagueWithPlayersAndTransactions().pipe(
+  vm$ = this.dataScope.context$.pipe(
     map(({ league, teams, drafts, players, transactions }) => {
 
       const offSeason = league.Status === 'Off-Season';

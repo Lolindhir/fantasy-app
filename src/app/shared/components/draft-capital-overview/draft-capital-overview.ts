@@ -1,9 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { map } from 'rxjs/operators';
+import { Component, Input, OnChanges } from '@angular/core';
 
 import type { DraftPick, FantasyTeam, League, RawDraft } from '../../../core/models/fantasy.models';
-import { DataService } from '../../../core/services/data.service';
 import {
   compareDraftPickCollectionsByStrength,
   compareDraftPicksBySlotAcrossDrafts,
@@ -49,7 +47,7 @@ interface DraftCapitalViewModel {
   imports: [CommonModule],
   template: `
     <section
-      *ngIf="vm$ | async as vm"
+      *ngIf="vm as vm"
       class="draft-dashboard-card"
       [class.draft-capital--medium-counts]="vm.isMediumCountMode"
       [class.draft-capital--wide-counts]="vm.isWideCountMode"
@@ -309,46 +307,50 @@ interface DraftCapitalViewModel {
     }
   `]
 })
-export class DraftCapitalOverviewComponent {
-  private dataService = inject(DataService);
+export class DraftCapitalOverviewComponent implements OnChanges {
+  @Input({ required: true }) league!: League;
+  @Input({ required: true }) drafts!: RawDraft[];
+  vm: DraftCapitalViewModel | null = null;
 
-  vm$ = this.dataService.getLeagueWithPlayers().pipe(
-    map(({ league, teams, drafts }: { league: League; teams: FantasyTeam[]; drafts: RawDraft[] }) => {
-      const showDraftCapital = league.Status === 'Draft-Season' || league.Status === 'Off-Season';
-      if (!showDraftCapital) return null;
+  ngOnChanges(): void {
+    this.vm = this.buildViewModel(this.league, this.league.Teams, this.drafts);
+  }
 
-      const seasonDrafts = this.getSeasonDrafts(drafts, league.Season);
-      if (seasonDrafts.length === 0) return null;
+  private buildViewModel(league: League, teams: FantasyTeam[], drafts: RawDraft[]): DraftCapitalViewModel | null {
+    const showDraftCapital = league.Status === 'Draft-Season' || league.Status === 'Off-Season';
+    if (!showDraftCapital) return null;
 
-      const useFullDraftTypeOnMobile = seasonDrafts.length <= 2;
-      const columns = seasonDrafts.map(draft => {
-        const draftTypeLabel = draft.DisplayDraftType || draft.DisplayDraftKey;
-        const abbreviatedLabel = getDraftCapitalAbbreviation(draft);
+    const seasonDrafts = this.getSeasonDrafts(drafts, league.Season);
+    if (seasonDrafts.length === 0) return null;
 
-        return {
-          draftKey: draft.DraftKey,
-          mobileLabel: useFullDraftTypeOnMobile ? draftTypeLabel : abbreviatedLabel,
-          desktopLabel: draftTypeLabel,
-          fullLabel: draft.DisplayDraftKey
-        };
-      });
-      const draftKeys = new Set(columns.map(column => column.draftKey));
-      const seasonPicks = teams
-        .flatMap(team => team.DraftPicks ?? [])
-        .filter(pick => pick.Season === league.Season && draftKeys.has(pick.DraftKey));
-      const showSecondBestPick = !seasonPicks.some(pick => this.isDraftPickMade(pick));
-      const rows = this.buildRows(teams, seasonDrafts, columns, showSecondBestPick);
+    const useFullDraftTypeOnMobile = seasonDrafts.length <= 2;
+    const columns = seasonDrafts.map(draft => {
+      const draftTypeLabel = draft.DisplayDraftType || draft.DisplayDraftKey;
+      const abbreviatedLabel = getDraftCapitalAbbreviation(draft);
 
       return {
-        columns,
-        gridTemplate: this.buildGridTemplate(columns.length),
-        isMediumCountMode: columns.length > 2 && columns.length <= 4,
-        isWideCountMode: columns.length <= 2,
-        showSecondBestPick,
-        rows
-      } satisfies DraftCapitalViewModel;
-    })
-  );
+        draftKey: draft.DraftKey,
+        mobileLabel: useFullDraftTypeOnMobile ? draftTypeLabel : abbreviatedLabel,
+        desktopLabel: draftTypeLabel,
+        fullLabel: draft.DisplayDraftKey
+      };
+    });
+    const draftKeys = new Set(columns.map(column => column.draftKey));
+    const seasonPicks = teams
+      .flatMap(team => team.DraftPicks ?? [])
+      .filter(pick => pick.Season === league.Season && draftKeys.has(pick.DraftKey));
+    const showSecondBestPick = !seasonPicks.some(pick => this.isDraftPickMade(pick));
+    const rows = this.buildRows(teams, seasonDrafts, columns, showSecondBestPick);
+
+    return {
+      columns,
+      gridTemplate: this.buildGridTemplate(columns.length),
+      isMediumCountMode: columns.length > 2 && columns.length <= 4,
+      isWideCountMode: columns.length <= 2,
+      showSecondBestPick,
+      rows
+    } satisfies DraftCapitalViewModel;
+  }
 
   private getSeasonDrafts(drafts: RawDraft[], season: string): RawDraft[] {
     return drafts
