@@ -150,6 +150,109 @@ _weekly_roster_rows(Path.cwd(), 2025, 1)
         self.assertEqual(["recaps-roster"], [row["rule"] for row in classify_reads(result.events, self.rules)])
         self.assertFalse(any(event.get("write") for event in result.events))
 
+    def metadata_fixture(self, league):
+        source = sorted((TOOLS.parent / ROOTS["meta"]).glob("*/metadata.json"))
+        self.assertTrue(source, "Need one configured metadata schema fixture")
+        base = json.loads(source[0].read_text(encoding="utf-8-sig"))
+        base["CanonicalLeagueID"] = league
+        return base
+
+    def test_players_game_history_projection_is_delivery_not_forecast_input(self):
+        self.put(Path(DATA_DERIVED_ROOT, "player-week-fantasy", "league-a", "2025", "01.json"),
+                 {"CanonicalLeagueID": "league-a", "Season": 2025, "Week": 1,
+                  "Records": [{"CanonicalPlayerID": "c1", "Projection": {"Points": 17},
+                               "Actual": {"State": "final"}},
+                              {"CanonicalPlayerID": "c2", "Projection": {"Points": None}}]})
+        result = self.run_code("""
+from pathlib import Path
+from derived_data_lib.players_read_model import load_projections, attach_projections
+projections = load_projections(Path.cwd(), 'league-a', 2025)
+assert projections == {('c1', 1): {'Points': 17.0, 'ActualFinal': True}}
+games = [{'GameDetails': {'Week': 1, 'WeekFinal': True}, 'FantasyPoints': 18},
+         {'GameDetails': {'Week': 2, 'WeekFinal': True}, 'FantasyPoints': 20}]
+attach_projections(games, 'c1', projections)
+assert games[0]['Projection']['Points'] == 17.0
+assert games[1]['Projection'] is None
+""")
+        rows = classify_reads(result.events, self.rules)
+        self.assertEqual(["players-pwf-delivery"], [row["rule"] for row in rows])
+        with self.assertRaisesRegex(TraceError, "Delivery read in producer stage"):
+            classify_reads(result.events, self.rules, own_product="league-forecast")
+
+    def test_decision_windows_transitive_read_boundaries_at_fixed_clock(self):
+        # Exercise the actual Decision Windows input assembly and actual
+        # population roster/draft readers. Unrelated lifecycle, schedule,
+        # identity resolver and provider profile dependencies are fixture mocks,
+        # not claims of complete current-chain execution.
+        metadata = self.metadata_fixture("league-a")
+        year = sorted(metadata["Seasons"])[0]
+        self.put(ROOTS["meta"] / "league-a" / "metadata.json", metadata)
+        season_dir = ROOTS["source"] / "leagues" / "league-a" / "seasons" / year
+        self.put(season_dir / "league.json", {"ProviderMappings": [{"Provider": "Sleeper",
+                  "ProviderLeagueID": "provider-fixture"}], "RosterPositions": ["QB"]})
+        player = {"CanonicalPlayerID": "c1", "ProviderMappings": [{"Provider": "Sleeper",
+                  "ProviderPlayerID": "p1"}]}
+        self.put(season_dir / "rosters.json", [{"CanonicalLeagueRosterID": "r1",
+                 "ProviderMappings": [{"Provider": "Sleeper", "ProviderRosterID": "1"}],
+                 "Players": [player], "Starters": [player]}])
+        raw = ROOTS["source"] / "providers" / "sleeper" / "leagues" / "provider-fixture" / "rosters.json"
+        self.put(raw, [{"roster_id": 1, "starters": ["p1", "0"]}])
+        self.put(ROOTS["source"] / "nfl" / "identities" / "players.json", {"Players": []})
+        availability = ROOTS["source"] / "nfl" / "player-availability" / "espn.json"
+        self.put(availability, {"Records": []})
+        self.put(ROOTS["source"] / "nfl" / "rosters" / (year + ".json"),
+                 {"Records": [{"CanonicalPlayerID": "c1"}]})
+        self.put(ROOTS["source"] / "nfl" / "weekly-rosters" / year / "01.json",
+                 {"Records": [{"CanonicalPlayerID": "c1"}]})
+        self.put(ROOTS["source"] / "nfl" / "draft" / (year + ".json"),
+                 {"Picks": [{"CanonicalPlayerID": "c1"}]})
+        code = f"""
+from pathlib import Path
+from datetime import datetime, timezone
+from unittest.mock import patch, Mock
+from contextlib import ExitStack
+from derived_data_lib import decision_windows as d
+import players_population as p
+root = Path.cwd()
+clock = datetime(int({year!r}), 9, 1, 12, tzinfo=timezone.utc)
+resolver = Mock()
+resolver.resolve.return_value = ('c1', 'resolved')
+with ExitStack() as stack:
+    for obj, name, value in [
+        (d, 'resolve_lifecycle', {{'LineupWeek': 1, 'LastLeagueWeek': 17,
+                                 'WaiversOpen': False, 'NextWaiverRun': None}}),
+        (d, 'build_schedule', []),
+        (p, 'load_snapshot', [{{'SleeperPlayerID': 'p1', 'Position': 'QB',
+                               'BirthDate': '2000-01-01', 'FullName': 'Fixture Player'}}]),
+        (p.NflTeamRegistry, 'load', None),
+        (p.SleeperIdentityResolver, 'from_repo', resolver),
+        (p, 'league_owned_sleeper_ids', set()),
+        (p, 'provider_ids_by_canonical', {{}}),
+        (p, 'load_profiles', {{}}),
+    ]:
+        stack.enter_context(patch.object(obj, name, return_value=value))
+    inputs = d._inputs(root, 'league-a', int({year!r}), clock)
+    assert inputs['rosters'][0]['StarterSlots'] == ['p1', None]
+    assert inputs['players'][0]['PlayerID'] == 'p1'
+    assert inputs['lineup_week'] == 1
+    assert inputs['availability_snapshot'] == EXPECTED_AVAILABILITY
+"""
+        normal = self.run_code(code.replace("EXPECTED_AVAILABILITY", "{'Records': []}"))
+        rows = classify_reads(normal.events, self.rules, own_product="league-forecast")
+        expected = {"dw-league", "dw-canonical-rosters", "dw-raw-rosters", "dw-identities",
+                    "dw-espn-availability", "population-nfl-rosters",
+                    "population-weekly-rosters", "population-nfl-draft", "dw-metadata"}
+        self.assertEqual(expected, {row["rule"] for row in rows})
+        self.assertEqual(len(expected), len(rows))
+        (self.root / availability).write_text("not JSON", encoding="utf-8")
+        unknown = self.run_code(code.replace("EXPECTED_AVAILABILITY", "None"))
+        self.assertEqual(expected, {row["rule"] for row in classify_reads(unknown.events, self.rules)})
+        self.put(raw, [{"roster_id": 1, "starters": ["p2"]}])
+        rejected = self.run_code(code.replace("EXPECTED_AVAILABILITY", "None"), rc=1)
+        self.assertIn("contradict the canonical rosters", rejected.process.stderr)
+        self.assertEqual({"dw-league", "dw-canonical-rosters", "dw-raw-rosters"},
+                         {row["rule"] for row in classify_reads(rejected.events, self.rules)})
+
     def test_real_powershell_metadata_read_boundary(self):
         pwsh = shutil.which("pwsh")
         if pwsh is None:
