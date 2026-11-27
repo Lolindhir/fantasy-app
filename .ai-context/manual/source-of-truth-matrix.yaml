@@ -2620,7 +2620,8 @@ angularDomainGuard:
   test: tools/tests/test_consumer_read_classification.py (test_g6_angular_*, test_g6_overview_cap_comes_from_central_outlook, test_g6_rivalry_comes_from_the_product)
   purpose: >
     Narrow text rules over src/app (comments stripped, no AST) that keep the delivery consumer a delivery
-    consumer: a loader, a generated-data URL or an archive path outside DataApiService, a central model ID in
+    consumer: a loader, a generated-data URL or an archive path outside DataApiService, an undocumented direct
+    native fetch call, a central model ID in
     executable code and a cap-limit input (SalaryRelevantTeamSize) outside the documented what-if files fail the
     test. They do not forbid aggregation, sorting or display logic in Angular (ADR-005); the frontend may still
     compute explicitly hypothetical values. Real team cap usage and predicted cap cuts come only from the central
@@ -2633,6 +2634,15 @@ angularDomainGuard:
     DataApiService is the one loader of generated JSON (ADR-004). about.ts loads the static handbook markdown
     under docs/, not generated data. The cache-busting interceptor (ADR-022) names the data/ and
     data/past_seasons/ prefixes to exempt the archives from build-version query parameters; it loads nothing.
+  nativeFetchAssets:
+    src/app/app.ts:
+      - index.html
+      - build-info.json
+  nativeFetchNote: >
+    Direct native fetch calls are restricted to the existing build-refresh assets and their cache-buster
+    template in app.ts. All generated read-model loading remains with DataApiService. This narrow text
+    guard catches ordinary direct fetch calls, including dynamic URLs, but does not analyze aliases,
+    computed property calls or data flow.
   archivePathFiles:
     - src/app/core/services/data-api.service.ts
     - src/app/core/interceptors/json-data-cache-busting.interceptor.ts
