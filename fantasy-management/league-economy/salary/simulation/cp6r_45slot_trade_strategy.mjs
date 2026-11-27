@@ -942,7 +942,8 @@ function createCP7bBase(csv,seed,vetSlope=.25){
  return {world,teams,contracts,cap:start.cap,seed,slope:vetSlope,
   archiveAsOf:'2026-10-05',syntheticOwnership:true,syntheticContractVintages:true};
 }
-export {simulateCP6r,createCP7bBase,lineup,coverage,annual,capFor,tradeUtility};
+export {simulateCP6r,createCP7bBase,lineup,coverage,annual,capFor,tradeUtility,
+ seasonalDevelopment,applyDynamicSalary,newRookies,draft,allOwned,contract,cutEntries};
 
 const self=fileURLToPath(import.meta.url);
 if(process.argv[1]&&path.resolve(process.argv[1])===self){
