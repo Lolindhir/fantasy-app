@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { defer, of, Subject, throwError } from 'rxjs';
 
 import type { RawDraft } from '../../core/models/draft.models';
@@ -46,14 +46,13 @@ describe('LeagueActivityComponent context reuse', () => {
     ]));
     dataService.getPastDraftsRaw.and.returnValue(of([pastDraft]));
     TestBed.configureTestingModule({
-      imports: [LeagueActivityComponent],
       providers: [
-        provideRouter([]),
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } },
         { provide: DataService, useValue: dataService }
       ]
     });
-    const component = TestBed.createComponent(LeagueActivityComponent).componentInstance;
+    // Exercise the real component's selection stream without compiling its unrelated presentation children.
+    const component = TestBed.runInInjectionContext(() => new LeagueActivityComponent());
     return { component, dataService, bundleSubscriptions: () => bundleSubscriptions };
   }
 
