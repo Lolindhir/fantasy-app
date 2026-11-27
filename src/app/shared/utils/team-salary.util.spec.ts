@@ -3,6 +3,7 @@ import type { RawLeague } from '../../core/models/league.models';
 import type { RawPlayer } from '../../core/models/player.models';
 import { verifyTeamCapOutlook, type TeamCapOutlookReadModel } from '../../core/models/team-cap-outlook.models';
 import { calculateTopPlayersSalary } from './trade-calculator.util';
+import { FreeAgentMarketService } from '../../core/services/free-agent-market.service';
 import {
   buildTeamSalarySummary,
   getEarliestOpenPicks,
@@ -110,6 +111,24 @@ describe('team salary utilities', () => {
     expect(verifyTeamCapOutlook({ ...outlook, SalaryCapProjected: 221 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
     const readyTeam = outlook.Teams[0];
     if (readyTeam.Status !== 'ready') throw new Error('Test fixture must be a ready team');
+    const cut = { PlayerID: 'b', CutOrder: 1, SalaryRank: 2, SalaryUsed: 80, CapBeforeCut: 180, CapAfterCut: 100 };
+    const compatible = {
+      ...outlook,
+      Models: { RosterCap: 'roster-cap-v2', AutoCut: 'auto-cut-v3' },
+      Teams: [{ ...readyTeam, Current: { ...readyTeam.Current, Cuts: [cut] } }]
+    };
+    const verified = verifyTeamCapOutlook(compatible, league, players as unknown as RawPlayer[]);
+    expect(verified.get(1)?.Current.Cuts).toEqual([cut]);
+    const team = makeTeam({ Roster: players });
+    players.forEach(player => { player.TeamFantasy = team; });
+    new FreeAgentMarketService().enrich(players, [team], league, verified);
+    expect(players[1].FreeAgentMarketInfo.SalaryRank).toBe(2);
+    expect(players[1].FreeAgentMarketInfo.Status).toBe('ProjectedCapCut');
+    expect(players[1].FreeAgentMarketInfo.Reason).not.toContain('6th');
+    for (const invalidRank of [0, -1, 1.5, 3, NaN]) {
+      const bad = { ...compatible, Teams: [{ ...readyTeam, Current: { ...readyTeam.Current, Cuts: [{ ...cut, SalaryRank: invalidRank }] } }] };
+      expect(verifyTeamCapOutlook(bad, league, players as unknown as RawPlayer[]).size).toBe(0);
+    }
     const reversedRosterWitness = { ...readyTeam, InputRoster: [...readyTeam.InputRoster].reverse() };
     expect(verifyTeamCapOutlook({ ...outlook, Teams: [reversedRosterWitness] }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook(null, league, players as unknown as RawPlayer[]).size).toBe(0);

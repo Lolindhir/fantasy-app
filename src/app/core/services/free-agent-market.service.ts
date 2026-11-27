@@ -43,7 +43,7 @@ export class FreeAgentMarketService {
     return {
       Status: 'ProjectedCapCut', StatusDisplay: 'Projected Cap Cut',
       PredictionModel: 'RuleBasedAutoCut', SalaryMode: lens, Probability: 1,
-      Reason: 'Team is over the salary cap. Rule-based model cuts the current 6th highest salary player until the team is under the cap.',
+      Reason: 'This player is a projected cut in the published salary cap outlook.',
       TeamID: team.TeamID, TeamName: team.Team ?? `Team ${team.Owner}`, Owner: team.Owner,
       CutOrder: cut.CutOrder, SalaryRank: cut.SalaryRank, SalaryUsed: cut.SalaryUsed,
       SalaryUsedDisplay: formatSalaryDollars(cut.SalaryUsed),
