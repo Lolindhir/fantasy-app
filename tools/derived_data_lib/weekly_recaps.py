@@ -17,6 +17,7 @@ from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from league_metadata import data_meta_root, load_league_metadata, model_for
 
 from .fantasy_game_context import canonical_matchup_facts
+from .historical_pregame import historical_team_projection, raw_matchup_probability
 from .matchup_context import (
     MatchupContextError,
     canonical_pairings,
@@ -479,25 +480,14 @@ def pregame_win_probabilities(
     """
     result: list[dict[str, Any]] = []
     for matchup in facts:
-        teams: list[dict[str, Any]] = []
-        for team in matchup["Teams"]:
-            starters: dict[str, dict[str, Any]] = {}
-            projections: dict[str, Any] = {}
-            for player in team["Players"]:
-                if not player["IsStarter"]:
-                    continue
-                player_id = _text(player["PlayerID"])
-                starters[player_id] = {"final": False, "points": None, "bye": False}
-                canonical_id = _text(player.get("CanonicalPlayerID")) or _text(identity_map["ByPlayer"].get(player_id, {}).get("CanonicalPlayerID"))
-                if canonical_id in projections_by_canonical:
-                    projections[player_id] = projections_by_canonical[canonical_id]
-            teams.append(team_range_model.build_team_projection(team["FantasyTeamID"], starters, projections))
+        teams = [
+            historical_team_projection(team, identity_map, projections_by_canonical, team_range_model)
+            for team in matchup["Teams"]
+        ]
         if len(teams) != 2:
             continue
         percentages = win_prob_model.matchup_percentages(teams[0], teams[1])
-        first = win_prob_model.win_probability(
-            teams[0]["ProjectedFinalScore"], teams[0]["StandardDeviation"], teams[1]["ProjectedFinalScore"], teams[1]["StandardDeviation"]
-        ) if percentages else None
+        first = raw_matchup_probability(teams[0], teams[1], win_prob_model) if percentages else None
         scores = [float(team["FinalScore"]) for team in matchup["Teams"]]
         upset = None
         level = None
