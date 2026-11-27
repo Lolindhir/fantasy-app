@@ -19,6 +19,7 @@ import sys
 import urllib.request
 from typing import Any, Callable
 
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from nfl_injuries_materialize import _assert_bounded_path, stage_injury_season
 from nfl_injuries_phase import run_injury_phase
 from nfl_source_data_lib.injury_product_plan import (
@@ -99,8 +100,8 @@ def discover_injury_history(
     if not repo_root.is_dir():
         raise ValueError("Repository root does not exist")
     current = current_source_season(repo_root)
-    raw_root = repo_root / "data-source/providers/nflverse/injuries"
-    schedules_root = repo_root / "data-source/nfl/schedules"
+    raw_root = repo_root / f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries"
+    schedules_root = repo_root / f"{DATA_SOURCE_ROOT}/nfl/schedules"
     persisted: set[int] = set()
     if raw_root.is_dir():
         for metadata_path in sorted(raw_root.glob("metadata-*.json")):
@@ -109,10 +110,10 @@ def discover_injury_history(
                 raise ValueError("Unrecognized Injury source metadata filename")
             season = int(match.group(1))
             metadata_path = _assert_bounded_path(
-                repo_root, f"data-source/providers/nflverse/injuries/metadata-{season}.json",
+                repo_root, f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json",
             )
             raw_path = _assert_bounded_path(
-                repo_root, f"data-source/providers/nflverse/injuries/raw-{season}.csv",
+                repo_root, f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv",
             )
             if metadata_path.is_symlink() or raw_path.is_symlink():
                 raise ValueError(f"Incomplete or symlinked stored Injury source season {season}")
@@ -163,7 +164,7 @@ def preflight_next_injury_history(
                 or not row["CanonicalScheduleAvailable"]):
             continue
         derived_file = _assert_bounded_path(
-            repo_root, f"data-derived/nfl-injuries/{season}.json")
+            repo_root, f"{DATA_DERIVED_ROOT}/nfl-injuries/{season}.json")
         if not derived_file.is_file():
             candidates.append(season)
     if not candidates:
@@ -188,9 +189,9 @@ def preflight_next_injury_history(
             or hashlib.sha256(source).hexdigest() != expected_digest):
         raise ValueError("Historical pilot original bytes disagree with official SHA-256/size")
     identity_file = _assert_bounded_path(
-        repo_root, "data-source/nfl/identities/players.json")
+        repo_root, f"{DATA_SOURCE_ROOT}/nfl/identities/players.json")
     schedule_file = _assert_bounded_path(
-        repo_root, f"data-source/nfl/schedules/{season}.json")
+        repo_root, f"{DATA_SOURCE_ROOT}/nfl/schedules/{season}.json")
     if not identity_file.is_file() or not schedule_file.is_file():
         raise ValueError("Historical pilot lacks persisted canonical identity or schedule")
     players = json.loads(identity_file.read_text(encoding="utf-8"))
@@ -200,7 +201,7 @@ def preflight_next_injury_history(
         schedule=schedule, expected_source_sha256=expected_digest,
         release_asset=asset,
     )
-    manifest = json.loads(proposed[f"data-source/nfl/injuries/{season}/manifest.json"])
+    manifest = json.loads(proposed[f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json"])
     quality = manifest["CanonicalQuality"]
     identities = quality["IdentityResolutionCounts"]
     links = quality["GameLinkCounts"]
@@ -240,10 +241,10 @@ def refresh_injury_raw(
     if not repo_root.is_dir():
         raise ValueError("Repository root does not exist")
     metadata_path = _assert_bounded_path(
-        repo_root, f"data-source/providers/nflverse/injuries/metadata-{season}.json",
+        repo_root, f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json",
     )
     raw_path = _assert_bounded_path(
-        repo_root, f"data-source/providers/nflverse/injuries/raw-{season}.csv",
+        repo_root, f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv",
     )
     known = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.is_file() else None
     release = fetch_release()
@@ -297,10 +298,10 @@ def refresh_injury_season(
     """
     release = fetch_release()
     metadata_path = _assert_bounded_path(
-        repo_root, f"data-source/providers/nflverse/injuries/metadata-{season}.json"
+        repo_root, f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json"
     )
     raw_path = _assert_bounded_path(
-        repo_root, f"data-source/providers/nflverse/injuries/raw-{season}.csv"
+        repo_root, f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv"
     )
     stored_metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.is_file() else None
     decision = plan_release_refresh(release, season=season, stored_metadata=stored_metadata)

@@ -19,6 +19,7 @@ import tempfile
 from typing import Any
 
 from derived_data_lib.nfl_injuries import derive_nfl_injuries
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from nfl_injuries_materialize import _assert_bounded_path
 from nfl_source_data_lib.injury_reports import valid_injury_season
 from nfl_source_data_lib.injury_product_plan import (
@@ -47,7 +48,7 @@ def _read_json(root: Path, relative: str) -> dict:
 
 
 def _read_source(repo_root: Path, season: int) -> tuple[bytes, dict]:
-    prefix = "data-source/providers/nflverse/injuries/"
+    prefix = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/"
     meta = _read_json(repo_root, f"{prefix}metadata-{season}.json")
     raw_path = _assert_bounded_path(repo_root, f"{prefix}raw-{season}.csv")
     if not raw_path.is_file():
@@ -62,7 +63,7 @@ def _read_source(repo_root: Path, season: int) -> tuple[bytes, dict]:
 
 
 def _read_canonical(repo_root: Path, season: int) -> dict:
-    root = f"data-source/nfl/injuries/{season}/"
+    root = f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/"
     manifest = _read_json(repo_root, root + "manifest.json")
     if (manifest.get("SchemaVersion") != 1 or manifest.get("Season") != season
             or manifest.get("SourceDataset") != _SOURCE):
@@ -158,24 +159,24 @@ def plan_injury_phase(
             season=season, source_csv=raw, players=players, schedule=schedule,
             expected_source_sha256=metadata["AssetSha256"],
         )
-        prefix = f"data-source/nfl/injuries/{season}/"
+        prefix = f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/"
         return {key: val for key, val in whole.items() if key.startswith(prefix)}
     if players is not None or schedule is not None:
         raise ValueError("Derived phase consumes only canonical Injury product")
     canonical = _read_canonical(repo_root, season)
     derived = derive_nfl_injuries(canonical)
-    return {f"data-derived/nfl-injuries/{season}.json": _render(derived)}
+    return {f"{DATA_DERIVED_ROOT}/nfl-injuries/{season}.json": _render(derived)}
 
 
 def _allowed_phase_path(phase: str, season: int, path: str) -> bool:
     if phase == "raw":
         return path in (
-            f"data-source/providers/nflverse/injuries/raw-{season}.csv",
-            f"data-source/providers/nflverse/injuries/metadata-{season}.json",
+            f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv",
+            f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json",
         )
     if phase == "derived":
-        return path == f"data-derived/nfl-injuries/{season}.json"
-    prefix = f"data-source/nfl/injuries/{season}/"
+        return path == f"{DATA_DERIVED_ROOT}/nfl-injuries/{season}.json"
+    prefix = f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/"
     return path == prefix + "manifest.json" or (
         path.startswith(prefix) and bool(_WEEK_FILE.fullmatch(path[len(prefix):]))
     )
@@ -204,10 +205,10 @@ def run_injury_phase(
     if not proposed or any(not _allowed_phase_path(phase, season, p) for p in proposed):
         raise ValueError("Proposed Injury artifact exceeds its phase write scope")
     expected_keys = (
-        {f"data-source/providers/nflverse/injuries/raw-{season}.csv",
-         f"data-source/providers/nflverse/injuries/metadata-{season}.json"} if phase == "raw" else
-        {f"data-source/nfl/injuries/{season}/manifest.json"} if phase == "canonical" else
-        {f"data-derived/nfl-injuries/{season}.json"}
+        {f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv",
+         f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json"} if phase == "raw" else
+        {f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json"} if phase == "canonical" else
+        {f"{DATA_DERIVED_ROOT}/nfl-injuries/{season}.json"}
     )
     if not expected_keys.issubset(proposed):
         raise ValueError("Injury publication phase lacks mandatory outputs")
@@ -215,7 +216,7 @@ def run_injury_phase(
     candidates = set(proposed)
     if phase == "canonical":
         for week in range(1, 23):
-            candidates.add(f"data-source/nfl/injuries/{season}/{week:02d}.json")
+            candidates.add(f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/{week:02d}.json")
     for path in candidates:
         target = _assert_bounded_path(repo_root, path)
         if target.is_file():
@@ -226,8 +227,8 @@ def run_injury_phase(
     # Every current release and the full CSV have already been validated by
     # plan_injury_phase; only release-specific identity/time may be ignored.
     if phase == "raw":
-        raw_name = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
-        metadata_name = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
+        raw_name = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv"
+        metadata_name = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json"
         if metadata_name in existing:
             accepted = json.loads(existing[metadata_name].decode("utf-8"))
             current = json.loads(proposed[metadata_name].decode("utf-8"))

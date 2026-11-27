@@ -16,6 +16,7 @@ import re
 import sys
 from typing import Any, Callable
 
+from data_roots import DATA_SOURCE_ROOT
 from nfl_injuries_materialize import _assert_bounded_path
 from nfl_injuries_phase import run_injury_phase
 from nfl_injuries_refresh import discover_injury_history, release_api, source_asset
@@ -49,7 +50,7 @@ def _verified_cancelled_game_unlinked_reports(
     if any(game.get("GameID") == _CANCELLED_2022_GAME_ID
            for game in schedule.get("Games", [])):
         return 0
-    week_path = "data-source/nfl/injuries/2022/17.json"
+    week_path = f"{DATA_SOURCE_ROOT}/nfl/injuries/2022/17.json"
     if week_path not in artifacts:
         return 0
     partition = json.loads(artifacts[week_path])
@@ -85,7 +86,7 @@ def accepted_historical_injury_seasons(
     if not repo_root.is_dir():
         raise ValueError("Injury repository root does not exist")
     current = current_source_season(repo_root)
-    root = repo_root / "data-source/providers/nflverse/injuries"
+    root = repo_root / f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries"
     if not root.exists():
         return [], current
     if not root.is_dir() or root.is_symlink():
@@ -110,7 +111,7 @@ def accepted_historical_injury_seasons(
                          f"rawOnly={sorted(raw_years - meta_years)}")
     historical = []
     for season in sorted(meta_years & raw_years):
-        prefix = "data-source/providers/nflverse/injuries/"
+        prefix = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/"
         metadata = _json(repo_root, f"{prefix}metadata-{season}.json")
         csv_path = _assert_bounded_path(repo_root, f"{prefix}raw-{season}.csv")
         source = csv_path.read_bytes()
@@ -144,7 +145,7 @@ def stage_next_verified_missing_injury_source(
     accepted, current = accepted_historical_injury_seasons(
         repo_root, allow_incomplete=True)
     source_dir = _assert_bounded_path(
-        repo_root, "data-source/providers/nflverse/injuries")
+        repo_root, f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries")
     incomplete: set[int] = set()
     if source_dir.exists():
         if not source_dir.is_dir() or source_dir.is_symlink():
@@ -210,8 +211,8 @@ def stage_next_verified_missing_injury_source(
               max(incomplete) if incomplete else max(candidates))
     if season >= current or season in accepted:
         raise ValueError("Historical Injury admission selected accepted/current Source")
-    raw_name = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
-    meta_name = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
+    raw_name = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv"
+    meta_name = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json"
     raw_path = _assert_bounded_path(repo_root, raw_name)
     meta_path = _assert_bounded_path(repo_root, meta_name)
     if raw_path.is_symlink() or meta_path.is_symlink():
@@ -243,22 +244,22 @@ def stage_next_verified_missing_injury_source(
                 or prior.get("AssetByteSize") != len(original)):
             raise ValueError("Missing historical CSV does not match frozen metadata")
     canonical_path = _assert_bounded_path(
-        repo_root, f"data-source/nfl/injuries/{season}/manifest.json")
+        repo_root, f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json")
     if canonical_path.is_file():
         manifest = _json(
-            repo_root, f"data-source/nfl/injuries/{season}/manifest.json")
+            repo_root, f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json")
         if (manifest.get("Season") != season
                 or manifest.get("SourceDataset") != "nflverse.injuries"
                 or manifest.get("SourceAssetSha256") != computed_digest):
             raise ValueError("Historical source recovery conflicts with frozen Canonical provenance")
 
-    players = _json(repo_root, "data-source/nfl/identities/players.json")
-    schedule = _json(repo_root, f"data-source/nfl/schedules/{season}.json")
+    players = _json(repo_root, f"{DATA_SOURCE_ROOT}/nfl/identities/players.json")
+    schedule = _json(repo_root, f"{DATA_SOURCE_ROOT}/nfl/schedules/{season}.json")
     plan = build_injury_artifacts(
         season=season, source_csv=original, players=players,
         schedule=schedule, expected_source_sha256=computed_digest,
         release_asset=upstream)
-    manifest = json.loads(plan[f"data-source/nfl/injuries/{season}/manifest.json"])
+    manifest = json.loads(plan[f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json"])
     quality = manifest["CanonicalQuality"]
     count = manifest["SourceRowCount"]
     identities = quality["IdentityResolutionCounts"]
@@ -395,7 +396,7 @@ def accepted_canonical_injury_seasons(repo_root: Path) -> list[int]:
     No Raw, release metadata, identity graph, schedule or League manifest
     participates even in season discovery for this Derived owner.
     """
-    root = _assert_bounded_path(repo_root, "data-source/nfl/injuries")
+    root = _assert_bounded_path(repo_root, f"{DATA_SOURCE_ROOT}/nfl/injuries")
     if not root.exists():
         return []
     if not root.is_dir() or root.is_symlink():
@@ -411,7 +412,7 @@ def accepted_canonical_injury_seasons(repo_root: Path) -> list[int]:
         season = int(child.name)
         if not valid_injury_season(season):
             raise ValueError("Invalid Canonical Injury season identifier")
-        manifest = _json(repo_root, f"data-source/nfl/injuries/{season}/manifest.json")
+        manifest = _json(repo_root, f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json")
         if (manifest.get("Season") != season
                 or manifest.get("SchemaVersion") != 1
                 or manifest.get("SourceDataset") != "nflverse.injuries"):
@@ -434,7 +435,7 @@ def reconcile_accepted_injury_history(
         raise ValueError("Cannot require no-op while writing")
     if phase == "canonical":
         seasons, current = accepted_historical_injury_seasons(repo_root)
-        players = (_json(repo_root, "data-source/nfl/identities/players.json")
+        players = (_json(repo_root, f"{DATA_SOURCE_ROOT}/nfl/identities/players.json")
                    if seasons else None)
     else:
         seasons = accepted_canonical_injury_seasons(repo_root)
@@ -442,7 +443,7 @@ def reconcile_accepted_injury_history(
         players = None
     planned: dict[int, dict[str, Any]] = {}
     for season in seasons:
-        schedule = (_json(repo_root, f"data-source/nfl/schedules/{season}.json")
+        schedule = (_json(repo_root, f"{DATA_SOURCE_ROOT}/nfl/schedules/{season}.json")
                     if phase == "canonical" else None)
         planned[season] = run_injury_phase(
             repo_root, season, phase, write=False,
@@ -456,7 +457,7 @@ def reconcile_accepted_injury_history(
     results = {}
     for season in seasons:
         if write:
-            schedule = (_json(repo_root, f"data-source/nfl/schedules/{season}.json")
+            schedule = (_json(repo_root, f"{DATA_SOURCE_ROOT}/nfl/schedules/{season}.json")
                         if phase == "canonical" else None)
             results[season] = run_injury_phase(
                 repo_root, season, phase, write=True,
@@ -491,7 +492,7 @@ def audit_frozen_injury_revisions(
     """Report upstream revisions but never fetch or replace frozen originals."""
     seasons, current = accepted_historical_injury_seasons(repo_root)
     release = fetch_release()
-    schedule_root = repo_root / "data-source/nfl/schedules"
+    schedule_root = repo_root / f"{DATA_SOURCE_ROOT}/nfl/schedules"
     schedules = [
         int(p.stem) for p in schedule_root.glob("*.json")
         if p.is_file() and not p.is_symlink()
@@ -507,7 +508,7 @@ def audit_frozen_injury_revisions(
     for season in seasons:
         metadata = _json(
             repo_root,
-            f"data-source/providers/nflverse/injuries/metadata-{season}.json")
+            f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json")
         decision = plan_release_refresh(
             release, season=season, stored_metadata=metadata)
         if decision["Action"] == "retry-later":

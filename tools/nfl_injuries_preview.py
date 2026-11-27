@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 import sys
 
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from nfl_source_data_lib.injury_reports import parse_injury_report_csv
 from nfl_source_data_lib.injury_canonical import canonicalize_injury_reports
 from derived_data_lib.nfl_injuries import derive_nfl_injuries
@@ -86,9 +87,9 @@ def plan_preview(
                 existing[relative] = candidate.read_bytes()
         # An upstream correction can remove an entire previously observed week.
         # Expose it as a blocking candidate; NEVER silently delete it.
-        folder = compare_root / f"data-source/nfl/injuries/{season}"
+        folder = compare_root / f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}"
         for week in range(1, 23):
-            relative = f"data-source/nfl/injuries/{season}/{week:02d}.json"
+            relative = f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/{week:02d}.json"
             candidate = folder / f"{week:02d}.json"
             if relative not in artifacts and candidate.is_file():
                 existing[relative] = candidate.read_bytes()
@@ -107,13 +108,13 @@ def plan_preview(
         ],
         "ChangeSet": change_set,
         "RawMetadata": json.loads(
-            artifacts[f"data-source/providers/nflverse/injuries/metadata-{season}.json"]
+            artifacts[f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json"]
         ),
         "CanonicalManifest": json.loads(
-            artifacts[f"data-source/nfl/injuries/{season}/manifest.json"]
+            artifacts[f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json"]
         ),
         "DerivedQuality": json.loads(
-            artifacts[f"data-derived/nfl-injuries/{season}.json"]
+            artifacts[f"{DATA_DERIVED_ROOT}/nfl-injuries/{season}.json"]
         )["Quality"],
     }
 
