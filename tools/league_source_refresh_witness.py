@@ -19,7 +19,7 @@ from typing import Any
 from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib.week_finality import resolve_week_finality
 
-WITNESS_ROOT = "data-source/_sync/league-refresh-witnesses"
+WITNESS_ROOT = f"{DATA_SOURCE_ROOT}/_sync/league-refresh-witnesses"
 RAW_DATASETS = {
     "league.json": "sleeper.league",
     "members.json": "sleeper.league-members",

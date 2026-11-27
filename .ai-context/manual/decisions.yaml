@@ -1135,6 +1135,9 @@ decisions:
       frequency, freshness polling and dependency orchestration are technical
       pipeline concerns and must not be encoded as Domain Rules. A later dependency
       DAG may use these boundaries to trigger only the affected derivations.
+      Issue #1618 M2a reserves data-canonical and a dormant Combine partition
+      locator in the existing root owners; no production route, data ownership,
+      persistence or publisher authorization changes in this checkpoint.
       This ADR fixes logical ownership and boundaries, not the final physical
       repository directory names. Existing source-data/**, public/data/**,
       public/requests/**, Metadata.json and fantasy-management/** paths remain valid

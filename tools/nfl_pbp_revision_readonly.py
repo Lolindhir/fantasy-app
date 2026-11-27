@@ -20,8 +20,13 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+if __package__:
+    from .data_roots import DATA_SOURCE_ROOT
+else:
+    from data_roots import DATA_SOURCE_ROOT
+
 SEASON = 2025
-MANIFEST = "data-source/providers/nflverse/play-by-play-original/metadata-2025.json"
+MANIFEST = f"{DATA_SOURCE_ROOT}/providers/nflverse/play-by-play-original/metadata-2025.json"
 ARCHIVED_SHA = "2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978"
 ARCHIVED_BYTES = 19105296
 ARCHIVED_ASSET_ID = 756418144

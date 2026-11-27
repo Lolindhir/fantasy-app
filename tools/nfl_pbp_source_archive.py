@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from nfl_source_data_lib.common import download, load_json, write_json_if_changed
 
 PILOT_SEASON = 2025
@@ -37,7 +38,7 @@ SOURCE_METADATA_URL = (
 ARCHIVE_TAG = f"nfl-pbp-source-{PILOT_SEASON}-{EXPECTED_SHA256[:12]}"
 ARCHIVE_NAME = f"play_by_play_{PILOT_SEASON}.csv.gz"
 MANIFEST_PATH = (
-    f"data-source/providers/nflverse/play-by-play-original/metadata-{PILOT_SEASON}.json"
+    f"{DATA_SOURCE_ROOT}/providers/nflverse/play-by-play-original/metadata-{PILOT_SEASON}.json"
 )
 REQUIRED_METRICS = frozenset((
     "offensive_dropbacks_faced", "pass_attempts_faced", "rush_attempts_faced",
@@ -130,7 +131,7 @@ def read_only_audits(root: Path, original: Path) -> dict[str, Any]:
         "--season", str(PILOT_SEASON),
         "--pbp-csv-gz", str(original),
         "--expected-sha256", EXPECTED_SHA256,
-        "--game-index-json", "data-derived/nfl-games/2025.json",
+        "--game-index-json", f"{DATA_DERIVED_ROOT}/nfl-games/2025.json",
     ], root)
     if (source.get("SourceAssetSHA256") != EXPECTED_SHA256
             or source.get("RawSeasonRowCount") != EXPECTED_ROWS

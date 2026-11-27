@@ -18,6 +18,7 @@ import sys
 import tempfile
 from typing import Any
 
+from data_roots import DATA_SOURCE_ROOT
 from nfl_source_data_lib.injury_reports import valid_injury_season
 from nfl_source_data_lib.injury_product_plan import (
     build_injury_artifacts,
@@ -46,9 +47,9 @@ def _assert_bounded_path(root: Path, relative: str) -> Path:
 def read_existing_product(root: Path, proposed: dict[str, bytes], season: int) -> dict[str, bytes]:
     """Include stale canonical weeks so no previous evidence vanishes silently."""
     paths = set(proposed)
-    folder = root / f"data-source/nfl/injuries/{season}"
+    folder = root / f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}"
     for week in range(1, 23):
-        paths.add(f"data-source/nfl/injuries/{season}/{week:02d}.json")
+        paths.add(f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/{week:02d}.json")
     existing: dict[str, bytes] = {}
     for name in sorted(paths):
         target = _assert_bounded_path(root, name)

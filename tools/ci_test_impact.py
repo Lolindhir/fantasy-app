@@ -22,6 +22,11 @@ import re
 import sys
 from urllib.request import Request, urlopen
 
+if __package__:
+    from .data_roots import DATA_SOURCE_ROOT, DATA_DERIVED_ROOT, DATA_META_ROOT
+else:
+    from data_roots import DATA_SOURCE_ROOT, DATA_DERIVED_ROOT, DATA_META_ROOT
+
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / ".github/ci-test-inventory.json"
 GROUPS = ("nfl-identity-replay", "league-pwf-twp", "market-restore", "consumer-restore")
@@ -33,7 +38,8 @@ VALID_STATES = {"added", "modified", "changed", "renamed", "removed", "deleted",
 # Frozen 2026-10-20; retired #1199 Matchup/FGC/WeeklyRecaps PowerShell tests and #1238 DecisionWindowRegressionLegacyTest on 2026-10-31. Remaining debt: #1113.
 # This is a drift detector, not a security hash. To retire legacy debt or replace
 # it with actual PR coverage, review the inventory change and update this anchor.
-LEGACY_UNCOVERED_FNV32 = "4a038e26"
+# #1618 M2a: root parity/literal tests are now executed by Core.
+LEGACY_UNCOVERED_FNV32 = "88688eb2"
 
 
 def uncovered_baseline_fingerprint(paths: list[str]) -> str:
@@ -247,20 +253,20 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return {"league-pwf-twp", "consumer-restore"}, "Schedule-outlook-derivation"
     if path.startswith("tools/derived_data_lib/models/playoff_odds/"):
         return {"league-pwf-twp", "consumer-restore"}, "Playoff-odds-derivation"
-    if path.startswith(("data-meta/", "tools/data_roots.py", "tools/derived_data_lib/")):
+    if path.startswith((f"{DATA_META_ROOT}/", "tools/data_roots.py", "tools/derived_data_lib/")):
         return ALL.copy(), "shared-state-or-model"
-    if path.startswith(("data-source/nfl/identities/", "data-source/nfl/providers/",
-                        "data-source/providers/")):
+    if path.startswith((f"{DATA_SOURCE_ROOT}/nfl/identities/", f"{DATA_SOURCE_ROOT}/nfl/providers/",
+                        f"{DATA_SOURCE_ROOT}/providers/")):
         return ALL.copy(), "cross-provider-identity"
-    if path.startswith("data-source/nfl/"):
+    if path.startswith(f"{DATA_SOURCE_ROOT}/nfl/"):
         return {"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}, "NFL-canonical-source"
-    if path.startswith("data-source/leagues/"):
+    if path.startswith(f"{DATA_SOURCE_ROOT}/leagues/"):
         return {"league-pwf-twp", "consumer-restore"}, "League-canonical-source"
-    if path.startswith(("data-source/market/", "data-source/external-registry.json")):
+    if path.startswith((f"{DATA_SOURCE_ROOT}/market/", f"{DATA_SOURCE_ROOT}/external-registry.json")):
         return {"market-restore", "consumer-restore"}, "Market-source"
-    if path.startswith("data-source/"):
+    if path.startswith(f"{DATA_SOURCE_ROOT}/"):
         return ALL.copy(), "shared-source:unknown-subtype"
-    if path.startswith("data-derived/"):
+    if path.startswith(f"{DATA_DERIVED_ROOT}/"):
         return {"league-pwf-twp", "consumer-restore"}, "Shared-Derived"
     if path.startswith(("tools/nfl_source_data_lib/", "tools/nfl_source_data.py")):
         return ALL.copy(), "NFL-source-implementation"
@@ -330,7 +336,7 @@ def blocks_for(path: str, groups: set[str], rule: str) -> set[str]:
         return {"angular"}
     if path.startswith("public/data/"):
         return {"angular", "powershell"}
-    if path.startswith(("public/requests/", "data-meta/")) or groups:
+    if path.startswith(("public/requests/", f"{DATA_META_ROOT}/")) or groups:
         return {"powershell"}
     return set()
 

@@ -18,6 +18,7 @@ import tempfile
 import urllib.error
 from typing import Any, Mapping
 
+from data_roots import DATA_SOURCE_ROOT
 from nfl_source_data_lib.common import current_source_season, download, load_json, write_json_if_changed
 from nfl_pbp_source_auto import (
     _DEST_REPOSITORY, _PBP_RELEASE, _SOURCE_REPOSITORY, _SOURCE_MANIFEST_DIR,
@@ -74,7 +75,7 @@ def official_inventory(token: str) -> dict[int, dict[str, Any]]:
 
 
 def source_seasons(root: Path) -> list[int]:
-    directory = root / "data-source/nfl/schedules"
+    directory = root / f"{DATA_SOURCE_ROOT}/nfl/schedules"
     if not directory.is_dir():
         raise ValueError("Canonical Source schedule directory missing")
     seasons = sorted(int(path.stem) for path in directory.glob("[12][0-9][0-9][0-9].json"))

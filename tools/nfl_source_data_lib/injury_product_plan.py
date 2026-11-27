@@ -12,6 +12,7 @@ import json
 import re
 from typing import Any, Iterable, Mapping
 
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from .injury_reports import parse_injury_report_csv, valid_injury_season
 from .injury_canonical import canonicalize_injury_reports
 from derived_data_lib.nfl_injuries import derive_nfl_injuries
@@ -227,8 +228,8 @@ def build_injury_raw_artifacts(
     parsed = parse_injury_report_csv(source_csv, season=season)
     if not parsed["Rows"]:
         raise ValueError("Empty injury report is not evidence of a healthy or complete season")
-    raw_path = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
-    metadata_path = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
+    raw_path = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/raw-{season}.csv"
+    metadata_path = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/metadata-{season}.json"
     target: dict[str, bytes] = {raw_path: source_csv}
     target[metadata_path] = _render({
         "SchemaVersion": 1,
@@ -283,14 +284,14 @@ def build_injury_artifacts(
     for partition in canonical["Partitions"]:
         week = partition["Week"]
         weeks.append(week)
-        path = f"data-source/nfl/injuries/{season}/{week:02d}.json"
+        path = f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/{week:02d}.json"
         encoded = _render(partition)
         target[path] = encoded
         week_artifacts.append({
             "Week": week, "Path": path,
             "ByteSize": len(encoded), "Sha256": _sha256(encoded),
         })
-    target[f"data-source/nfl/injuries/{season}/manifest.json"] = _render({
+    target[f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/manifest.json"] = _render({
         "SchemaVersion": 1,
         "SourceDataset": _DATASET,
         "Season": season,
@@ -306,7 +307,7 @@ def build_injury_artifacts(
         "ScheduleGraphFingerprint": canonical["ScheduleGraphFingerprint"],
         "Completeness": "observed-report-partitions-only",
     })
-    target[f"data-derived/nfl-injuries/{season}.json"] = _render(derived)
+    target[f"{DATA_DERIVED_ROOT}/nfl-injuries/{season}.json"] = _render(derived)
     return dict(sorted(target.items()))
 
 
@@ -323,9 +324,9 @@ def classify_injury_artifacts(
     """
     if not valid_injury_season(season):
         raise ValueError("Injury partition season must be a four-digit year")
-    raw_prefix = "data-source/providers/nflverse/injuries/"
-    canonical_prefix = f"data-source/nfl/injuries/{season}/"
-    derived_path = f"data-derived/nfl-injuries/{season}.json"
+    raw_prefix = f"{DATA_SOURCE_ROOT}/providers/nflverse/injuries/"
+    canonical_prefix = f"{DATA_SOURCE_ROOT}/nfl/injuries/{season}/"
+    derived_path = f"{DATA_DERIVED_ROOT}/nfl-injuries/{season}.json"
     expected_raw = {f"{raw_prefix}raw-{season}.csv", f"{raw_prefix}metadata-{season}.json"}
     manifest_path = f"{canonical_prefix}manifest.json"
 

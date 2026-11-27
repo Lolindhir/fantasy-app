@@ -448,9 +448,9 @@ def _schedule_outlook_source_witness(root: Path) -> dict[str, str] | None:
         return process.stdout.strip() if process.returncode == 0 else None
 
     commit = git("rev-parse", "--verify", "HEAD")
-    source_tree = git("rev-parse", "--verify", "HEAD:data-source")
-    metadata_tree = git("rev-parse", "--verify", "HEAD:data-meta")
-    status = git("status", "--porcelain", "--untracked-files=all", "--", "data-source", "data-meta")
+    source_tree = git("rev-parse", "--verify", f"HEAD:{DATA_SOURCE_ROOT}")
+    metadata_tree = git("rev-parse", "--verify", f"HEAD:{DATA_META_ROOT}")
+    status = git("status", "--porcelain", "--untracked-files=all", "--", DATA_SOURCE_ROOT, DATA_META_ROOT)
     if not all(isinstance(x, str) and len(x) == 40 and
                all(ch in "0123456789abcdef" for ch in x)
                for x in (commit, source_tree, metadata_tree)):

@@ -318,7 +318,7 @@ def team_awards_and_performance(
         or to_int(value_of(derived, "Week")) != week
     ):
         raise WeeklyRecapsError(f"WeeklyRecaps TeamAwards derived partition identity/version mismatch: {path}")
-    finality = f"data-source/nfl/game-finality/{season}.json:REG-W{week};league:scored-week-confirmed"
+    finality = f"{DATA_SOURCE_ROOT}/nfl/game-finality/{season}.json:REG-W{week};league:scored-week-confirmed"
     if (
         value_of(derived, "FinalityEvidence") != finality
         or _text(value_of(derived, "LineupDefinitionHash")) == ""
