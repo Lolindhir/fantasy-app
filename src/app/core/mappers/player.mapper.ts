@@ -1,6 +1,6 @@
 import type {
   FreeAgentMarketInfo,
-  GameHistory,
+  GameHistoryRow,
   NFLTeam,
   Player,
   PlayerStats,
@@ -153,39 +153,17 @@ function prepareGameHistory(
   currentWeek: number,
   playoffStartWeek: number,
   lastWeek: number
-): GameHistory[] {
+): GameHistoryRow[] {
   const existingGames = player.GameHistory ?? [];
   const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
 
   return weeks.map(week => {
-    const existing = existingGames.find(game => game.GameDetails.Week === week);
-    if (existing) return existing;
-
+    const game = existingGames.find(entry => entry.GameDetails.Week === week) ?? null;
     return {
-      GameID: '',
-      TeamID: '',
-      TeamAbv: '',
-      GameDetails: {
-        Week: week,
-        WeekFinal: false,
-        WeekPlayoff: week >= playoffStartWeek && week <= lastWeek,
-        WeekScored: week <= lastWeek,
-        Date: '',
-        Home: '-',
-        HomeID: '',
-        Away: '-',
-        AwayID: '',
-        HomePoints: 0,
-        AwayPoints: 0
-      },
-      FantasyPoints: 0,
-      SnapCount: 0,
-      SnapPercentage: 0,
-      Attempts: 0,
-      Passing: undefined,
-      Rushing: undefined,
-      Receiving: undefined,
-      Kicking: undefined
+      Week: week,
+      WeekScored: game?.GameDetails.WeekScored ?? week <= lastWeek,
+      WeekPlayoff: game?.GameDetails.WeekPlayoff ?? (week >= playoffStartWeek && week <= lastWeek),
+      Game: game
     };
   });
 }

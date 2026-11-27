@@ -62,6 +62,14 @@ export interface GameHistory {
   Projection?: GameProjection | null;
 }
 
+/** App-only Game Log row. A null Game means no published history entry, not a zero-point game. */
+export interface GameHistoryRow {
+  Week: number;
+  WeekScored: boolean;
+  WeekPlayoff: boolean;
+  Game: GameHistory | null;
+}
+
 /** Result against the projection, classified by the generator: met = points reach the projection (equal counts). */
 export type GameProjectionResult = 'met' | 'missed';
 
@@ -219,7 +227,7 @@ export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'Game
   SalaryDisplay: string;
   SalaryProjectedDisplay: string;
   Stats: PlayerStats;
-  GameHistoryFull?: GameHistory[];
+  GameHistoryFull?: GameHistoryRow[];
 }
 
 export interface RawNFLTeam {
