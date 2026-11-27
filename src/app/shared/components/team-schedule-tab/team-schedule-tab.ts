@@ -9,10 +9,12 @@ import type { NFLTeam, Player } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { TeamScheduleDataService } from '../../services/team-schedule-data.service';
-import { TeamSeasonService, teamsWithSeasonIdentity } from '../../services/team-season.service';
+import { TeamSeasonService } from '../../services/team-season.service';
+import type { TeamIdentitySubject } from '../team-identity/team-identity';
 import {
   buildTeamSchedule,
   formatScheduleRecord,
+  resolveScheduleOpponent,
   type ScheduleRecord,
   type TeamScheduleRow
 } from '../../utils/team-schedule.util';
@@ -117,10 +119,21 @@ export class TeamScheduleTabComponent {
     return row.outcome !== null || (row.opponentID === null && row.week < this.lastPlayedWeek());
   }
 
-  /** Opponents carry the identity (name, abbreviation, logo) of the selected season (Issue #774). */
-  private readonly teamsById = computed(() =>
-    new Map(teamsWithSeasonIdentity(this.leagueSignal()?.Teams ?? [], this.base()?.teamSeasons ?? null, this.activeSeason()?.season)
-      .map(candidate => [Number(candidate.TeamID), candidate])));
+  /** The selected historical slot is explicitly labelled with its season identity, not today's manager. */
+  readonly historicalTeamLabel = computed(() => {
+    const team = this.teamSignal();
+    const season = this.activeSeason();
+    if (!team || !season || season.isCurrent) return '';
+    const identity = this.seasonIdentity(team.TeamID);
+    return identity ? [identity.Team, identity.Owner].filter(Boolean).join(' · ') : `Team ${team.TeamID}`;
+  });
+
+  private seasonIdentity(teamID: number): TeamIdentitySubject | null {
+    const season = this.activeSeason();
+    const league = this.leagueSignal();
+    if (!season || !league) return null;
+    return resolveScheduleOpponent(league.Teams, this.base()?.teamSeasons ?? null, season.season, String(league.Season), teamID);
+  }
 
   readonly seasonRecordLabel = computed(() => {
     const schedule = this.schedule();
@@ -209,8 +222,8 @@ export class TeamScheduleTabComponent {
     this.pickedSeason.set(season);
   }
 
-  opponent(row: TeamScheduleRow): FantasyTeam | null {
-    return row.opponentID === null ? null : this.teamsById().get(row.opponentID) ?? null;
+  opponent(row: TeamScheduleRow): TeamIdentitySubject | null {
+    return row.opponentID === null ? null : this.seasonIdentity(row.opponentID);
   }
 
   opponentName(row: TeamScheduleRow): string {

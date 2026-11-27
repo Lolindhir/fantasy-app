@@ -1,3 +1,6 @@
+import type { FantasyTeam } from '../../core/models/league.models';
+import type { TeamIdentitySubject } from '../components/team-identity/team-identity';
+import type { TeamSeasonLookup } from '../services/team-season.service';
 import type {
   FantasyMatchupReadModel,
   MatchupCompletionState,
@@ -84,6 +87,19 @@ function resolveOutcome(matchup: FantasyMatchupReadModel, teamID: number): Sched
   return matchup.Result.WinnerTeamID === teamID ? 'win' : 'loss';
 }
 
+/** Historical opponents are resolved in their own season, including teams no longer present today. */
+export function resolveScheduleOpponent(
+  teams: readonly FantasyTeam[],
+  lookup: Pick<TeamSeasonLookup, 'identity'> | null,
+  season: string,
+  currentSeason: string,
+  teamID: number
+): TeamIdentitySubject | null {
+  return season === currentSeason
+    ? teams.find(team => team.TeamID === teamID) ?? null
+    : lookup?.identity(season, teamID) ?? null;
+}
+
 export function buildTeamSchedule(
   model: MatchupsReadModel | null | undefined,
   teamID: number,
@@ -91,6 +107,9 @@ export function buildTeamSchedule(
 ): TeamSchedule {
   const weeks = [...(model?.Weeks ?? [])].sort((left, right) => left.Week - right.Week);
   const records = countRegularSeasonRecords(model);
+  if (!weeks.some(week => week.Matchups.some(matchup => matchup.Participants.some(entry => entry.TeamID === teamID)))) {
+    return { rows: [], record: null, upcomingPlayoffStartWeek: null };
+  }
   const activeWeek = options.isCurrentSeason ? model?.Summary?.ActiveOrNextWeek ?? null : null;
   const rows: TeamScheduleRow[] = [];
 

@@ -34,6 +34,10 @@
     }
   </div>
 
+  @if (historicalTeamLabel(); as historicalTeam) {
+    <p class="schedule-note">Season team: {{ historicalTeam }}</p>
+  }
+
   @if (loading()) {
     <p class="schedule-note">Loading schedule…</p>
   } @else if (!schedule() || !data()?.matchups) {
