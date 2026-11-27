@@ -1,4 +1,4 @@
-import type { FantasyTeam } from '../../core/models/league.models';
+import type { FantasyTeam, FantasyTeamSummary } from '../../core/models/league.models';
 import type {
   FantasyMatchupReadModel,
   MatchupCompletionState,
@@ -72,17 +72,17 @@ export interface SeasonGridCell {
   isWeekHigh: boolean;
 }
 
-export interface SeasonGridRow {
+export interface SeasonGridRow<T extends FantasyTeamSummary = FantasyTeam> {
   teamID: number;
-  team: FantasyTeam | null;
+  team: T | null;
   cells: SeasonGridCell[];
 }
 
-export interface SeasonGrid {
+export interface SeasonGrid<T extends FantasyTeamSummary = FantasyTeam> {
   weeks: WeekTab[];
   regularWeekCount: number;
   playoffWeekCount: number;
-  rows: SeasonGridRow[];
+  rows: SeasonGridRow<T>[];
 }
 
 export type WeekRecapStatus = 'available' | 'pending-final' | 'missing';
@@ -177,7 +177,7 @@ export function parseWeekParam(value: string | null | undefined): number | null 
   return Number(value.trim());
 }
 
-function indexTeams(teams: readonly FantasyTeam[]): Map<number, FantasyTeam> {
+function indexTeams<T extends FantasyTeamSummary>(teams: readonly T[]): Map<number, T> {
   return new Map(teams.map(team => [Number(team.TeamID), team]));
 }
 
@@ -413,7 +413,7 @@ export function selectWeekRecap(
 
 function orderedTeamIDs(
   model: MatchupsReadModel,
-  teams: readonly FantasyTeam[]
+  teams: readonly FantasyTeamSummary[]
 ): number[] {
   const known = [...teams];
   try {
@@ -439,17 +439,17 @@ function orderedTeamIDs(
 }
 
 /** Team x week table of the values already present in the Matchups file. */
-export function buildSeasonGrid(
+export function buildSeasonGrid<T extends FantasyTeamSummary>(
   model: MatchupsReadModel | null | undefined,
-  teams: readonly FantasyTeam[]
-): SeasonGrid | null {
+  teams: readonly T[]
+): SeasonGrid<T> | null {
   if (!model || model.Weeks.length === 0) return null;
 
   const weeks = buildWeekTabs(model);
   const teamByID = indexTeams(teams);
   const sortedWeeks = [...model.Weeks].sort((left, right) => left.Week - right.Week);
 
-  const rows = orderedTeamIDs(model, teams).map((teamID): SeasonGridRow => ({
+  const rows = orderedTeamIDs(model, teams).map((teamID): SeasonGridRow<T> => ({
     teamID,
     team: teamByID.get(teamID) ?? null,
     cells: sortedWeeks.map((week): SeasonGridCell => {

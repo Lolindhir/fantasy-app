@@ -83,20 +83,20 @@ export class SeasonTabComponent {
   group: StatsGroup = 'record';
 
   readonly vm$ = forkJoin({
-    data: this.dataService.getLeagueWithPlayers(),
+    league: this.dataService.getLeagueSummary(),
     injury: this.dataService.getInjuryImpact(),
     nflTeams: this.dataService.getNflTeams(),
     stats: this.dataService.getAllSeasonStatistics(),
     teamSeasons: this.teamSeasons.getLookup().pipe(catchError(() => of(null)))
   }).pipe(
-    map(({ data: { league, teams }, injury, nflTeams, stats, teamSeasons }): SeasonStatsViewModel => {
+    map(({ league, injury, nflTeams, stats, teamSeasons }): SeasonStatsViewModel => {
       const history = buildSeasonHistory(league).seasons.filter(season => season.regularSeasonStandings.length > 0);
       const statsDocs = new Map<string, SeasonStatisticsReadModel>(stats.bySeason);
       if (stats.current) statsDocs.set(String(stats.current.Season), stats.current);
       const injurySeasons = new Map((injury?.Seasons ?? []).map(season => [String(season.Season), season]));
       const seasons = history.map(season => season.season).filter(season => statsDocs.has(season) || injurySeasons.has(season));
       const cache = new Map<string, SeasonStatsRow[]>();
-      const currentTeams = new Map(teams.map(team => [String(team.TeamID), team]));
+      const currentTeams = new Map(league.Teams.map(team => [String(team.TeamID), team]));
 
       return {
         seasons,
