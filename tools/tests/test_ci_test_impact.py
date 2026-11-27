@@ -96,6 +96,14 @@ class RoutingTests(unittest.TestCase):
         selected = set(self.choose("tools/league_schedule_outlook_preview.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
 
+    def test_forecast_dependency_trace_and_manifest_keep_conservative_coverage(self):
+        for path in ("tools/forecast_dependency_trace.py",
+                     "tools/tests/fixtures/forecast_dependency_manifest.json"):
+            with self.subTest(path=path):
+                result = self.choose(path)
+                self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+                self.assertFalse(result["uncertain"])
+
     def test_schedule_outlook_document_assembler_selects_derived_fast_families(self):
         selected = set(self.choose("tools/derived_data_lib/league_schedule_outlook.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
