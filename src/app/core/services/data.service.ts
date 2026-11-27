@@ -13,7 +13,7 @@ import type {
   HistoricalFantasyGameContextSeason
 } from '../models/fantasy-game-context.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
-import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
+import type { MatchupProjectionMatchup, MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type { MatchupsReadModel } from '../models/matchup.models';
 import type {
   PlayerWeekFantasyProjection,
@@ -82,6 +82,18 @@ function buildProjectionByPlayerID(
   return result;
 }
 
+function buildProjectionByMatchupID(
+  matchupProjections: MatchupProjectionsReadModel
+): Map<string, MatchupProjectionMatchup> | null {
+  const result = new Map<string, MatchupProjectionMatchup>();
+  for (const matchup of matchupProjections.Matchups) {
+    const id = matchup.FantasyMatchupID;
+    if (typeof id !== 'string' || id.trim() === '' || result.has(id)) return null;
+    result.set(id, matchup);
+  }
+  return result;
+}
+
 function sameTarget(
   context: FantasyGameContextReadModel,
   snapshot: { Season: string | number; Week: number }
@@ -93,7 +105,8 @@ function sameTarget(
 /**
  * Joins published projection data onto the current FantasyGameContext. This is a pure join:
  * projections, ranges, display level and axes are published data and are never calculated here.
- * Each snapshot joins only when its Season and Week match; otherwise the context is left as is.
+ * Each snapshot joins only when its Season and Week match and its join keys are unambiguous;
+ * otherwise that snapshot is ignored without blocking the other snapshot.
  */
 function enrichFantasyGameContextWithProjections(
   context: FantasyGameContextReadModel,
@@ -128,10 +141,10 @@ function enrichFantasyGameContextWithProjections(
     };
   }
 
-  if (matchupProjections && sameTarget(context, matchupProjections)) {
-    const projectionByMatchupID = new Map(
-      matchupProjections.Matchups.map(matchup => [matchup.FantasyMatchupID, matchup])
-    );
+  const projectionByMatchupID = matchupProjections && sameTarget(context, matchupProjections)
+    ? buildProjectionByMatchupID(matchupProjections)
+    : null;
+  if (projectionByMatchupID && matchupProjections) {
     display.TeamRangeLevel = matchupProjections.DisplayLevel;
     result = {
       ...result,
