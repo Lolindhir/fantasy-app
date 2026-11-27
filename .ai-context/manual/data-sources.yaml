@@ -845,7 +845,7 @@ sharedDerivedData:
         semantics: adapt-only-no-recompute
         currentConsumer: src/app/core/services/data.service.ts::getFantasyGameContext
         consumerJoin: Season+Week match and unique non-null App/Sleeper PlayerID; otherwise raw FantasyGameContext is preserved
-        matchupProjectionsConsumer: src/app/core/services/data.service.ts joins MatchupProjections.json by FantasyMatchupID (Season+Week match); no arithmetic in the frontend
+        matchupProjectionsConsumer: src/app/core/services/data.service.ts joins MatchupProjections.json by unique non-empty FantasyMatchupID (Season+Week match); reject the ambiguous snapshot independently of player projections; no arithmetic in the frontend
       schedulingState: PlayerWeekFantasy is refreshed for the current App week by tools/player_week_fantasy_refresh.py inside the League Live workflow; MatchupProjections.json is rendered from the matchup-context product (Issue #1571, #1645)
       matchupProjections:
         output: public/data/MatchupProjections.json

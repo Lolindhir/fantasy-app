@@ -178,6 +178,32 @@ describe('DataService', () => {
       expect(result.FantasyMatchups[0].Projection?.Teams.length).toBe(2);
     });
 
+    it('rejects duplicate matchup IDs without blocking the valid player snapshot', async () => {
+      const matchups = createMatchupProjections();
+      matchups.Matchups.push({
+        ...matchups.Matchups[0],
+        Axis: { Min: 0, Max: 100, Step: 10 }
+      });
+      stub(createFantasyGameContext(), createPlayerWeekFantasy(), matchups);
+
+      const result = await firstValueFrom(service.getFantasyGameContext());
+
+      expect(result.Games[0].FantasyTeams[0].Players[0].Prediction?.Points).toBe(10);
+      expect(result.FantasyMatchups[0].Projection).toBeUndefined();
+      expect(result.ProjectionDisplay?.TeamRangeLevel).toBeNull();
+    });
+
+    it('keeps raw context when an invalid matchup ID is present and player projections are unavailable', async () => {
+      const context = createFantasyGameContext();
+      const matchups = createMatchupProjections();
+      matchups.Matchups.push({ ...matchups.Matchups[0], FantasyMatchupID: ' ' });
+      stub(context, null, matchups);
+
+      const result = await firstValueFrom(service.getFantasyGameContext());
+
+      expect(result).toBe(context);
+    });
+
     it('keeps raw FantasyGameContext when no publication can be loaded', async () => {
       const context = createFantasyGameContext();
       stub(context, null, null);
