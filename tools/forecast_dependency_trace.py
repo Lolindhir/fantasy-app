@@ -107,6 +107,8 @@ def classify_reads(
                 or (own_product is not None and event["root"] == "app"
                     and rule.role != "comparison")):
             raise TraceError(f"Forbidden producer feedback: {rule.id}: {event}")
+        if own_product is not None and rule.role == "delivery":
+            raise TraceError(f"Delivery read in producer stage: {rule.id}: {event}")
         classified.append({**event, "rule": rule.id, "role": rule.role})
     return classified
 
