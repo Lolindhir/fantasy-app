@@ -364,19 +364,22 @@ function runOne(base,{mode,timeline,shock,seasons,wait}){
 }
 export function runCP7c(csv,{seeds=[11,29,47],shocks=[0,-.10,-.20],
  timelines=['enforce_before_reset','reset_before_enforce'],
- modes=MODES,seasons=5,wait=.5}={}){
+ modes=MODES,seasons=5,wait=.5,pairs=null}={}){
  assert(seasons>=3&&seasons<=10,'seasons 3-10');
  const starts=[],runs=[];
  for(const seed of seeds){
   const base=createCP7bBase(csv,seed,.25);
   starts.push({seed,cap:base.cap,teams:base.teams.map(t=>({team:t.id,roster:t.players.length,
    index:lineup(t.players,base.world).score}))});
-  for(const shock of shocks)for(const timeline of timelines)for(const mode of modes)
+  const matrix=pairs??timelines.flatMap(timeline=>modes.map(mode=>({mode,timeline})));
+  for(const shock of shocks)for(const {mode,timeline} of matrix){
+   assert(MODES.includes(mode)&&['enforce_before_reset','reset_before_enforce'].includes(timeline),'bad policy matrix');
    runs.push(runOne(base,{mode,timeline,shock,seasons,wait}));
+  }
  }
  return {schema:'cp7c-multiyear-synthetic-v0',asOf:'2026-10-05',
   status:'paired synthetic NFL futures and contracts, NOT real manager offers, salaries or future playoff odds',
-  assumptions:{seeds,shocks,timelines,modes,seasons,wait,rosterMax:45,noTaxi:true,noIR:true,
+  assumptions:{seeds,shocks,timelines,modes,pairs,seasons,wait,rosterMax:45,noTaxi:true,noIR:true,
    rookieDraft:5,annualSalary:'fixed remaining contract; new signings and renewal from same CP6r Criticality price',
    cap:'CP6r Top120/6 after same draft and performance update times cap-only shock',
    tenure:'2027 initial synthetic acquiredYear = synthetic contract vintage, resets on trade',
