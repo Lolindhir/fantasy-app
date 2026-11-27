@@ -5,6 +5,7 @@ import {
   isZeroPlaceLabel,
   formatExactPlaceShares,
   playoffPillLabel,
+  playoffOddsBasis,
   formatPlayoffPercent,
   ordinal,
   playoffLockedPlace,
@@ -113,7 +114,9 @@ describe('schedule outlook view', () => {
     const base = outlook();
     const model = outlook({
       Model: 'playoff-odds-v4',
-      Provenance: { PlayoffTeams: 1, RegularSeasonComplete: false, PlaceMassDenominator: '100000000000000000000' },
+      Provenance: { PlayoffTeams: 1, RegularSeasonComplete: false, PlaceMassDenominator: '100000000000000000000',
+        Method: 'exact-enumeration-wtl-record', TieRule: 'equal-record-teams-share-places',
+        OutcomeWeights: { Loss: 99, Tie: 2, Win: 99 }, OutcomeWeightDenominator: 200 },
       Teams: [
         { ...base.PlayoffOdds!.Teams[0], Status: 'alive', PlayoffProbability: 1, PlaceProbabilities: [1, 1e-20, 0],
           PlaceMassNumerators: ['99999999999999999999', '1', '0'], PossiblePlaces: [1, 2] },
@@ -128,8 +131,24 @@ describe('schedule outlook view', () => {
     expect(playoffPillLabel(odds.teams.get(1)!)).toContain('1% tie probability');
     expect(playoffLockedPlace(odds, 1)).toBeNull();
     expect(playoffLockedPlace(odds, 3)).toBe(3);
+    model.PlayoffOdds!.Model = 'future-exact-model';
+    model.PlayoffOdds!.Provenance!.OutcomeWeights = { Loss: 48, Tie: 4, Win: 48 };
+    model.PlayoffOdds!.Provenance!.OutcomeWeightDenominator = 100;
+    const future = resolvePlayoffOdds(model, 2026)!;
+    expect(future.teams.get(1)!.placeLabels).toEqual(['>99.99%', '<0.01%', '0.0%']);
+    expect(playoffPillLabel(future.teams.get(1)!)).toContain('4% tie probability');
     model.PlayoffOdds!.Teams[0].PossiblePlaces = [1];
     expect(resolvePlayoffOdds(model, 2026)).toBeNull();
+  });
+
+  it('does not invent model assumptions when provenance is missing', () => {
+    expect(playoffOddsBasis(undefined)).toBe('the published playoff model');
+    expect(playoffOddsBasis({ PlayoffTeams: 1, RegularSeasonComplete: false, Method: 'exact-enumeration-wtl-record',
+      OutcomeWeights: { Loss: 1, Tie: 1, Win: 1 }, OutcomeWeightDenominator: 3 }))
+      .toContain('equally weighted');
+    expect(resolvePlayoffOdds(outlook({ Model: 'playoff-odds-v4' }), 2026)).toBeNull();
+    expect(resolvePlayoffOdds(outlook({ Model: 'future-exact-model',
+      Provenance: { PlayoffTeams: 1, RegularSeasonComplete: false, Method: 'exact-enumeration-wtl-record' } }), 2026)).toBeNull();
   });
 
   it('keeps independent schedule forecasts when exact playoff odds are unavailable', () => {
@@ -146,6 +165,8 @@ describe('schedule outlook view', () => {
     expect(view.remainingExpectedWins).toBe(0.62);
     expect(view.gameByWeek.get(5)!.margin).toBe(12);
     expect(view.leagueMeanPoints).toBe(190);
+    model.RegularSeason!.MatchupForecast.Model = 'future-compatible-forecast';
+    expect(resolveTeamScheduleOutlook(model, 2026, 1)!.remainingExpectedWins).toBe(0.62);
     model.RegularSeason!.MatchupForecast.Provenance.RegularSeasonComplete = true;
     expect(resolveTeamScheduleOutlook(model, 2026, 1)!.remainingExpectedWins).toBeNull();
   });

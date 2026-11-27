@@ -5,7 +5,6 @@ import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identit
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 import {
   formatPlayoffCell,
-  playoffOddsBasis,
   formatPlacePercent,
   isZeroPlaceLabel,
   type PlayoffOddsView
@@ -44,7 +43,7 @@ export class PlayoffPictureComponent {
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
 
   get basis(): string {
-    return playoffOddsBasis(this.odds.model);
+    return this.odds.basis ?? 'the published playoff model';
   }
 
   get placeNumbers(): number[] {

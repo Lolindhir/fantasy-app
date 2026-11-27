@@ -52,6 +52,10 @@ export interface PlayoffOddsBlock {
     RegularSeasonComplete: boolean;
     StrengthBasis?: string | null;
     PlaceMassDenominator?: string;
+    Method?: string;
+    TieRule?: string;
+    OutcomeWeights?: { Loss: number; Tie: number; Win: number };
+    OutcomeWeightDenominator?: number;
   } | null;
   Scoring?: PlayoffOddsScoring | null;
   Teams: PlayoffOddsTeam[];

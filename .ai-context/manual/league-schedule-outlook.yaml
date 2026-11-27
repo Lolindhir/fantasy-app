@@ -141,7 +141,9 @@ playoffOddsExact:
     PlayoffOdds.Provenance.PlaceMassDenominator and Teams[].PlaceMassNumerators[] are base-10 integer strings.
     Teams[].PossiblePlaces and Status use exact mass, not rounded floats. PlaceProbabilities,
     PlayoffProbability and EliminationProbability are convenience floating-point approximations only.
-    The consumer must use exact mass for certainty and display rounding.
+    The consumer must use exact mass for certainty and display rounding. Compatible future models with exact mass evidence use the same validation;
+    known legacy exact model IDs remain a fail-closed missing-evidence guard, not a basis for display assumptions.
+    App model explanations use published Method, TieRule and OutcomeWeights / OutcomeWeightDenominator; missing provenance is described neutrally.
   independentScheduleForecast: >
     For exact candidates, RegularSeason.MatchupForecast (Model schedule-matchup-forecast-v1) carries
     Scoring, Provenance.StrengthBasis/StrengthReason/RegularSeasonComplete, and Teams rows with the same

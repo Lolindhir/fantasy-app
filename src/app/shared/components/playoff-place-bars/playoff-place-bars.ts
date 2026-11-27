@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { formatPlacePercent, isZeroPlaceLabel, playoffOddsBasis } from '../../utils/schedule-outlook-view.util';
+import { formatPlacePercent, isZeroPlaceLabel } from '../../utils/schedule-outlook-view.util';
 
 interface PlaceBar {
   place: number;
@@ -23,7 +23,7 @@ interface PlaceBar {
 export class PlayoffPlaceBarsComponent {
   @Input({ required: true }) places: readonly number[] = [];
   @Input() placeLabels: readonly string[] | undefined;
-  @Input() model: string | undefined;
+  @Input() basis: string | undefined;
   @Input() playoffTeams: number | null = null;
   @Input() teamName = 'This team';
 
@@ -41,6 +41,6 @@ export class PlayoffPlaceBarsComponent {
   get description(): string {
     const parts = this.bars.filter(bar => !isZeroPlaceLabel(bar.label))
       .map(bar => `place ${bar.place} ${bar.label}`);
-    return `${this.teamName}: chance of each final place based on ${playoffOddsBasis(this.model)}: ${parts.join(', ') || 'none'}`;
+    return `${this.teamName}: chance of each final place based on ${this.basis ?? 'the published playoff model'}: ${parts.join(', ') || 'none'}`;
   }
 }
