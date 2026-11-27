@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from data_roots import data_derived_dir, data_meta_root
+from data_roots import data_derived_dir, data_meta_dir
 from league_metadata import list_league_ids
 from league_standings_sources import manifest, manifest_seasons, current_season
 from derived_data_lib.league_records import PRODUCT, build
@@ -54,7 +54,7 @@ def main() -> int:
     try:
         root = args.repo_root
         out = args.out_root or data_derived_dir(root)
-        leagues = [args.league] if args.league else list_league_ids(data_meta_root(root))
+        leagues = [args.league] if args.league else list_league_ids(data_meta_dir(root))
         reports = [materialize(root, out, league, write=args.write) for league in leagues]
     except (ValueError, KeyError, TypeError, OSError) as exc:
         print(f"league-records: {exc}", file=sys.stderr)
