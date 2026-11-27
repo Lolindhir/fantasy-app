@@ -23,6 +23,17 @@ describe('TeamSeasonLookup', () => {
     expect(lookup.identity('2025', '1')?.TeamAbbr).toBe('NEW');
   });
 
+  it('provides unique season roster and league witnesses for canonical joins', () => {
+    expect(lookup.canonicalLeagueID).toBe('test');
+    expect(lookup.roster('2024', 1)?.CanonicalLeagueRosterID).toBe('r1');
+    expect(lookup.roster('2024', 9)).toBeNull();
+    const duplicate = new TeamSeasonLookup({ ...model, Seasons: [
+      { Season: '2024', Teams: [team(1, 'A', 'A', null), team(1, 'B', 'B', null)] }
+    ] });
+    expect(duplicate.roster('2024', 1)).toBeNull();
+    expect(duplicate.identity('2024', 1)).toBeNull();
+  });
+
   it('uses the neutral default logo for a season without a logo, never a later one', () => {
     expect(lookup.identity(2024, 1)?.Avatar).toBe(DEFAULT_TEAM_AVATAR);
     expect(lookup.identity(2025, 1)?.Avatar).toBe('new.png');

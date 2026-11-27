@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map, shareReplay } from 'rxjs';
 
 import type { FantasyTeam } from '../../core/models/league.models';
-import type { TeamSeasonsReadModel } from '../../core/models/team-season.models';
+import type { RawTeamSeasonTeam, TeamSeasonsReadModel } from '../../core/models/team-season.models';
 import { DataService } from '../../core/services/data.service';
 
 export const DEFAULT_TEAM_AVATAR = 'assets/default-team-avatar.png';
@@ -26,10 +26,21 @@ export class TeamSeasonLookup {
     return this.model.CurrentSeason;
   }
 
+  get canonicalLeagueID(): string {
+    return this.model.CanonicalLeagueID;
+  }
+
+  /** Exact, unique season roster witness; never resolve through a different season. */
+  roster(season: string | number, teamId: string | number): RawTeamSeasonTeam | null {
+    const seasons = this.model.Seasons.filter(entry => entry.Season === String(season));
+    if (seasons.length !== 1) return null;
+    const teams = seasons[0].Teams.filter(candidate => String(candidate.TeamID) === String(teamId));
+    return teams.length === 1 ? teams[0] : null;
+  }
+
   /** Identity of the team in exactly that season, or null when the season or team is unknown (no fallback to another season). */
   identity(season: string | number, teamId: string | number): TeamSeasonIdentity | null {
-    const seasonEntry = this.model.Seasons.find(entry => entry.Season === String(season));
-    const team = seasonEntry?.Teams.find(candidate => String(candidate.TeamID) === String(teamId));
+    const team = this.roster(season, teamId);
     if (!team) return null;
     return {
       TeamID: Number(team.TeamID),

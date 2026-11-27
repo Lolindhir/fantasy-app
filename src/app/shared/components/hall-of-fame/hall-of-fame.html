@@ -85,7 +85,7 @@
 <ng-template #upsetSide let-side let-winner="winner">
   <div class="hof__match-side" [class.hof__match-side--winner]="winner">
     <button class="hof__match-team" type="button" [disabled]="!side.interactive" (click)="openTeamId(side.team.TeamID)"
-            [attr.aria-label]="'Open current team details for ' + side.team.Team">
+            [attr.aria-label]="side.interactive ? 'Open current team details for ' + side.team.Team : side.team.Team">
       <img class="hof__team-logo" [src]="side.team.Avatar || defaultTeamAvatar" alt="" loading="lazy" />
       <span class="hof__owner">{{ side.team.Team }}</span>
     </button>
