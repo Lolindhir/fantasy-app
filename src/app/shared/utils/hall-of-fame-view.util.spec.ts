@@ -102,7 +102,8 @@ describe('hall of fame view util', () => {
       WinnerCanonicalLeagueRosterID: 'r-current', LoserCanonicalLeagueRosterID: 'r2' } } } as LeagueRecordsReadModel;
     const snapshot = { ...teamSeasons.Seasons[0].Teams[0], CanonicalLeagueRosterID: 'r-current', TeamName: 'Current snapshot' };
     const lookup = new TeamSeasonLookup({ ...teamSeasons, Seasons: [...teamSeasons.Seasons, { Season: '2026', Teams: [snapshot] }] });
-    const current = [{ TeamID: 1, OwnerID: 'o', Team: 'Current team' }] as FantasyTeam[];
+    const current = [{ TeamID: 1, OwnerID: 'o', Team: 'Current team',
+      Placements: { AllTime: { Playoffs: { Place: 999 }, Regular: { Place: 999 } } } }] as unknown as FantasyTeam[];
     const league = leagueWith([], '2026', false);
     const side = (input: LeagueRecordsReadModel, teams = current, evidence = lookup) =>
       buildHallOfFameSections(league, teams, input, null, [], evidence).bests[0].upset!.winner;
