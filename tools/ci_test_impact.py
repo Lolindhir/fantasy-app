@@ -243,6 +243,8 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return ALL.copy(), "CI-or-policy:fail-closed"
     if path.startswith((".ai-context/manual/", ".ai-context/ai-context.yaml")):
         return ALL.copy(), "canonical-contract:fail-closed"
+    if path in {"tools/forecast_dependency_trace.py", "tools/tests/fixtures/forecast_dependency_manifest.json"}:
+        return ALL.copy(), "forecast-dependency-audit"
     if path == "tools/derived_data_lib/league_schedule_outlook.py":
         return {"league-pwf-twp", "consumer-restore"}, "Schedule-outlook-document"
     if path == "tools/derived_data_lib/league_records.py" or path.startswith("tools/league_records"):
