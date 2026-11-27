@@ -55,6 +55,11 @@ function guarantee(c){
 function cutQuote(s,team,id,mode,year=Y){
  const c=s.contracts.get(id);
  assert(c&&team.players.includes(id),'seller does not own '+id);
+ if(c.end<year){
+  // Already expired contract has zero remaining booked salary and no guarantee.
+  return {mode:'none',year,annual:0,dead:{},now:0,relief:0,
+   activeAfterCut:null,futureDebt:0,player:id,seller:team.id,expired:true};
+ }
  const terms={};
  for(let y=year;y<=c.end;y++)terms[y]=salary(c,y);
  const player=s.world.get(id);
