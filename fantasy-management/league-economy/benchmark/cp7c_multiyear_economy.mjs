@@ -241,7 +241,7 @@ function settleCuts(s,mode,cap){
    });
    tried++;
    if(!choices.length)break;
-   const b=choices[0],previous=due(team,s),contract=s.contracts.get(b.player);
+   const b=choices[0],previous=due(team,s),oldContract=s.contracts.get(b.player);
    team.players=b.replacement?team.players.map(id=>id===b.player?b.replacement:id):team.players.filter(id=>id!==b.player);
    s.contracts.delete(b.player);
    if(b.replacement){
@@ -251,7 +251,7 @@ function settleCuts(s,mode,cap){
     c.acquiredYear=Y;c.draftRound=p.draftRound??null;s.contracts.set(p.id,c);
    }
    for(const [yr,amount] of Object.entries(b.quote.dead))if(amount>0)
-    s.debt.push({owner:team.id,player:b.player,year:Number(yr),amount,signYear:contract.start});
+    s.debt.push({owner:team.id,player:b.player,year:Number(yr),amount,signYear:oldContract.start});
    if(mode==='retained_cycle'&&b.quote.activeAfterCut!=null)s.released.set(b.player,b.quote.activeAfterCut);
    s.cutPlayers.add(b.player);
    if(b.replacement)s.pickedFA.add(b.replacement);
