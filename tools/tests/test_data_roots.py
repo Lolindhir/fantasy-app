@@ -73,6 +73,10 @@ def powershell_literal_violations(path: Path) -> list[str]:
 
 
 class DataRootsTests(unittest.TestCase):
+    # Keep every failing location visible in CI; the default unittest diff
+    # truncates large legacy inventories and prevents safe remediation.
+    maxDiff = None
+
     def test_python_production_code_has_no_spelled_out_roots(self) -> None:
         violations = [v for path in python_production_files() for v in python_literal_violations(path)]
         self.assertEqual([], violations, "use tools/data_roots.py instead of spelling out data roots")
