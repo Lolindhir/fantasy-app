@@ -3,6 +3,7 @@ import type {
   GameHistoryRow,
   NFLTeam,
   Player,
+  PlayerIdentitySummary,
   PlayerStats,
   PointHistory,
   PointHistorySeason,
@@ -36,10 +37,22 @@ const FREE_AGENT_TEAM: NFLTeam = {
   Logo: 'assets/logo_nfl.png'
 };
 
+/** Shared NFL identity resolution for both lightweight and complete player contexts. */
+export function mapRawPlayerIdentity(
+  raw: Pick<RawPlayer, 'ID' | 'Picture' | 'IsFreeAgent' | 'TeamID'>,
+  nflTeams: readonly RawNFLTeam[]
+): PlayerIdentitySummary {
+  return {
+    ID: raw.ID,
+    Picture: raw.Picture,
+    TeamNFL: raw.IsFreeAgent
+      ? FREE_AGENT_TEAM
+      : findNflTeam(nflTeams, raw.TeamID) ?? createUnknownNflTeam(String(raw.TeamID ?? '').trim())
+  };
+}
+
 export function mapRawPlayerToPlayer(raw: RawPlayer, context: PlayerMappingContext): Player {
-  const teamNfl = raw.IsFreeAgent
-    ? FREE_AGENT_TEAM
-    : findNflTeam(context.nflTeams, raw.TeamID) ?? createUnknownNflTeam(String(raw.TeamID ?? '').trim());
+  const { TeamNFL: teamNfl } = mapRawPlayerIdentity(raw, context.nflTeams);
 
   const stats = mapPlayerStats(raw, context.seasonYear);
   const injuryDetails = normalizeInjuryDetails(raw);

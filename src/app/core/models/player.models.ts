@@ -230,6 +230,9 @@ export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'Game
   GameHistoryFull?: GameHistoryRow[];
 }
 
+/** Current published portrait and NFL identity only; not a partially initialized Player. */
+export type PlayerIdentitySummary = Pick<Player, 'ID' | 'Picture' | 'TeamNFL'>;
+
 export interface RawNFLTeam {
   ID: string;
   Name: string;

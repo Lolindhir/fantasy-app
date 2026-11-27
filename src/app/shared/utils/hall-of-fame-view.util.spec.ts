@@ -1,4 +1,4 @@
-import type { Player } from '../../core/models/player.models';
+import type { PlayerIdentitySummary } from '../../core/models/player.models';
 import type { PlayerAwardHistoryReadModel } from '../../core/models/player-award-history.models';
 import type { LeagueRecordsReadModel } from '../../core/models/league-records.models';
 import type { FantasyTeam, League } from '../../core/models/league.models';
@@ -68,13 +68,13 @@ describe('hall of fame view util', () => {
       { PlayerID: 'b', Name: 'Second', Count: 4 },
       { PlayerID: 'c', Name: 'Third', Count: 4 }
     ] }, Players: [{ PlayerID: 'b', Picture: 'historic.png' }] } as unknown as PlayerAwardHistoryReadModel;
-    const current = [{ ID: 'a', Name: 'Different display name', Picture: 'current.png', TeamNFL: { Logo: 'nfl.png', Abv: 'NYG' } }] as unknown as Player[];
+    const current: PlayerIdentitySummary[] = [{ ID: 'a', Picture: 'current.png', TeamNFL: { ID: 'NYG', Name: 'Giants', Logo: 'nfl.png', Abv: 'NYG' } }];
     const [award] = buildHallOfFameSections(leagueWith([], '2026', false), [], null, history, current).playerLegends;
     expect(award.valueDisplay).toBe('4×');
     expect(award.players?.map(player => player.name)).toEqual(['First', 'Second', 'Third']);
     expect(award.players?.map(player => player.picture)).toEqual(['current.png', 'historic.png', null]);
     expect(award.players?.[0].teamLogo).toBe('nfl.png');
-    expect(award.players?.[1].player).toBeNull();
+    expect(award.players?.map(player => player.interactive)).toEqual([true, false, false]);
   });
 
   it('uses the historical identity for a historical upset, not a current team logo', () => {

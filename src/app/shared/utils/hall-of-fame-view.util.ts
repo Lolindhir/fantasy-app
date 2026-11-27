@@ -1,6 +1,6 @@
-import type { Player } from '../../core/models/player.models';
+import type { PlayerIdentitySummary } from '../../core/models/player.models';
 import type { TeamIdentitySubject } from '../components/team-identity/team-identity';
-import type { FantasyTeam, League } from '../../core/models/league.models';
+import type { FantasyTeamSummary, LeagueSummary } from '../../core/models/league.models';
 import type { PlayerAwardHistoryReadModel } from '../../core/models/player-award-history.models';
 import type { LeagueRecordsReadModel } from '../../core/models/league-records.models';
 import type { TeamSeasonLookup } from '../services/team-season.service';
@@ -16,7 +16,7 @@ export interface HallOfFamePlayerIdentity {
   picture: string | null;
   teamLogo: string | null;
   teamAbbr: string | null;
-  player: Player | null;
+  interactive: boolean;
 }
 
 export interface HallOfFameUpsetSide {
@@ -51,11 +51,11 @@ export interface HallOfFameSections {
 }
 
 export function buildHallOfFameSections(
-  league: League,
-  teams: FantasyTeam[],
+  league: Pick<LeagueSummary, 'Season' | 'Standings'>,
+  teams: FantasyTeamSummary[],
   records: LeagueRecordsReadModel | null,
   awards: PlayerAwardHistoryReadModel | null,
-  players: readonly Player[] = [],
+  players: readonly PlayerIdentitySummary[] = [],
   lookup: TeamSeasonLookup | null = null
 ): HallOfFameSections {
   const teamById = new Map(teams.map(team => [String(team.TeamID), team]));
@@ -124,7 +124,7 @@ export function buildHallOfFameSections(
         const player = currentById.get(id) ?? null;
         const history = historyById.get(id);
         return { id, name: leader.Name, picture: player?.Picture || history?.Picture || null,
-          teamLogo: player?.TeamNFL?.Logo || null, teamAbbr: player?.TeamNFL?.Abv || null, player };
+          teamLogo: player?.TeamNFL?.Logo || null, teamAbbr: player?.TeamNFL?.Abv || null, interactive: !!player };
       })
     };
   });
@@ -148,7 +148,7 @@ export interface HallOfFameChampion {
  * season when the league is finished). Name and logo come from the season's own team identity (league-teams, Issue #774); the
  * champion of the standings is only looked up there, never derived. Without a lookup entry the season snapshot of the standings is shown.
  */
-export function buildHallOfFameChampions(league: League, lookup: TeamSeasonLookup | null): HallOfFameChampion[] {
+export function buildHallOfFameChampions(league: Pick<LeagueSummary, 'Season' | 'Standings' | 'IsFinished'>, lookup: TeamSeasonLookup | null): HallOfFameChampion[] {
   return buildSeasonHistory(league).seasons
     .filter(season => /^\d{4}$/.test(season.season) && !!season.champion)
     .filter(season => Number(season.season) < Number(league.Season) || league.IsFinished)

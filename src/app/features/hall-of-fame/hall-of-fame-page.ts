@@ -1,7 +1,7 @@
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { catchError, forkJoin, map, of } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { DataService } from '../../core/services/data.service';
 import { AchievementBannerComponent } from '../../shared/components/achievement-banner/achievement-banner';
@@ -35,15 +35,25 @@ export class HallOfFamePageComponent {
 
   /** Unavailable optional files (team identity, league records, awards) never block the page. */
   readonly vm$ = forkJoin({
-    data: this.dataService.getLeagueWithPlayers(),
+    league: this.dataService.getLeagueSummary(),
     records: this.dataService.getLeagueRecords().pipe(catchError(() => of(null))),
-    awards: this.dataService.getPlayerAwardHistory().pipe(catchError(() => of(null))),
+    playerAwards: this.dataService.getPlayerAwardHistory().pipe(
+      catchError(() => of(null)),
+      switchMap(awards => {
+        const ids = Object.values(awards?.Leaders ?? {}).flatMap(leaders => (leaders ?? []).map(leader => leader.PlayerID));
+        return this.dataService.getPlayerIdentitySummaries(ids).pipe(
+          // Award facts and historical portraits remain available without current identity enrichment.
+          catchError(() => of([])),
+          map(players => ({ awards, players }))
+        );
+      })
+    ),
     lookup: this.teamSeasons.getLookup().pipe(catchError(() => of(null)))
   }).pipe(
-    map(({ data: { league, teams, players }, records, awards, lookup }) => ({
+    map(({ league, records, playerAwards: { awards, players }, lookup }) => ({
       champions: buildHallOfFameChampions(league, lookup),
-      sections: buildHallOfFameSections(league, teams, records, awards, players, lookup),
-      allTime: buildLeagueLegacy(league, teams)
+      sections: buildHallOfFameSections(league, league.Teams, records, awards, players, lookup),
+      allTime: buildLeagueLegacy(league, league.Teams)
     }))
   );
 
