@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
 import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
-import type { RawLeague } from '../models/league.models';
+import type { RawFantasyTeam, RawLeague } from '../models/league.models';
 import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type {
   PlayerWeekFantasyProjectionStatus,
@@ -22,6 +22,8 @@ describe('DataService', () => {
   beforeEach(() => {
     dataApiService = jasmine.createSpyObj<DataApiService>('DataApiService', [
       'getMovesData',
+      'getLeagueRaw',
+      'getLeagueData',
       'getTimestamps',
       'getFantasyGameContextRaw',
       'getPlayerWeekFantasyRaw',
@@ -61,6 +63,38 @@ describe('DataService', () => {
     expect(transactions.length).toBe(1);
     expect(transactions[0].TransactionID).toBe(rawTransaction.TransactionID);
     expect(transactions[0].Participants[0].RosterID).toBe(1);
+  });
+
+  it('loads the standings summary from League alone, preserving full-context identity and placements', async () => {
+    const raw = createRawLeague();
+    raw.Teams = [{
+      TeamID: 1, Team: 'Example', Owner: 'Manager', OwnerID: 'owner-1', TeamAbbr: 'EX',
+      Roster: ['player-1'], Reserve: [], Taxi: [], Starter: ['player-1'], DraftPicks: ['pick-1'],
+      Placements: {
+        Current: { Regular: { Place: 1, Wins: 2, Losses: 1, Ties: 0, Points: 123, PointsAgainst: 100, Record: 'WWL', Streak: '1L', PlaceDelta: 1 } },
+        Previous: { Playoffs: { Place: 1 } },
+        AllTime: { Playoffs: { Place: 1, Championships: 1 }, Regular: { RegularSeasonWins: 1 } }
+      }
+    }] as unknown as RawFantasyTeam[];
+    dataApiService.getLeagueRaw.and.returnValue(of(raw));
+    const summary = await firstValueFrom(service.getLeagueSummary());
+
+    expect(dataApiService.getLeagueRaw).toHaveBeenCalledTimes(1);
+    expect(dataApiService.getLeagueData).not.toHaveBeenCalled();
+    expect(freeAgentMarketService.enrich).not.toHaveBeenCalled();
+    expect(summary.Teams[0].Wins).toBe(2);
+    expect(summary.Teams[0].Points).toBe(123);
+    expect(summary.Teams[0].DraftPickKeys).toEqual(['pick-1']);
+    expect('Roster' in summary.Teams[0]).toBeFalse();
+    expect('DraftPicks' in summary.Teams[0]).toBeFalse();
+    expect('CapOutlook' in summary.Teams[0]).toBeFalse();
+
+    dataApiService.getLeagueData.and.returnValue(of({ leagueRaw: raw, playersRaw: [], nflTeamsRaw: [], draftsRaw: [] }));
+    const full = await firstValueFrom(service.getLeagueWithPlayers());
+    const { Roster, Reserve, Taxi, Starter, DraftPicks, CapOutlook, CapOutlookAsOfWeek, ...fullSummary } = full.teams[0];
+    expect(fullSummary).toEqual(summary.Teams[0]);
+    expect(full.league.Standings).toEqual(summary.Standings);
+    expect(freeAgentMarketService.enrich).toHaveBeenCalledTimes(1);
   });
 
   it('exposes the transaction timestamp and includes it in the latest timestamp', async () => {

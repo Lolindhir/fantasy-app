@@ -1,6 +1,7 @@
 import type { FantasyTeam } from '../../core/models/league.models';
 
 export type FantasyTeamNeutralOrderIndex = ReadonlyMap<string, number>;
+type NeutralOrderTeam = Pick<FantasyTeam, 'TeamID' | 'Placements'>;
 
 /**
  * Applies the already-resolved All-Time Overall standings order to a current/live
@@ -8,7 +9,7 @@ export type FantasyTeamNeutralOrderIndex = ReadonlyMap<string, number>;
  * tie-breaker: duplicate or missing resolved places are contract errors.
  */
 export function buildNeutralFantasyTeamOrderIndex(
-  teams: readonly FantasyTeam[]
+  teams: readonly NeutralOrderTeam[]
 ): FantasyTeamNeutralOrderIndex {
   const entries = teams.map(team => ({
     teamID: String(team.TeamID),
@@ -38,9 +39,9 @@ export function buildNeutralFantasyTeamOrderIndex(
   return new Map(entries.map((entry, index) => [entry.teamID, index]));
 }
 
-export function sortFantasyTeamsByNeutralOrder(
-  teams: readonly FantasyTeam[]
-): FantasyTeam[] {
+export function sortFantasyTeamsByNeutralOrder<T extends NeutralOrderTeam>(
+  teams: readonly T[]
+): T[] {
   const orderIndex = buildNeutralFantasyTeamOrderIndex(teams);
 
   return [...teams].sort((left, right) =>
@@ -61,7 +62,7 @@ export function getNeutralFantasyTeamOrderPosition(
   return position;
 }
 
-function resolveAllTimeOverallPlace(team: FantasyTeam): number {
+function resolveAllTimeOverallPlace(team: NeutralOrderTeam): number {
   const place = Number(team.Placements?.AllTime?.Playoffs?.Place);
 
   if (!Number.isFinite(place) || place <= 0 || place >= 999) {

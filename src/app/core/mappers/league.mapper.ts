@@ -3,7 +3,9 @@ import type { DraftPick, RawDraft } from '../models/draft.models';
 import type {
   AwardInStanding,
   FantasyTeam,
+  FantasyTeamSummary,
   League,
+  LeagueSummary,
   RawFantasyTeam,
   RawLeague
 } from '../models/league.models';
@@ -27,23 +29,38 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
   const { leagueRaw, draftsRaw, players } = context;
   const drafts = draftsRaw ?? [];
   const draftPickByKey = buildDraftPickByKey(drafts);
-
-  const teams = leagueRaw.Teams.map(team => mapRawFantasyTeamToFantasyTeam(team, draftPickByKey));
+  const summary = mapRawLeagueSummary(leagueRaw);
+  const teams: FantasyTeam[] = summary.Teams.map(team => ({
+    ...team,
+    Roster: [],
+    Reserve: [],
+    Taxi: [],
+    Starter: [],
+    DraftPicks: team.DraftPickKeys
+      .map(key => draftPickByKey.get(key))
+      .filter((pick): pick is DraftPick => !!pick)
+  }));
   assignTeamRosters(teams, leagueRaw.Teams, players);
+
+  return { league: { ...summary, Teams: teams }, teams, drafts };
+}
+
+/** The same published identity and placements as the full mapping, without pretending to resolve details. */
+export function mapRawLeagueSummary(leagueRaw: RawLeague): LeagueSummary {
+  const teams = leagueRaw.Teams.map(mapRawFantasyTeamSummary);
   const isFinished = ['Finished', 'Completed'].includes(leagueRaw.Status);
   const defendingChampionId = getDefendingChampionTeamId(leagueRaw.Standings, leagueRaw.Season, isFinished);
   teams.forEach(team => {
     team.IsDefendingChampion = defendingChampionId !== null && String(team.TeamID) === defendingChampionId;
   });
-  const neutralTeams = sortFantasyTeamsByNeutralOrder(teams);
 
-  const league: League = {
+  return {
     ...leagueRaw,
     Standings: leagueRaw.Standings.map(standing => ({
       ...standing,
       Awards: standing.Awards?.map(award => mapStandingAward(award))
     })),
-    Teams: neutralTeams,
+    Teams: sortFantasyTeamsByNeutralOrder(teams),
     SalaryCap: leagueRaw.SalaryCap,
     SalaryCapDisplay: formatSalaryDollars(leagueRaw.SalaryCap),
     SalaryCapProjected: leagueRaw.SalaryCapProjected,
@@ -51,8 +68,6 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
     IsFinished: isFinished,
     SeasonAsNumber: +leagueRaw.Season
   };
-
-  return { league, teams: neutralTeams, drafts };
 }
 
 function buildDraftPickByKey(drafts: RawDraft[]): Map<string, DraftPick> {
@@ -70,25 +85,14 @@ function buildDraftPickByKey(drafts: RawDraft[]): Map<string, DraftPick> {
   return draftPickByKey;
 }
 
-function mapRawFantasyTeamToFantasyTeam(
-  team: RawFantasyTeam,
-  draftPickByKey: Map<string, DraftPick>
-): FantasyTeam {
-  const draftPickKeys = team.DraftPicks ?? [];
-  const resolvedDraftPicks = draftPickKeys
-    .map(key => draftPickByKey.get(key))
-    .filter((pick): pick is DraftPick => !!pick);
+function mapRawFantasyTeamSummary(team: RawFantasyTeam): FantasyTeamSummary {
+  const { Roster, Reserve, Taxi, Starter, DraftPicks, ...fields } = team;
 
   return {
-    ...team,
+    ...fields,
     Team: team.Team || `Team ${team.Owner}`,
     Avatar: team.TeamAvatar || 'assets/default-team-avatar.png',
-    Roster: [],
-    Reserve: [],
-    Taxi: [],
-    Starter: [],
-    DraftPickKeys: draftPickKeys,
-    DraftPicks: resolvedDraftPicks,
+    DraftPickKeys: DraftPicks ?? [],
     Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0
       ? team.Placements.Current.Playoffs.Place
       : team.Placements.Current.Regular.Place ?? 0,

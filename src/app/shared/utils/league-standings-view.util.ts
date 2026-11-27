@@ -1,8 +1,8 @@
 import type { AwardInStanding, FantasyTeam, League } from '../../core/models/fantasy.models';
-import type { LegacyHighlightFact } from '../../core/models/league.models';
+import type { FantasyTeamSummary, LegacyHighlightFact } from '../../core/models/league.models';
 
-export interface CurrentStandingRow {
-  team: FantasyTeam;
+export interface CurrentStandingRow<T extends FantasyTeamSummary = FantasyTeamSummary> {
+  team: T;
   displayPlace: number;
 }
 
@@ -145,7 +145,7 @@ export interface SeasonHistoryViewModel {
   seasons: SeasonHistorySeasonViewModel[];
 }
 
-export function buildCurrentStandings(league: League, teams: FantasyTeam[]): CurrentStandingRow[] {
+export function buildCurrentStandings<T extends FantasyTeamSummary>(league: Pick<League, 'Season' | 'Standings'>, teams: T[]): CurrentStandingRow<T>[] {
   const currentStanding = league.Standings.find(standing => standing.Season === league.Season);
   const placeByTeamId = new Map(
     currentStanding?.RegularSeason.map(row => [String(row.TeamID), row.Place]) ?? []
@@ -293,7 +293,7 @@ export function buildLeagueLegacy(league: League, teams: FantasyTeam[]): LeagueL
   };
 }
 
-export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
+export function buildSeasonHistory(league: Pick<League, 'Standings'>): SeasonHistoryViewModel {
   const seasons = [...(league.Standings ?? [])]
     .map(standing => {
       const playoffSnapshots = new Map(
