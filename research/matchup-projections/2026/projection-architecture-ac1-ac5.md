@@ -1,3 +1,9 @@
+# Superseded target architecture — Package 1 historical review basis
+
+The user approved target B after independent review. The current proposed design is [Package 1b review resolution](projection-architecture-review-resolution.md). Where the two documents conflict, Package 1b supersedes the earlier persistence, selection, registry and migration recommendations. This original document remains evidence for the independent review, not the current operative contract. See #1451 for status and gates.
+
+---
+
 # Projection architecture consolidation — AC1–AC5
 
 Status: review candidate, 2026-11-27. Refs #1451; architecture-first package authorized, production implementation NOT authorized by this package. This is shared research/audit evidence and a proposed specification, not an adopted ADR or a second backlog. Operative checklist/decision gates live only in #1451. Reviewed repository revision: f417fbc4a735b9baf38bc5b948963940f7210cce. Existing CP3 drafts/frozen protocol untouched.
