@@ -40,6 +40,6 @@ export interface SeasonStatisticsReadModel {
   IsCompleted: boolean;
   Teams: SeasonStatisticsTeam[];
   BiggestUpset: SeasonStatisticsUpset | null;
-  /** Chosen by the generator over all seasons (current file only). */
+  /** Compatibility projection of league-records (current file only; use LeagueRecords for new consumers). */
   BiggestUpsetAllTime?: (SeasonStatisticsUpset & { Season: number }) | null;
 }
