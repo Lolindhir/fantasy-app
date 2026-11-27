@@ -627,6 +627,17 @@ dataSources:
       Consumer delivery of the computed recap function; additive PlayerAwards per recap week since Issue #499 (ADR-086). Written only on a semantic difference by League Live (current
       season) and the weekly update-history run (completed seasons).
 
+  leagueRecords:
+    path: public/data/LeagueRecords.json
+    generator: tools/league_records_app_publish.py
+    contract: .ai-context/manual/league-records.yaml
+    category: generated-output
+    role: Cross-season league records, including model and source coverage
+    description: >
+      Direct App delivery of the persisted Shared Derived league-records product
+      (ADR-100, Issue #1672); written only on semantic difference by existing
+      League Live and History writers. No consumer-side record selection.
+
   playerAwardHistory:
     path: public/data/PlayerAwardHistory.json
     generator: tools/weekly_recaps_app_publish.py

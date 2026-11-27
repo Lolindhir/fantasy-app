@@ -310,6 +310,14 @@ class PersistedProductTests(unittest.TestCase):
 
 
 
+def reference_biggest_upset(documents):
+    """Frozen pre-ADR-100 selection, retained only for migration regression tests."""
+    candidates = [{"Season": year, **doc["BiggestUpset"]} for year, doc in documents.items()
+                  if doc["BiggestUpset"] is not None]
+    return min(candidates, key=lambda x: (x["WinnerPregameWinProbability"], x["Season"], x["Week"]),
+               default=None)
+
+
 class LeagueRecordsFoundationTests(unittest.TestCase):
     def source(self, year, chance=None, week=3):
         return {
@@ -352,7 +360,6 @@ class LeagueRecordsFoundationTests(unittest.TestCase):
         import tempfile
         from league_records_materialize import materialize
         from derived_data_lib.league_records import legacy_biggest_upset
-        from season_statistics_app_publish import biggest_upset_all_time
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
             source = output / "season-statistics" / "league-test"
@@ -373,19 +380,62 @@ class LeagueRecordsFoundationTests(unittest.TestCase):
                 before = path.read_bytes()
                 self.assertEqual(0, materialize(REPO, output, "league-test", write=True)["Written"])
                 self.assertEqual(before, path.read_bytes())
-                self.assertEqual(biggest_upset_all_time(docs), legacy_biggest_upset(first["Document"]))
+                self.assertEqual(reference_biggest_upset(docs), legacy_biggest_upset(first["Document"]))
                 (source / "2024.json").unlink()
                 with self.assertRaises(OSError):
                     materialize(REPO, output, "league-test", write=True)
                 self.assertEqual(before, path.read_bytes())
 
+    def test_delivery_and_compatibility_field_read_same_persisted_record(self):
+        import tempfile
+        from datetime import datetime, timezone
+        from unittest.mock import patch
+        from app_delivery import Writer
+        from derived_data_lib.league_records import build, legacy_biggest_upset
+        from league_records_app_publish import publish as publish_records
+        from season_statistics_app_publish import publish as publish_stats
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "data-derived"
+            source = output / "season-statistics" / "league-test"
+            source.mkdir(parents=True)
+            docs = {2024: self.source(2024, 0.1), 2025: self.source(2025, 0.2)}
+            for year, doc in docs.items():
+                (source / f"{year}.json").write_text(json.dumps(doc), encoding="utf-8")
+            product = build("league-test", list(docs), docs)
+            folder = output / "league-records"
+            folder.mkdir()
+            path = folder / "league-test.json"
+            path.write_text(json.dumps(product), encoding="utf-8")
+            lineage = {"CurrentCanonicalLeagueSeasonID": "league-test-2025"}
+            with patch("season_statistics_app_publish.manifest", return_value=lineage):
+                first = Writer(root, datetime(2026, 1, 1, tzinfo=timezone.utc))
+                publish_records(root, "league-test", first)
+                publish_stats(root, "league-test", "current", first)
+                first.finish()
+                records = json.loads((first.data / "LeagueRecords.json").read_text())
+                statistics = json.loads((first.data / "SeasonStatistics.json").read_text())
+                self.assertEqual(product, records)
+                self.assertEqual(legacy_biggest_upset(product), statistics["BiggestUpsetAllTime"])
+                second = Writer(root, datetime(2026, 1, 2, tzinfo=timezone.utc))
+                publish_records(root, "league-test", second)
+                publish_stats(root, "league-test", "current", second)
+                self.assertEqual([], second.finish())
+                path.unlink()
+                with self.assertRaises(OSError):
+                    publish_records(root, "league-test", second)
+                publish_stats(root, "league-test", "current", second)
+                statistics = json.loads((second.data / "SeasonStatistics.json").read_text())
+                self.assertEqual(legacy_biggest_upset(product), statistics["BiggestUpsetAllTime"])
+                self.assertEqual([], second.finish())
+
     def test_persisted_inputs_match_existing_selection(self):
         from derived_data_lib.league_records import legacy_biggest_upset
         from league_records_materialize import resolve
-        from season_statistics_app_publish import biggest_upset_all_time, persisted_documents
+        from season_statistics_app_publish import persisted_documents
         output = REPO / "data-derived"
         for league in sorted(p.name for p in (output / "season-statistics").iterdir() if p.is_dir()):
-            self.assertEqual(biggest_upset_all_time(persisted_documents(output, league)),
+            self.assertEqual(reference_biggest_upset(persisted_documents(output, league)),
                              legacy_biggest_upset(resolve(REPO, output, league)))
 
 if __name__ == "__main__":
