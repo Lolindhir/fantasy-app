@@ -29,6 +29,7 @@ the read-only restore probe `tools/derived_clean_root_audit.py`.
 | `league-drafts` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
 | `league-standings` | `.ai-context/manual/league-standings.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-standings.yml` |
 | `season-statistics` | `.ai-context/manual/season-statistics.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
+| `league-records` | `.ai-context/manual/league-records.yaml` | `tools/league_records_materialize.py` | `league-live.yml`, `update-history.yml` |
 | `league-rivalry` | `.ai-context/manual/league-rivalry.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
 | `league-teams` | `.ai-context/manual/league-teams.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-history.yml` |
 | `league-schedule-outlook` | `.ai-context/manual/league-schedule-outlook.yaml` | `tools/league_schedule_outlook_materialize.py` | `league-live.yml`, `update-history.yml` |

@@ -97,6 +97,15 @@ class CleanRootProbeTests(unittest.TestCase):
         written = emit(target, self.body("league-rivalry", root, existing))
         return {"Seasons": [{"Written": written}]}
 
+    def fake_league_records(self, root, out_root, league, *, write):
+        self.check_isolation(root)
+        self.assertTrue(write)
+        self.assertTrue((out_root / "season-statistics" / league / "2024.json").is_file())
+        self.calls.append(("league-records", league))
+        target = out_root / "league-records" / f"{league}.json"
+        existing = target.read_text() if target.is_file() else None
+        return {"Written": emit(target, self.body("league-records", root, existing))}
+
     def fake_league_teams(self, root, out_root, league, seasons, check_only):
         self.check_isolation(root)
         self.calls.append(("league-teams", league))
@@ -172,6 +181,7 @@ class CleanRootProbeTests(unittest.TestCase):
                 ("materialize_season_statistics", self.fake_season_statistics),
                 ("materialize_league_rivalry", self.fake_league_rivalry),
                 ("materialize_league_teams", self.fake_league_teams),
+                ("materialize_league_records", self.fake_league_records),
                 ("materialize_matchup_context", self.fake_matchup_context),
                 ("materialize_weekly_recaps", self.fake_weekly_recaps),
                 ("materialize_historical", self.fake_pwf),
@@ -191,7 +201,7 @@ class CleanRootProbeTests(unittest.TestCase):
     def publish_all_stable(self):
         for relative in (
             f"player-valuation/{LEAGUE}/2024/week-00.json", f"league-transactions/{LEAGUE}/2024.json",
-            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"league-teams/{LEAGUE}.json", f"matchup-context/{LEAGUE}/2024/matchups.json", f"weekly-recaps/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
+            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"league-teams/{LEAGUE}.json", f"league-records/{LEAGUE}.json", f"matchup-context/{LEAGUE}/2024/matchups.json", f"weekly-recaps/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
             f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json", "nfl-injuries/2024.json", "nfl-player-availability/2024.json",
         ):
             self.publish(relative, "stable")
@@ -203,6 +213,7 @@ class CleanRootProbeTests(unittest.TestCase):
         # which reads PlayerWeekFantasy; a clean root must build them in that order.
         self.assertLess(order.index(probe.PLAYER_WEEK_FANTASY), order.index(probe.SEASON_STATISTICS))
         self.assertLess(order.index(probe.SEASON_STATISTICS), order.index(probe.LEAGUE_STANDINGS))
+        self.assertLess(order.index(probe.SEASON_STATISTICS), order.index(probe.LEAGUE_RECORDS))
 
     def test_all_products_ready_and_repository_untouched(self):
         self.publish_all_stable()
