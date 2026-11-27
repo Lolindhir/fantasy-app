@@ -98,7 +98,8 @@ class RoutingTests(unittest.TestCase):
 
     def test_forecast_dependency_trace_and_manifest_keep_conservative_coverage(self):
         for path in ("tools/forecast_dependency_trace.py",
-                     "tools/tests/fixtures/forecast_dependency_manifest.json"):
+                     "tools/tests/fixtures/forecast_dependency_manifest.json",
+                     "tools/tests/fixtures/forecast_metadata_reader_trace.ps1"):
             with self.subTest(path=path):
                 result = self.choose(path)
                 self.assertEqual(set(ci.GROUPS), set(result["selected"]))
