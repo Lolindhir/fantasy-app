@@ -20,6 +20,7 @@ import type { PlayerAwardHistoryReadModel } from '../models/player-award-history
 import type { InjuryImpactReadModel } from '../models/injury-impact.models';
 import type { PlayerInjuryHistoryReadModel } from '../models/player-injury-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
+import type { LeagueRecordsReadModel } from '../models/league-records.models';
 import type { ScheduleOutlookReadModel } from '../models/schedule-outlook.models';
 
 export interface LeagueDataLoadResult {
@@ -140,6 +141,10 @@ export class DataApiService {
 
   getInjuryImpactRaw(): Observable<InjuryImpactReadModel> {
     return this.http.get<InjuryImpactReadModel>('data/InjuryImpact.json');
+  }
+
+  getLeagueRecordsRaw(): Observable<LeagueRecordsReadModel> {
+    return this.http.get<LeagueRecordsReadModel>('data/LeagueRecords.json');
   }
 
   getSeasonStatisticsRaw(): Observable<SeasonStatisticsReadModel> {

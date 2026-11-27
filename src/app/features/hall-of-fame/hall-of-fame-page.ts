@@ -16,7 +16,7 @@ import { buildLeagueLegacy } from '../../shared/utils/league-standings-view.util
 /**
  * Global Hall of Fame (Issue #1621): champions of every season in the identity of their season, league legacy, all-time bests,
  * player award legends and the all-time standings. Not season dependent. Display only: every value comes from the generated
- * standings, season statistics, award history and team identity files; nothing is counted here.
+ * standings, league records, award history and team identity files; nothing is counted here.
  */
 @Component({
   selector: 'app-hall-of-fame-page',
@@ -33,16 +33,16 @@ export class HallOfFamePageComponent {
 
   readonly championEmblemSrc = GENERIC_CHAMPIONSHIP_RING_SRC;
 
-  /** Unavailable optional files (team identity, statistics, awards) never block the page. */
+  /** Unavailable optional files (team identity, league records, awards) never block the page. */
   readonly vm$ = forkJoin({
     data: this.dataService.getLeagueWithPlayers(),
-    stats: this.dataService.getAllSeasonStatistics().pipe(catchError(() => of({ current: null, bySeason: new Map() }))),
+    records: this.dataService.getLeagueRecords().pipe(catchError(() => of(null))),
     awards: this.dataService.getPlayerAwardHistory().pipe(catchError(() => of(null))),
     lookup: this.teamSeasons.getLookup().pipe(catchError(() => of(null)))
   }).pipe(
-    map(({ data: { league, teams, players }, stats, awards, lookup }) => ({
+    map(({ data: { league, teams, players }, records, awards, lookup }) => ({
       champions: buildHallOfFameChampions(league, lookup),
-      sections: buildHallOfFameSections(league, teams, stats.current, stats.bySeason, awards, players, lookup),
+      sections: buildHallOfFameSections(league, teams, records, awards, players, lookup),
       allTime: buildLeagueLegacy(league, teams)
     }))
   );
