@@ -159,6 +159,8 @@ def compare(found: dict[str, set[str]], registry: dict) -> list[str]:
 BLOCK_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 LINE_COMMENT_RE = re.compile(r"(?<![:\"'])//[^\n]*")
 HTTP_LOADER_RE = re.compile(r"\bHttpClient\b|\bhttp\.(?:get|post|put|delete)\b")
+NATIVE_FETCH_RE = re.compile(r"\bfetch\s*\(")
+NATIVE_FETCH_ASSET_RE = re.compile(r"\s*`([A-Za-z0-9.-]+)\?t=\$\{cacheBuster\}`\s*,")
 ARCHIVE_PATH_RE = re.compile(r"past_seasons")
 DATA_URL_RE = re.compile(r"[\"'`]data/[^\"'`]*[\"'`]")
 CAP_LIMIT_INPUT_RE = re.compile(r"SalaryRelevantTeamSize", re.IGNORECASE)
@@ -196,12 +198,17 @@ def angular_sources(repo_root: Path) -> dict[str, str]:
 
 def check_angular_guards(sources: dict[str, str], guard: dict) -> list[str]:
     loaders = set(guard["httpLoaderFiles"])
+    native_assets = guard["nativeFetchAssets"]
     archives = set(guard["archivePathFiles"])
     cap_inputs = {row["path"] for row in guard["capLimitInputFiles"]}
     problems: list[str] = []
     for path, code in sorted(sources.items()):
         if HTTP_LOADER_RE.search(code) and path not in loaders:
             problems.append(f"new HTTP loader outside DataApiService: {path}")
+        for call in NATIVE_FETCH_RE.finditer(code):
+            asset = NATIVE_FETCH_ASSET_RE.match(code, call.end())
+            if asset is None or asset.group(1) not in native_assets.get(path, []):
+                problems.append(f"native fetch outside documented build-refresh assets: {path}")
         if ARCHIVE_PATH_RE.search(code) and path not in archives:
             problems.append(f"past_seasons archive path outside DataApiService: {path}")
         if DATA_URL_RE.search(code) and path not in loaders:
@@ -210,7 +217,7 @@ def check_angular_guards(sources: dict[str, str], guard: dict) -> list[str]:
             problems.append(f"cap limit input (SalaryRelevantTeamSize) outside documented exceptions: {path}")
         if CENTRAL_MODEL_ID_RE.search(code):
             problems.append(f"central model ID in executable frontend code: {path}")
-    for path in sorted((loaders | archives | cap_inputs) - set(sources)):
+    for path in sorted((loaders | set(native_assets) | archives | cap_inputs) - set(sources)):
         problems.append(f"stale angularDomainGuard entry: {path}")
     return problems
 
@@ -1034,11 +1041,15 @@ class ConsumerReadClassificationTest(unittest.TestCase):
 
     def test_g6_angular_guard_negative_fixtures_fail_closed(self) -> None:
         guard = load_guard_registry()
-        base = {p: "" for p in (set(guard["httpLoaderFiles"]) | set(guard["archivePathFiles"])
+        base = {p: "" for p in (set(guard["httpLoaderFiles"]) | set(guard["nativeFetchAssets"])
+                                | set(guard["archivePathFiles"])
                                 | {r["path"] for r in guard["capLimitInputFiles"]})}
         self.assertEqual([], check_angular_guards(base, guard))
         fixtures = {
             "HTTP loader": 'constructor(private http: HttpClient) {} load() { return this.http.get("data/X.json"); }',
+            "native fetch with dynamic URL": "fetch(url);",
+            "qualified native fetch": "window.fetch(url);",
+            "native provider fetch": "fetch('https://api.sleeper.app/v1/players/nfl');",
             "archive path": "const url = `data/past_seasons/Drafts/Drafts_${season}.json`;",
             "data URL": "const url = 'data/Extra.json';",
             "cap limit": "const n = Math.min(league.SalaryRelevantTeamSize, roster.length);",
@@ -1047,6 +1058,13 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         for label, code in fixtures.items():
             problems = check_angular_guards({**base, "src/app/features/new/new.ts": code}, guard)
             self.assertTrue(problems, label)
+        app = "src/app/app.ts"
+        allowed = 'fetch(`index.html?t=${cacheBuster}`, {}); fetch(`build-info.json?t=${cacheBuster}`, {});'
+        self.assertEqual([], check_angular_guards({**base, app: allowed}, guard))
+        for code in ("fetch(url);", 'fetch(`other.json?t=${cacheBuster}`, {});'):
+            self.assertTrue(any("native fetch" in p for p in check_angular_guards({**base, app: code}, guard)), code)
+        self.assertTrue(any("native fetch" in p for p in check_angular_guards(
+            {**base, "src/app/features/new/new.ts": allowed}, guard)))
         # Comments and documentation strings do not trip the guard.
         commented = "// loads past_seasons via HttpClient, win-prob-v1\n/* SalaryRelevantTeamSize */\nconst a = 1;"
         self.assertEqual([], check_angular_guards({**base, "src/app/features/new/new.ts": strip_ts_comments(commented)}, guard))
