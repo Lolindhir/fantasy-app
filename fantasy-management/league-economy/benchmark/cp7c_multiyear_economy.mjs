@@ -253,7 +253,10 @@ function settleCuts(s,mode,cap){
     const p=s.world.get(b.replacement),price=freeAgentSalary(s,p.id);
     assert(price===b.replacementSalary,'FA replacement cost');
     const c=contract(p.id,team.id,Y,p.year===1?'rookie':'veteran',price);
-    c.acquiredYear=Y;c.draftRound=p.draftRound??null;s.contracts.set(p.id,c);
+    c.acquiredYear=Y;c.draftRound=p.draftRound??null;
+    // P1 discount ends at the *next* actual annual Salary reprice, not after 3 contract years.
+    if(mode==='retained_cycle'&&s.released.has(p.id)&&price<p.price)c.discountThroughYear=Y;
+    s.contracts.set(p.id,c);
    }
    for(const [yr,amount] of Object.entries(b.quote.dead))if(amount>0)
     s.debt.push({owner:team.id,player:b.player,year:Number(yr),amount,signYear:oldContract.start});
@@ -281,7 +284,17 @@ function runOne(base,{mode,timeline,shock,seasons,wait}){
  for(let index=0;index<seasons;index++){
   Y=2027+index;s.released.clear();s.pickedFA.clear();s.cutPlayers.clear();
   s.debt=s.debt.filter(d=>d.year>=Y);
-  if(index){seasonalDevelopment(s.world,base.seed,index);applyDynamicSalary(s.world,s.previousCap);}
+  if(index){
+   seasonalDevelopment(s.world,base.seed,index);
+   applyDynamicSalary(s.world,s.previousCap);
+   for(const c of s.contracts.values())if(c.discountThroughYear!=null&&c.discountThroughYear<Y){
+    // Retained-Salary only has a one-cycle discounted active Salary.
+    // Once the next Salary Check happens, restore full annual market price.
+    const p=s.world.get(c.player);
+    c.start=Y;c.end=Y+2;c.base=Math.max(1,p.price);
+    c.kind='veteran';c.anchored2027=null;c.pendingRenewal=false;c.discountThroughYear=null;
+   }
+  }
   const exits=[];
   for(const t of s.teams){
    for(const id of [...t.players])if(!s.world.get(id).active){
