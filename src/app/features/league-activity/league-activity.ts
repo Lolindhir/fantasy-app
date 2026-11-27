@@ -71,78 +71,51 @@ export class LeagueActivityComponent {
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
-  private readonly historicalSeasons$ = combineLatest([
+  // One selection owns its transaction and draft requests and the exact context used to resolve them.
+  // A new season cancels the previous in-flight selection; never publish an old feed under a new season label.
+  private readonly selectedData$ = combineLatest([
     this.leagueData$,
-    this.pastSeasonsIndex$
-  ]).pipe(
-    map(([leagueData, index]) => this.getHistoricalTransactionSeasons(
-      index.Seasons ?? [],
-      leagueData.league.Season
-    )),
-    shareReplay({ bufferSize: 1, refCount: true })
-  );
-
-  private readonly selectionContext$ = combineLatest([
-    this.leagueData$,
-    this.historicalSeasons$,
+    this.pastSeasonsIndex$,
     this.selectedSeason$
   ]).pipe(
-    map(([leagueData, historicalSeasons, selectedSeason]) => this.buildSelectionContext(
-      leagueData.league.Season,
-      historicalSeasons,
-      selectedSeason
-    )),
-    shareReplay({ bufferSize: 1, refCount: true })
-  );
-
-  private readonly transactions$ = this.selectionContext$.pipe(
-    tap(() => {
-      this.loadFailed = false;
-    }),
-    switchMap(context => this.dataService.getTransactionsForSources(
-      context.IncludeCurrent,
-      context.HistoricalPaths
-    ).pipe(
-      catchError(() => {
-        this.loadFailed = true;
-        return of([]);
-      })
-    )),
-    shareReplay({ bufferSize: 1, refCount: true })
-  );
-
-  private readonly drafts$ = combineLatest([
-    this.selectionContext$,
-    this.leagueData$
-  ]).pipe(
-    switchMap(([context, leagueData]) => {
+    switchMap(([leagueData, index, selectedSeason]) => {
+      const historicalSeasons = this.getHistoricalTransactionSeasons(
+        index.Seasons ?? [], leagueData.league.Season
+      );
+      const context = this.buildSelectionContext(leagueData.league.Season, historicalSeasons, selectedSeason);
       const historicDrafts$ = context.HistoricalDraftPaths.map(path =>
         this.dataService.getPastDraftsRaw(path).pipe(catchError(() => of([] as RawDraft[])))
       );
-      return (historicDrafts$.length ? forkJoin(historicDrafts$) : of([] as RawDraft[][])).pipe(
-        map(drafts => [
-          ...(context.IncludeCurrent ? leagueData.drafts : []),
-          ...drafts.flat()
-        ])
-      );
+      return forkJoin({
+        moves: this.dataService.getTransactionsForContext(
+          leagueData, context.IncludeCurrent, context.HistoricalPaths
+        ).pipe(
+          map(transactions => ({ transactions, loadFailed: false })),
+          catchError(() => of({ transactions: [], loadFailed: true }))
+        ),
+        pastDrafts: historicDrafts$.length ? forkJoin(historicDrafts$) : of([] as RawDraft[][])
+      }).pipe(map(({ moves, pastDrafts }) => ({
+        ...moves,
+        context,
+        drafts: [...(context.IncludeCurrent ? leagueData.drafts : []), ...pastDrafts.flat()],
+        teams: leagueData.teams
+      })));
     }),
+    tap(data => { this.loadFailed = data.loadFailed; }),
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
   readonly vm$ = combineLatest([
-    this.transactions$,
-    this.selectedFilter$,
-    this.selectionContext$,
-    this.drafts$,
-    this.leagueData$
+    this.selectedData$,
+    this.selectedFilter$
   ]).pipe(
-    map(([transactions, selectedFilter, context, drafts, leagueData]) => ({
+    map(([{ transactions, context, drafts, teams }, selectedFilter]) => ({
       ...buildMovesViewModel(transactions, selectedFilter),
       SeasonLabel: context.SeasonLabel,
       SeasonOptions: context.SeasonOptions,
       SelectedSeason: context.SelectedSeason,
       Drafts: drafts,
-      Teams: leagueData.teams
+      Teams: teams
     })),
     tap(() => this.scrollToLinkedTransaction()),
     shareReplay({ bufferSize: 1, refCount: true })

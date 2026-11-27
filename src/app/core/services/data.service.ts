@@ -298,9 +298,7 @@ export class DataService {
               ? forkJoin(draftPaths.map(path => this.getPastDraftsRaw(path)))
               : of([] as RawDraft[][]);
             return forkJoin({
-              transactions: this.loadCompletedRawTransactions(true, transactionPaths).pipe(
-                map(raw => mapRawTransactions(raw, teams, players))
-              ),
+              transactions: this.getTransactionsForContext({ teams, players }, true, transactionPaths),
               pastDrafts: pastDrafts$
             }).pipe(
               map(({ transactions, pastDrafts }) => ({
@@ -354,6 +352,17 @@ export class DataService {
       raw: this.loadCompletedRawTransactions(includeCurrent, historicalPaths)
     }).pipe(map(({ context, raw }) =>
       mapRawTransactions(raw, context.teams, context.players)));
+  }
+
+  /** Resolve selected transaction sources against an already loaded, mapped league context. */
+  getTransactionsForContext(
+    context: Pick<LeagueWithPlayers, 'teams' | 'players'>,
+    includeCurrent: boolean,
+    historicalPaths: string[]
+  ): Observable<Transaction[]> {
+    return this.loadCompletedRawTransactions(includeCurrent, historicalPaths).pipe(
+      map(raw => mapRawTransactions(raw, context.teams, context.players))
+    );
   }
 
   /** Source selection and completed-transaction merge are shared by Moves and Player Journey. */
