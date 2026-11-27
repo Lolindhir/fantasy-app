@@ -52,7 +52,8 @@ function validLens(lens: TeamCapLens | undefined, rosterIDs: Set<string>): boole
     new Set(lens.TopPlayerIDs).size === lens.TopPlayerIDs.length &&
     lens.Cuts.every((cut, i) =>
       typeof cut.PlayerID === 'string' && rosterIDs.has(cut.PlayerID) &&
-      cut.CutOrder === i + 1 && cut.SalaryRank === 6 &&
+      cut.CutOrder === i + 1 && Number.isInteger(cut.SalaryRank) &&
+      cut.SalaryRank >= 1 && cut.SalaryRank <= rosterIDs.size - i &&
       [cut.SalaryUsed, cut.CapBeforeCut, cut.CapAfterCut].every(Number.isFinite)
     ) && new Set(lens.Cuts.map(c => c.PlayerID)).size === lens.Cuts.length;
 }
