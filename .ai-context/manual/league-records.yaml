@@ -1,6 +1,6 @@
 schemaVersion: 1
 product: league-records
-status: first-publication-pending
+status: active
 trackingIssue: 1672
 model: league-records-v1
 logicalLayer: Shared Derived Data
@@ -32,9 +32,9 @@ validation:
   - Existing season-statistics regression suite includes selection, missing data, identity, read-only preview, no-op and legacy parity.
   - Restore probe rebuilds league-records after season-statistics; first live publication and exact parity are required before consumer cutover.
 activation:
-  status: writers-configured-first-publication-pending
+  status: active
   approvedScope: Existing league-live and update-history rebuild-and-retry writers; only new league-records prefix and additive App delivery.
-  next: Verify CI and the first real publication, remove the temporary inventory first-fill exception, then cut over consumers.
+  next: Verify App delivery before Hall of Fame cutover.
   rollback: Remove new writer calls and path allowances; retain inert generated files; restore prior consumer selection if cut over.
 writers:
   - workflow: .github/workflows/league-live.yml
@@ -47,3 +47,10 @@ publication:
   failure: Warn and retain previous record on missing or invalid evidence; no consumer cutover until readback.
   check: Second invocation is read-only and must be a semantic no-op; a failed check aborts the rebuild transaction.
   schedule: Existing League Live cadence and weekly historical reconciliation, no new trigger.
+appDelivery:
+  path: public/data/LeagueRecords.json
+  publisher: tools/league_records_app_publish.py
+  timestampsKey: LeagueRecords
+  shape: Unchanged persisted shared product.
+  compatibility: SeasonStatistics.json.BiggestUpsetAllTime is a field-only projection of the same shared record, last coherent current file retained if its input is unavailable; no duplicate record selection.
+  activation: App delivery and alias must be published and verified before the Hall of Fame switches to the new file.
