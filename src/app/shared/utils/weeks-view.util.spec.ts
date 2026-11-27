@@ -21,7 +21,8 @@ import {
   resolveSelectedWeek,
   resolveWeeksSeason,
   selectRecapUpsets,
-  selectWeekRecap
+  selectWeekRecap,
+  allFavoritesWon
 } from './weeks-view.util';
 
 function team(id: number): FantasyTeam {
@@ -338,10 +339,38 @@ describe('weeks view util', () => {
       const withUpsets: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('b', 3, 70, 30, 'upset')] }] };
       expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.underdog?.matchupID).toBe('b');
       expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.allFavoritesWon).toBeFalse();
-      const none: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('c', 5, 20, 80, null)] }, { Week: 2, KeyGames: [], KeyPlayers: [] }] };
+      const none: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('x', 1, 20, 80, null)] }, { Week: 2, KeyGames: [], KeyPlayers: [] }] };
       expect(selectWeekRecap(none, '2025', final(1)).content?.allFavoritesWon).toBeTrue();
       expect(selectWeekRecap(none, '2025', final(1)).content?.underdog).toBeNull();
       expect(selectWeekRecap(none, '2025', final(2)).content?.allFavoritesWon).toBeFalse();
+    });
+
+    it('requires complete, unique, final matchup coverage before declaring all favorites won', () => {
+      const first = matchup('a', [1, 10], [2, 5], 'final', 1);
+      const second = matchup('b', [3, 10], [4, 5], 'final', 3);
+      const settled = week(1, 'regular-season', 'final', [first, second]);
+      const mark = (id: string, winner: number, loser: number) => ({
+        FantasyMatchupID: id,
+        Teams: [{ FantasyTeamID: winner, PregameWinProbability: 70 }, { FantasyTeamID: loser, PregameWinProbability: 30 }],
+        Upset: false,
+        UpsetWinnerFantasyTeamID: null,
+        UpsetLevel: null,
+        UnderdogWinnerFantasyTeamID: null
+      });
+      const a = mark('a', 1, 2);
+      const b = mark('b', 3, 4);
+      expect(allFavoritesWon([a, b], settled)).toBeTrue();
+      expect(allFavoritesWon([a], settled)).toBeFalse();
+      expect(allFavoritesWon([a, a], settled)).toBeFalse();
+      expect(allFavoritesWon([a, { ...b, FantasyMatchupID: 'other' }], settled)).toBeFalse();
+      expect(allFavoritesWon([a, mark('b', 3, 9)], settled)).toBeFalse();
+      expect(allFavoritesWon([a, { ...b, Teams: [{ FantasyTeamID: 3, PregameWinProbability: null }, b.Teams[1]] }], settled)).toBeFalse();
+      expect(allFavoritesWon([a, { ...b, Teams: [{ FantasyTeamID: 3, PregameWinProbability: 50 }, { FantasyTeamID: 4, PregameWinProbability: 50 }] }], settled)).toBeFalse();
+      expect(allFavoritesWon([a, { ...b, UpsetLevel: undefined }], settled)).toBeFalse();
+      expect(allFavoritesWon([a, b], week(1, 'regular-season', 'final', [first, matchup('b', [3, 5], [4, 5], 'final', 'tie')]))).toBeFalse();
+      expect(allFavoritesWon([a, b], week(1, 'regular-season', 'open', [first, second]))).toBeFalse();
+      expect(allFavoritesWon([a, b], week(1, 'regular-season', 'final', [first, { ...second, Result: null }]))).toBeFalse();
+      expect(allFavoritesWon([a, b], week(1, 'regular-season', 'final', [first, { ...second, Result: { Type: 'win', WinnerTeamID: 4 } }]))).toBeFalse();
     });
 
     it('passes weekly player awards through only when available', () => {

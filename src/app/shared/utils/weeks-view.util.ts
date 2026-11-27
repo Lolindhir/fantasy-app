@@ -346,10 +346,40 @@ export function selectRecapUpsets(winProbabilities: readonly WeeklyRecapWinProba
     (left.level === right.level ? 0 : left.level === 'upset' ? -1 : 1) || (left.winnerChance ?? 100) - (right.winnerChance ?? 100));
 }
 
-/** True when the generator knows the pregame chances of the week and marked no underdog win (never guessed from missing data). */
-export function allFavoritesWon(winProbabilities: readonly WeeklyRecapWinProbability[] | null | undefined): boolean {
-  const known = (winProbabilities ?? []).filter(matchup => matchup.Teams.every(team => team.PregameWinProbability !== null));
-  return known.length > 0 && known.every(matchup => !matchup.UpsetLevel);
+/** An absolute display claim requires complete, unambiguous published evidence. */
+export function allFavoritesWon(
+  winProbabilities: readonly WeeklyRecapWinProbability[] | null | undefined,
+  week: MatchupWeekReadModel
+): boolean {
+  if (week.CompletionState !== 'final' || !week.Matchups.length ||
+      !winProbabilities || winProbabilities.length !== week.Matchups.length) return false;
+
+  const byID = new Map(winProbabilities.map(row => [row.FantasyMatchupID, row]));
+  if (byID.size !== winProbabilities.length ||
+      new Set(week.Matchups.map(row => row.FantasyMatchupID)).size !== week.Matchups.length) return false;
+
+  return week.Matchups.every(matchup => {
+    const recap = byID.get(matchup.FantasyMatchupID);
+    if (!recap || !matchup.FantasyMatchupID?.trim() || matchup.CompletionState !== 'final' ||
+        matchup.Result?.Type !== 'win' || matchup.Result.WinnerTeamID === null ||
+        recap.Upset !== false || recap.UpsetLevel !== null ||
+        recap.UnderdogWinnerFantasyTeamID !== null ||
+        matchup.Participants.length !== 2 || recap.Teams.length !== 2) return false;
+
+    const participants = new Set(matchup.Participants.map(team => String(team.TeamID)));
+    const recapTeams = new Set(recap.Teams.map(team => String(team.FantasyTeamID)));
+    if (participants.size !== 2 || recapTeams.size !== 2 ||
+        !recap.Teams.every(team => participants.has(String(team.FantasyTeamID)))) return false;
+
+    const winner = recap.Teams.find(team => String(team.FantasyTeamID) === String(matchup.Result?.WinnerTeamID));
+    const loser = recap.Teams.find(team => String(team.FantasyTeamID) !== String(matchup.Result?.WinnerTeamID));
+    const winnerChance = winner?.PregameWinProbability;
+    const loserChance = loser?.PregameWinProbability;
+    // Do not infer a favorite from equal rounded chances or an absent probability.
+    return typeof winnerChance === 'number' && Number.isFinite(winnerChance) &&
+      typeof loserChance === 'number' && Number.isFinite(loserChance) &&
+      loserChance >= 0 && winnerChance <= 100 && winnerChance > loserChance;
+  });
 }
 
 /** Recap of one week; a missing recap is a visible state, never an error or an invented value. */
@@ -373,7 +403,7 @@ export function selectWeekRecap(
         awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null,
         playerAwards: recap.PlayerAwards?.State === 'available' ? recap.PlayerAwards : null,
         underdog: selectRecapUpsets(recap.WinProbabilities)[0] ?? null,
-        allFavoritesWon: allFavoritesWon(recap.WinProbabilities)
+        allFavoritesWon: allFavoritesWon(recap.WinProbabilities, week)
       }
     };
   }
