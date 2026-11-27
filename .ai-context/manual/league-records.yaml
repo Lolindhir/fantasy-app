@@ -1,0 +1,38 @@
+schemaVersion: 1
+product: league-records
+status: foundation-pending-production-activation
+trackingIssue: 1672
+model: league-records-v1
+logicalLayer: Shared Derived Data
+physicalStorage: data-derived/league-records/<CanonicalLeagueID>.json
+purpose: >
+  Consumer-neutral cross-season records from persisted shared facts. V1 contains
+  only BiggestUpset and preserves the existing regular-season selection.
+identity:
+  - CanonicalLeagueID
+  - Model
+  - Season and season-specific CanonicalLeagueRosterID for event participants
+inputs:
+  - Canonical league manifest (expected seasons through current season)
+  - data-derived/season-statistics/<CanonicalLeagueID>/<season>.json
+rules:
+  - A missing expected season or contradictory identity prevents publication.
+  - CompletedWeeks must cover the scored regular-season interval; probability coverage is explicitly reported per team.
+  - A null upstream BiggestUpset means no qualifying known event, not missing data.
+  - Select minimum persisted WinnerPregameWinProbability, then earlier Season, then earlier Week.
+  - Preserve upstream scores, TeamIDs, eligibility, rounding and model versions. No new threshold, no playoffs added.
+  - No consumer file is an input. No clock or hard-coded league/year.
+  - Other record definitions require independent eligibility and tie rules before addition.
+contract:
+  fields: [SchemaVersion, Product, CanonicalLeagueID, Model, Coverage, Records]
+  records: Records.BiggestUpset is null or the existing event fields plus season-specific canonical roster IDs.
+  coverage: Per season source schema/model, scored and completed weeks, regular season length, known chance game counts by team and source threshold.
+materializer: tools/league_records_materialize.py
+validation:
+  - Existing season-statistics regression suite includes selection, missing data, identity, read-only preview, no-op and legacy parity.
+  - Full restore-probe integration and live publication parity are activation gates.
+activation:
+  status: not-active
+  approvedScope: Existing league-live and update-history rebuild-and-retry writers; only new league-records prefix and additive App delivery.
+  next: Integrate inventory and restore probe, bounded writers, then verify first publication before consumer cutover.
+  rollback: Remove new writer calls and path allowances; retain inert generated files; restore prior consumer selection if cut over.
