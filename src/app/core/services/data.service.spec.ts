@@ -216,6 +216,22 @@ describe('DataService', () => {
       expect(bundleSubscriptions).toBe(1);
     });
 
+    it('reuses the same mapped context across transaction source selections', async () => {
+      const context = await firstValueFrom(service.getLeagueWithPlayers());
+      const current = await firstValueFrom(service.getTransactionsForContext(context, true, []));
+      const past = await firstValueFrom(service.getTransactionsForContext(context, false, [transactionPath, transactionPath]));
+      const all = await firstValueFrom(service.getTransactionsForContext(context, true, [transactionPath]));
+
+      expect(bundleSubscriptions).toBe(1);
+      expect(freeAgentMarketService.enrich).toHaveBeenCalledTimes(1);
+      expect(dataApiService.getTransactionsRaw).toHaveBeenCalledTimes(2);
+      expect(dataApiService.getPastTransactionsRaw).toHaveBeenCalledTimes(2);
+      expect(current.map(tx => tx.Season)).toEqual(['2026']);
+      expect(past.map(tx => tx.Season)).toEqual(['2025']);
+      expect(all.map(tx => tx.Season)).toEqual(['2026', '2025']);
+      expect(all.every(tx => tx.Participants[0].Team === context.teams[0])).toBeTrue();
+    });
+
     it('preserves the independent transaction selector and archive-only semantics', async () => {
       const transactions = await firstValueFrom(service.getTransactionsForSources(false, [transactionPath, '', transactionPath]));
       expect(bundleSubscriptions).toBe(1);
