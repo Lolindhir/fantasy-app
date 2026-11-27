@@ -51,7 +51,7 @@ export class WeeklyTabComponent {
 
   private readonly base = toSignal(
     combineLatest({
-      leagueData: this.dataService.getLeagueWithPlayers(),
+      league: this.dataService.getLeagueSummary(),
       index: this.dataService.getPastSeasonsIndex().pipe(catchError(() => of(null)))
     }).pipe(catchError(() => of(null))),
     { initialValue: undefined }
@@ -59,11 +59,11 @@ export class WeeklyTabComponent {
 
   /** undefined while loading, null when the league data could not be loaded. */
   readonly ready = computed(() => this.base());
-  readonly teams = computed(() => this.base()?.leagueData.teams ?? []);
+  readonly teams = computed(() => this.base()?.league.Teams ?? []);
 
   readonly seasonOptions = computed<WeeksSeasonOption[]>(() => {
     const base = this.base();
-    return base ? buildWeeksSeasonOptions(base.index, base.leagueData.league.Season) : [];
+    return base ? buildWeeksSeasonOptions(base.index, base.league.Season) : [];
   });
 
   readonly activeSeason = computed(() =>

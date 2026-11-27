@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, combineLatest, of } from 'rxjs';
 
-import type { FantasyTeam } from '../../../../core/models/league.models';
+import type { FantasyTeamSummary } from '../../../../core/models/league.models';
 import type { RivalryFilter } from '../../../../core/models/rivalry.models';
 import { DataService } from '../../../../core/services/data.service';
 import { TeamIdentityComponent, type TeamIdentityElement, type TeamIdentitySubject } from '../../../../shared/components/team-identity/team-identity';
@@ -63,7 +63,7 @@ export class HeadToHeadTabComponent {
   /** undefined while loading, null when league data or the rivalry product is unavailable. */
   private readonly base = toSignal(
     combineLatest({
-      leagueData: this.dataService.getLeagueWithPlayers(),
+      league: this.dataService.getLeagueSummary(),
       lookup: this.rivalry.getLookup(),
       teamSeasons: this.teamSeasons.getLookup().pipe(catchError(() => of(null as TeamSeasonLookup | null)))
     }).pipe(catchError(() => of(null))),
@@ -89,7 +89,7 @@ export class HeadToHeadTabComponent {
     const base = this.base();
     if (!base) return [];
     const selection = this.selection();
-    const current: readonly FantasyTeam[] = base.leagueData.teams;
+    const current: readonly FantasyTeamSummary[] = base.league.Teams;
     if (selection === ALL_TIME) return [...current];
     const ids = new Set(base.lookup.seasonTeamIds(selection));
     const result: TeamIdentitySubject[] = [];

@@ -2,16 +2,16 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
-import type { FantasyTeam } from '../../../../core/models/league.models';
+import type { FantasyTeamSummary, LeagueSummary } from '../../../../core/models/league.models';
 import type { RawRivalryGame, RawRivalryRecord, RivalryReadModel } from '../../../../core/models/rivalry.models';
-import { DataService, type LeagueWithPlayers } from '../../../../core/services/data.service';
+import { DataService } from '../../../../core/services/data.service';
 import { TeamSeasonLookup, TeamSeasonService } from '../../../../shared/services/team-season.service';
 import { RivalryLookup, TeamRivalryService } from '../../../../shared/services/team-rivalry.service';
 import { TeamDetailDialogService } from '../../../../shared/services/team-detail-dialog.service';
 import { HeadToHeadTabComponent } from './head-to-head-tab';
 
-function team(id: number): FantasyTeam {
-  return { TeamID: id, Team: `Team ${id}`, TeamAbbr: `T${id}`, Owner: `Owner ${id}`, Avatar: '', OwnerAvatar: '', Roster: [] } as unknown as FantasyTeam;
+function team(id: number): FantasyTeamSummary {
+  return { TeamID: id, Team: `Team ${id}`, TeamAbbr: `T${id}`, Owner: `Owner ${id}`, Avatar: '', OwnerAvatar: '' } as unknown as FantasyTeamSummary;
 }
 
 const game = (id: string, outcome: 'win' | 'loss'): RawRivalryGame => ({
@@ -49,8 +49,8 @@ const teamSeasons = new TeamSeasonLookup({
 
 describe('HeadToHeadTabComponent', () => {
   function create(m: RivalryReadModel = model, query: Record<string, string> = {}): { fixture: ComponentFixture<HeadToHeadTabComponent>; root: HTMLElement; open: jasmine.Spy } {
-    const dataService = jasmine.createSpyObj<DataService>('DataService', ['getLeagueWithPlayers']);
-    dataService.getLeagueWithPlayers.and.returnValue(of({ league: { Season: '2025' }, teams: [team(1), team(2)] } as unknown as LeagueWithPlayers));
+    const dataService = jasmine.createSpyObj<DataService>('DataService', ['getLeagueSummary', 'getLeagueWithPlayers']);
+    dataService.getLeagueSummary.and.returnValue(of({ Season: '2025', Teams: [team(1), team(2)] } as unknown as LeagueSummary));
     const open = jasmine.createSpy('open');
     TestBed.configureTestingModule({
       imports: [HeadToHeadTabComponent],
@@ -65,6 +65,8 @@ describe('HeadToHeadTabComponent', () => {
     });
     const fixture = TestBed.createComponent(HeadToHeadTabComponent);
     fixture.detectChanges();
+    expect(dataService.getLeagueSummary).toHaveBeenCalledTimes(1);
+    expect(dataService.getLeagueWithPlayers).not.toHaveBeenCalled();
     return { fixture, root: fixture.nativeElement as HTMLElement, open };
   }
 
