@@ -42,7 +42,7 @@ export interface TeamScheduleRow {
 export interface TeamSchedule {
   rows: TeamScheduleRow[];
   /** Regular-season record of the team, counted from the final results. */
-  record: ScheduleRecord;
+  record: ScheduleRecord | null;
   /** Start week of the playoffs while the file holds no playoff weeks yet; otherwise null. */
   upcomingPlayoffStartWeek: number | null;
 }
@@ -54,25 +54,33 @@ function emptyRecord(): ScheduleRecord {
 /** Counts the final regular-season results of every team. */
 export function countRegularSeasonRecords(model: MatchupsReadModel | null | undefined): Map<number, ScheduleRecord> {
   const records = new Map<number, ScheduleRecord>();
+  const uncertain = new Set<number>();
   for (const week of model?.Weeks ?? []) {
     if (week.Stage !== 'regular-season') continue;
     for (const matchup of week.Matchups) {
-      if (matchup.CompletionState !== 'final' || !matchup.Result) continue;
       for (const participant of matchup.Participants) {
-        const record = records.get(participant.TeamID) ?? emptyRecord();
-        if (matchup.Result.Type === 'tie') record.ties++;
-        else if (matchup.Result.WinnerTeamID === participant.TeamID) record.wins++;
-        else record.losses++;
-        records.set(participant.TeamID, record);
+        const id = participant.TeamID;
+        const record = records.get(id) ?? emptyRecord();
+        const outcome = resolveOutcome(matchup, id);
+        if (outcome === 'tie') record.ties++;
+        else if (outcome === 'win') record.wins++;
+        else if (outcome === 'loss') record.losses++;
+        else if (matchup.CompletionState !== 'open' || matchup.Result) uncertain.add(id);
+        records.set(id, record);
       }
     }
   }
+  // An unknown or contradictory result is not a known zero or an official standing.
+  for (const id of uncertain) records.delete(id);
   return records;
 }
 
 function resolveOutcome(matchup: FantasyMatchupReadModel, teamID: number): ScheduleOutcome | null {
   if (matchup.CompletionState !== 'final' || !matchup.Result) return null;
-  if (matchup.Result.Type === 'tie') return 'tie';
+  const participants = new Set(matchup.Participants.map(entry => entry.TeamID));
+  if (matchup.Participants.length !== 2 || participants.size !== 2 || !participants.has(teamID)) return null;
+  if (matchup.Result.Type === 'tie') return matchup.Result.WinnerTeamID === null ? 'tie' : null;
+  if (matchup.Result.Type !== 'win' || !participants.has(matchup.Result.WinnerTeamID!)) return null;
   return matchup.Result.WinnerTeamID === teamID ? 'win' : 'loss';
 }
 
@@ -108,7 +116,7 @@ export function buildTeamSchedule(
       ownPoints: outcome && own ? own.Points : null,
       opponentPoints: outcome && other ? other.Points : null,
       firstKickoffUtc: week.FirstKickoffUtc,
-      opponentRecord: other ? records.get(other.TeamID) ?? emptyRecord() : null
+      opponentRecord: other ? records.get(other.TeamID) ?? null : null
     });
   }
 
@@ -116,11 +124,12 @@ export function buildTeamSchedule(
   const startWeek = options.playoffStartWeek ?? null;
   return {
     rows,
-    record: records.get(teamID) ?? emptyRecord(),
+    record: records.get(teamID) ?? null,
     upcomingPlayoffStartWeek: options.isCurrentSeason && !hasPlayoffWeeks && startWeek && startWeek > 0 ? startWeek : null
   };
 }
 
-export function formatScheduleRecord(record: ScheduleRecord): string {
+export function formatScheduleRecord(record: ScheduleRecord | null): string {
+  if (!record) return '–';
   return record.ties > 0 ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
 }

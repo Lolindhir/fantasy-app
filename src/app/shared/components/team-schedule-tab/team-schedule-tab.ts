@@ -95,7 +95,7 @@ export class TeamScheduleTabComponent {
     const option = this.activeSeason();
     const data = this.data();
     const league = this.leagueSignal();
-    if (!team || !option || !data) return null;
+    if (!team || !option || !data?.matchups) return null;
     return buildTeamSchedule(data.matchups, team.TeamID, {
       isCurrentSeason: option.isCurrent,
       playoffStartWeek: league?.PlayoffStartWeek

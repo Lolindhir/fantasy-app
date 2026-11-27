@@ -85,9 +85,32 @@ describe('team-schedule.util', () => {
     expect(buildTeamSchedule(season, 1, { isCurrentSeason: true, playoffStartWeek: 0 }).upcomingPlayoffStartWeek).toBeNull();
   });
 
+  it('keeps known 0-0 separate from an absent team or unknown result', () => {
+    const open = model([week(1, 'regular-season', [matchup('m', 1, 2, null)])], 1);
+    expect(buildTeamSchedule(open, 1, { isCurrentSeason: true }).record).toEqual({ wins: 0, losses: 0, ties: 0 });
+    expect(buildTeamSchedule(open, 9, { isCurrentSeason: true }).record).toBeNull();
+    const unknown = { ...matchup('m', 1, 2, null), CompletionState: 'unknown' as const };
+    expect(countRegularSeasonRecords(model([week(1, 'regular-season', [unknown])], 1)).has(1)).toBeFalse();
+    const invalid = matchup('bad', 1, 2, [10, 5], 9);
+    const invalidSchedule = buildTeamSchedule(model([week(1, 'regular-season', [invalid])], null), 1, { isCurrentSeason: true });
+    expect(invalidSchedule.record).toBeNull();
+    expect(invalidSchedule.rows[0].outcome).toBeNull();
+    expect(invalidSchedule.rows[0].opponentRecord).toBeNull();
+  });
+
+  it('uses individually final matchups even while the enclosing week is open', () => {
+    const mixed = model([week(1, 'regular-season', [
+      matchup('finished', 1, 2, [10, 5], 1), matchup('open', 3, 4, null)
+    ])], 1);
+    expect(mixed.Weeks[0].CompletionState).toBe('open');
+    expect(countRegularSeasonRecords(mixed).get(1)).toEqual({ wins: 1, losses: 0, ties: 0 });
+    expect(countRegularSeasonRecords(mixed).get(3)).toEqual({ wins: 0, losses: 0, ties: 0 });
+  });
+
   it('handles a missing season file', () => {
     const schedule = buildTeamSchedule(null, 1, { isCurrentSeason: true });
     expect(schedule.rows).toEqual([]);
-    expect(schedule.record).toEqual({ wins: 0, losses: 0, ties: 0 });
+    expect(schedule.record).toBeNull();
+    expect(formatScheduleRecord(schedule.record)).toBe('–');
   });
 });
