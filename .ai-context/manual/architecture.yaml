@@ -216,7 +216,8 @@ dataPlatformTarget:
       - Only the Combine family is modeled; all production paths remain unchanged.
       - No production callers or write-scope expansion until separately approved cutover.
       - An explicit route selects exactly one location for reads and writes; no existence fallback.
-      - Missing expected or migrated partitions fail closed; creation requires explicit new-partition evidence.
+      - Missing migrated partitions always fail closed; missing legacy partitions fail closed unless the caller explicitly allows creation.
+      - M2a does not verify new-partition evidence; enforce that evidence before introducing any production caller.
 
   principle: >
     Repository location does not define domain ownership. Data that can serve

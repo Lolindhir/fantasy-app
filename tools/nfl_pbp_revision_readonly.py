@@ -20,7 +20,10 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from data_roots import DATA_SOURCE_ROOT
+if __package__:
+    from .data_roots import DATA_SOURCE_ROOT
+else:
+    from data_roots import DATA_SOURCE_ROOT
 
 SEASON = 2025
 MANIFEST = f"{DATA_SOURCE_ROOT}/providers/nflverse/play-by-play-original/metadata-2025.json"
