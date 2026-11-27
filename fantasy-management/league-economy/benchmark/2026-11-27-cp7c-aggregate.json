@@ -1,0 +1,376 @@
+{
+  "schema": "cp7c-paired-economy-comparison-v1",
+  "date": "2026-11-27",
+  "status": "controlled synthetic multiyear research, NOT final league ranking",
+  "sourceFiles": [
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed11-shock10-fiveyear.json",
+      "gitBlob": "5348fc01c8ca862bfa0158ba3aa71290738ec5e5"
+    },
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed29-shock10-fiveyear-v2.json",
+      "gitBlob": "956a985e29c0dc7ca40a8f75dcd756cc2e34fffb"
+    },
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed47-shock10-fiveyear.json",
+      "gitBlob": "df8025784c61774af14c0caf445f1a26bb2d8934"
+    },
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed11-shock20-fiveyear.json",
+      "gitBlob": "e8d4f6362fa2f8c7ef035c54d1af8a93df24f1b0"
+    },
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed29-shock20-fiveyear.json",
+      "gitBlob": "2000212f1633f2de867db6270889e21e3097c107"
+    },
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed47-shock20-fiveyear.json",
+      "gitBlob": "af4b2ca74e9ebb9aab96c0e4a8aee7d7a2328aa3"
+    },
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed11-shock10-tenyear-p0p1.json",
+      "gitBlob": "722bccc2d6ed97849931faacfa9175181c32a00d"
+    },
+    {
+      "path": "fantasy-management/league-economy/benchmark/2026-11-27-cp7c-seed11-shock10-tenyear-p2.json",
+      "gitBlob": "8b286290e161ffc49346570fdd0756f16703f8b0"
+    }
+  ],
+  "design": {
+    "seeds": [
+      11,
+      29,
+      47
+    ],
+    "shocks": [
+      -0.1,
+      -0.2
+    ],
+    "fiveYearWindow": [
+      2027,
+      2031
+    ],
+    "tenYearWindow": [
+      2027,
+      2036
+    ],
+    "models": [
+      "none",
+      "retained_cycle",
+      "guaranteed_vintage"
+    ],
+    "timing": [
+      "enforce_before_reset",
+      "reset_before_enforce"
+    ],
+    "p1ResetFirstP0NullPolicyPairwiseIdentical": [
+      {
+        "seed": 11,
+        "shock": -0.1,
+        "identicalToNoDead": true
+      },
+      {
+        "seed": 29,
+        "shock": -0.1,
+        "identicalToNoDead": true
+      },
+      {
+        "seed": 47,
+        "shock": -0.1,
+        "identicalToNoDead": true
+      },
+      {
+        "seed": 11,
+        "shock": -0.2,
+        "identicalToNoDead": true
+      }
+    ],
+    "cost": "all active roster Salary and all current Dead Cap, 45 slots no Taxi/IR, 13 starters",
+    "archive": "2026-10-05 historical 1268-player archive",
+    "futures": "seeded synthetic NFL performance, aging, retirement, rookie drafts; no true injuries",
+    "returns": "trade/cut event & cost accounting, no real manager consent/pick offers or future cap forecast"
+  },
+  "fiveYearByShock": [
+    {
+      "shock": -0.1,
+      "models": [
+        {
+          "mode": "none",
+          "worlds": 3,
+          "legalFull": 3,
+          "failed": [],
+          "observedYears": 15,
+          "trades": 5,
+          "cuts": 338,
+          "onlyLegalTrades": 5,
+          "onlyLegalCuts": 338,
+          "lastYearDeadCurrent": 0,
+          "lastYearDeadFuture": 0,
+          "deadAllObservedYears": 0,
+          "medianLastYearIndexSpread": 20.455734698622024,
+          "lastYearMaxIndexMedian": 184.57129345673445,
+          "capacityCuts": 0,
+          "auditedFutureTransfers": 10,
+          "rookiePicksHeld": 450
+        },
+        {
+          "mode": "retained_cycle",
+          "worlds": 3,
+          "legalFull": 3,
+          "failed": [],
+          "observedYears": 15,
+          "trades": 13,
+          "cuts": 340,
+          "onlyLegalTrades": 13,
+          "onlyLegalCuts": 340,
+          "lastYearDeadCurrent": 158004460,
+          "lastYearDeadFuture": 0,
+          "deadAllObservedYears": 952525197,
+          "medianLastYearIndexSpread": 11.464157099054319,
+          "lastYearMaxIndexMedian": 180.10970843203452,
+          "capacityCuts": 0,
+          "auditedFutureTransfers": 26,
+          "rookiePicksHeld": 450
+        },
+        {
+          "mode": "guaranteed_vintage",
+          "worlds": 3,
+          "legalFull": 3,
+          "failed": [],
+          "observedYears": 15,
+          "trades": 17,
+          "cuts": 347,
+          "onlyLegalTrades": 17,
+          "onlyLegalCuts": 347,
+          "lastYearDeadCurrent": 452679267,
+          "lastYearDeadFuture": 96603564,
+          "deadAllObservedYears": 1789994990,
+          "medianLastYearIndexSpread": 12.224268116706895,
+          "lastYearMaxIndexMedian": 175.20838348977273,
+          "capacityCuts": 0,
+          "auditedFutureTransfers": 34,
+          "rookiePicksHeld": 450
+        }
+      ]
+    },
+    {
+      "shock": -0.2,
+      "models": [
+        {
+          "mode": "none",
+          "worlds": 3,
+          "legalFull": 3,
+          "failed": [],
+          "observedYears": 15,
+          "trades": 4,
+          "cuts": 380,
+          "onlyLegalTrades": 4,
+          "onlyLegalCuts": 380,
+          "lastYearDeadCurrent": 0,
+          "lastYearDeadFuture": 0,
+          "deadAllObservedYears": 0,
+          "medianLastYearIndexSpread": 18.491104317424373,
+          "lastYearMaxIndexMedian": 180.36911934007526,
+          "capacityCuts": 0,
+          "auditedFutureTransfers": 8,
+          "rookiePicksHeld": 450
+        },
+        {
+          "mode": "retained_cycle",
+          "worlds": 3,
+          "legalFull": 3,
+          "failed": [],
+          "observedYears": 15,
+          "trades": 7,
+          "cuts": 380,
+          "onlyLegalTrades": 7,
+          "onlyLegalCuts": 380,
+          "lastYearDeadCurrent": 191641965,
+          "lastYearDeadFuture": 0,
+          "deadAllObservedYears": 1218888097,
+          "medianLastYearIndexSpread": 15.814468873742129,
+          "lastYearMaxIndexMedian": 174.82653198216093,
+          "capacityCuts": 0,
+          "auditedFutureTransfers": 14,
+          "rookiePicksHeld": 450
+        },
+        {
+          "mode": "guaranteed_vintage",
+          "worlds": 3,
+          "legalFull": 2,
+          "failed": [
+            {
+              "seed": 29,
+              "shock": -0.2,
+              "year": 2027,
+              "failed": [
+                {
+                  "team": 2,
+                  "overBy": 327950,
+                  "rosterLegal": true
+                }
+              ]
+            }
+          ],
+          "observedYears": 11,
+          "trades": 8,
+          "cuts": 293,
+          "onlyLegalTrades": 6,
+          "onlyLegalCuts": 272,
+          "lastYearDeadCurrent": 331944000,
+          "lastYearDeadFuture": 89856097,
+          "deadAllObservedYears": 1722760368,
+          "medianLastYearIndexSpread": 10.296696919707813,
+          "lastYearMaxIndexMedian": 171.22512429229508,
+          "capacityCuts": 0,
+          "auditedFutureTransfers": 16,
+          "rookiePicksHeld": 330
+        }
+      ]
+    }
+  ],
+  "severeCapComparisonOnlyCompleteMatchedSeeds": [
+    {
+      "mode": "none",
+      "worlds": 2,
+      "legalFull": 2,
+      "failed": [],
+      "observedYears": 10,
+      "trades": 4,
+      "cuts": 248,
+      "onlyLegalTrades": 4,
+      "onlyLegalCuts": 248,
+      "lastYearDeadCurrent": 0,
+      "lastYearDeadFuture": 0,
+      "deadAllObservedYears": 0,
+      "medianLastYearIndexSpread": 18.491104317424373,
+      "lastYearMaxIndexMedian": 180.36911934007526,
+      "capacityCuts": 0,
+      "auditedFutureTransfers": 8,
+      "rookiePicksHeld": 300
+    },
+    {
+      "mode": "retained_cycle",
+      "worlds": 2,
+      "legalFull": 2,
+      "failed": [],
+      "observedYears": 10,
+      "trades": 5,
+      "cuts": 246,
+      "onlyLegalTrades": 5,
+      "onlyLegalCuts": 246,
+      "lastYearDeadCurrent": 131973881,
+      "lastYearDeadFuture": 0,
+      "deadAllObservedYears": 799659869,
+      "medianLastYearIndexSpread": 15.814468873742129,
+      "lastYearMaxIndexMedian": 174.82653198216093,
+      "capacityCuts": 0,
+      "auditedFutureTransfers": 10,
+      "rookiePicksHeld": 300
+    },
+    {
+      "mode": "guaranteed_vintage",
+      "worlds": 2,
+      "legalFull": 2,
+      "failed": [],
+      "observedYears": 10,
+      "trades": 6,
+      "cuts": 272,
+      "onlyLegalTrades": 6,
+      "onlyLegalCuts": 272,
+      "lastYearDeadCurrent": 331944000,
+      "lastYearDeadFuture": 89856097,
+      "deadAllObservedYears": 1559263229,
+      "medianLastYearIndexSpread": 10.296696919707813,
+      "lastYearMaxIndexMedian": 171.22512429229508,
+      "capacityCuts": 0,
+      "auditedFutureTransfers": 12,
+      "rookiePicksHeld": 300
+    }
+  ],
+  "tenYearSeed11Shock10": [
+    {
+      "mode": "none",
+      "worlds": 1,
+      "legalFull": 1,
+      "failed": [],
+      "observedYears": 10,
+      "trades": 4,
+      "cuts": 215,
+      "onlyLegalTrades": 4,
+      "onlyLegalCuts": 215,
+      "lastYearDeadCurrent": 0,
+      "lastYearDeadFuture": 0,
+      "deadAllObservedYears": 0,
+      "medianLastYearIndexSpread": 14.548684196422101,
+      "lastYearMaxIndexMedian": 165.42981868433313,
+      "capacityCuts": 88,
+      "auditedFutureTransfers": 8,
+      "rookiePicksHeld": 300
+    },
+    {
+      "mode": "retained_cycle",
+      "worlds": 1,
+      "legalFull": 1,
+      "failed": [],
+      "observedYears": 10,
+      "trades": 7,
+      "cuts": 274,
+      "onlyLegalTrades": 7,
+      "onlyLegalCuts": 274,
+      "lastYearDeadCurrent": 62984485,
+      "lastYearDeadFuture": 0,
+      "deadAllObservedYears": 634554914,
+      "medianLastYearIndexSpread": 11.326443375360583,
+      "lastYearMaxIndexMedian": 172.50407012831124,
+      "capacityCuts": 71,
+      "auditedFutureTransfers": 14,
+      "rookiePicksHeld": 300
+    },
+    {
+      "mode": "guaranteed_vintage",
+      "worlds": 1,
+      "legalFull": 1,
+      "failed": [],
+      "observedYears": 10,
+      "trades": 8,
+      "cuts": 271,
+      "onlyLegalTrades": 8,
+      "onlyLegalCuts": 271,
+      "lastYearDeadCurrent": 130052354,
+      "lastYearDeadFuture": 12391128,
+      "deadAllObservedYears": 1563158310,
+      "medianLastYearIndexSpread": 12.953087613060859,
+      "lastYearMaxIndexMedian": 165.18864414946012,
+      "capacityCuts": 58,
+      "auditedFutureTransfers": 16,
+      "rookiePicksHeld": 300
+    }
+  ],
+  "evidenceGates": {
+    "real2026": "CP4c/CP5c historical 2026 Salary deadline and buyer liquidity",
+    "playerOwnership": "synthetic initially, historical original 2025/26 manager vintages not reconstructed in these experiments",
+    "rookieGuarantees": "new draft round tiered, P2 cut aftermath FA reprice still undefined",
+    "capDeadline": "annual order counterfactual tested, real calendar with June transaction date not yet replayed",
+    "futureInjury": "no injury model; stochastic aging and NFL retirement only",
+    "models": "only P0 P1 P2 cut regimes controlled, not complete 4-package S0 A/B/C/D calibrated ranking",
+    "operator": "proxy number of transactions, no measured commissioner minutes"
+  },
+  "validation": {
+    "sourceMatched": true,
+    "pathsFiveYearPrimary": 18,
+    "pathsFiveYearResetControls": 4,
+    "tenYearExtensions": 3,
+    "pathsOverall": 25,
+    "legalFiveYearPrimary": 17,
+    "oneStressGreedyFailure": true,
+    "real2027NFL": false,
+    "realOwners": false,
+    "realTrades": false,
+    "independentNodeCI": false,
+    "sourceBlob": "3005ac081215f04eb62812961511d178cfacdf53",
+    "coreBlob": "d874d24f3d109ec6711f39e9145ec7a98fa81425",
+    "probeBlob": "053c027050339255e3f3df013fb16d4e09ca9ab2",
+    "archiveBlob": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489"
+  }
+}
