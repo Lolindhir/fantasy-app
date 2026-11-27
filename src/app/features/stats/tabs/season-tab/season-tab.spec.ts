@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { firstValueFrom, of } from 'rxjs';
 
 import type { LeagueSummary } from '../../../../core/models/league.models';
@@ -40,6 +41,7 @@ describe('SeasonTabComponent summary loading', () => {
     TestBed.configureTestingModule({
       imports: [SeasonTabComponent],
       providers: [
+        provideRouter([]),
         { provide: DataService, useValue: dataService },
         { provide: TeamSeasonService, useValue: { getLookup: () => of(null) } }
       ]
