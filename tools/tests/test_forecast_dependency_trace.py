@@ -1,7 +1,11 @@
 """AC6A read-trace foundation: actual Python boundary calls on scratch fixtures."""
 from __future__ import annotations
 
+import copy
 import json
+import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -145,6 +149,38 @@ _weekly_roster_rows(Path.cwd(), 2025, 1)
         self.assertIn("EvidenceGap", result.process.stderr)
         self.assertEqual(["recaps-roster"], [row["rule"] for row in classify_reads(result.events, self.rules)])
         self.assertFalse(any(event.get("write") for event in result.events))
+
+    def test_real_powershell_metadata_read_boundary(self):
+        pwsh = shutil.which("pwsh")
+        if pwsh is None:
+            if os.environ.get("CI", "").lower() == "true":
+                self.fail("pwsh is required in CI for the AC6A native runtime witness")
+            self.skipTest("pwsh is not installed locally; PowerShell evidence is incomplete")
+        source = sorted((TOOLS.parent / ROOTS["meta"]).glob("*/metadata.json"))
+        self.assertTrue(source, "Need one configured metadata schema fixture")
+        base = json.loads(source[0].read_text(encoding="utf-8-sig"))
+        season = sorted(base["Seasons"])[0]
+        models = base["Seasons"][season]["Models"]
+        for league in ("league-a", "league-b", "invalid"):
+            fixture = copy.deepcopy(base)
+            fixture["CanonicalLeagueID"] = league
+            if league == "invalid":
+                fixture["Seasons"][season]["Models"]["TeamRange"] = "unknown-fixture-model"
+            self.put(ROOTS["meta"] / league / "metadata.json", fixture)
+        events_path = self.root / "pwsh-events.json"
+        script = MANIFEST.with_name("forecast_metadata_reader_trace.ps1")
+        result = subprocess.run(
+            [pwsh, "-NoProfile", "-NonInteractive", "-File", str(script),
+             "-RepoRoot", str(TOOLS.parent), "-ScratchRoot", str(self.root),
+             "-Season", season, "-ExpectedTeamRange", models["TeamRange"],
+             "-ExpectedWinProb", models["WinProb"], "-EventFile", str(events_path)],
+            cwd=self.root, capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        rows = classify_reads(json.loads(events_path.read_text(encoding="utf-8")), self.rules)
+        self.assertEqual(["pwsh-league-metadata"] * 3, [row["rule"] for row in rows])
+        self.assertEqual(["league-a/metadata.json", "league-b/metadata.json", "invalid/metadata.json"],
+                         [row["path"] for row in rows])
 
     def test_ambiguous_manifest_and_uninstrumented_subprocess_fail_closed(self):
         self.put(Path(DATA_DERIVED_ROOT, "player-week-fantasy", "league-a", "2025", "01.json"),
