@@ -14,6 +14,7 @@ from derived_data_lib.models.season_stats import v1  # noqa: E402
 from derived_data_lib.models.team_range import v1 as team_range  # noqa: E402
 from derived_data_lib.models.win_prob import v1 as win_prob  # noqa: E402
 from derived_data_lib import season_statistics as ss  # noqa: E402
+from derived_data_lib import weekly_recaps as wr  # noqa: E402
 from season_statistics_app_publish import with_team_abbreviations  # noqa: E402
 from derived_data_lib.league_teams import team_abbreviation  # noqa: E402
 
@@ -245,6 +246,55 @@ class WeekGamesTests(unittest.TestCase):
         self.assertIsNone(missing[0]["WinProbability"])
         self.assertIsNone(missing[0]["Teams"][1]["PregameProjection"])
 
+
+    def test_historical_recap_and_statistics_legacy_projection_parity(self) -> None:
+        z = team_range.z_for_level(0.9)
+
+        def projection(points, sigma):
+            return {"Status": "available", "Points": points,
+                    "PredictionRanges": [{"Level": 0.9, "Lower": points - sigma * z,
+                                          "Upper": points + sigma * z}]}
+
+        facts = [{"FantasyMatchupID": "m", "Teams": [
+            {"FantasyTeamID": "1", "FinalScore": 90, "Players": [
+                {"PlayerID": " p1 ", "CanonicalPlayerID": " c1 ", "IsStarter": True},
+                {"PlayerID": "bench", "IsStarter": False},
+            ]},
+            {"FantasyTeamID": "2", "FinalScore": 100, "Players": [
+                {"PlayerID": "p2", "CanonicalPlayerID": "", "IsStarter": True},
+            ]},
+        ]}]
+        identity = {"ByPlayer": {
+            "p1": {"CanonicalPlayerID": "wrong"},
+            "p2": {"CanonicalPlayerID": " c2 "},
+        }, "ByCanonical": {}}
+        team_values = {"1": 1, "2": 2}
+        cases = [
+            ({"c1": projection(120, 10), "c2": projection(100, 10)}, 120.0, 100.0,
+             win_prob.win_probability(120, 10, 100, 10)),
+            ({"c1": projection(-5, 0), "c2": projection(-5, 0)}, -5.0, -5.0, 0.5),
+            ({"c1": projection(0, 0), "c2": projection(-5, 0)}, 0.0, -5.0, 1.0),
+            ({"c1": projection(100, 10)}, 100.0, None, None),
+            ({"c1": projection(100, 10), "c2": {"Status": "insufficient-history"}}, 100.0, None, None),
+            ({}, None, None, None),
+        ]
+        for projections, a, b, raw in cases:
+            with self.subTest(projections=projections):
+                # The identity embedded in the matchup takes precedence over
+                # conflicting fallback evidence, and unknown bench players do not count.
+                projections = {**projections, "wrong": projection(999, 0)}
+                stats = ss.week_games(facts, identity, projections, team_range, win_prob)[0]
+                recap = wr.pregame_win_probabilities(
+                    facts, team_values, identity, projections, team_range, win_prob,
+                )[0]
+                self.assertEqual([a, b], [t["PregameProjection"] for t in stats["Teams"]])
+                self.assertEqual(raw, stats["WinProbability"])
+                pair = win_prob.percent_pair(raw)
+                self.assertEqual(list(pair) if pair else [None, None],
+                                 [t["PregameWinProbability"] for t in recap["Teams"]])
+                winner_probability = 1.0 - raw if raw is not None else None
+                self.assertEqual(win_prob.is_upset(winner_probability), recap["Upset"])
+                self.assertEqual(win_prob.upset_level(winner_probability), recap["UpsetLevel"])
 
 class TeamAbbreviationTests(unittest.TestCase):
     """Issue #1621: the season-specific abbreviation follows the rule of League.json TeamAbbr (tools/derived_data_lib/league_teams.py team_abbreviation)."""
