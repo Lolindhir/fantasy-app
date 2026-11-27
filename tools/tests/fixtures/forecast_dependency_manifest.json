@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "AC6A checkpoint 2: bounded call-site rules for fixture-tested Python historical reads, delivery/comparison, and PowerShell metadata reader. Not a complete dependency inventory. Expand on actual runtime evidence; unknown/ambiguous reads fail closed.",
+  "scope": "AC6A checkpoint 2: bounded call-site rules for fixture-tested Python historical reads, delivery/comparison, transitive Decision Windows readers and PowerShell metadata reader. Not a complete dependency inventory. Expand on actual runtime evidence; unknown/ambiguous reads fail closed.",
   "rules": [
     {
       "id": "recaps-pwf",
@@ -73,6 +73,96 @@
       "caller": null,
       "role": "input",
       "note": "Actual pwsh module reader for versioned league model configuration; missing paths rejected before read."
+    },
+    {
+      "id": "players-pwf-delivery",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_projections",
+      "caller": null,
+      "role": "delivery",
+      "note": "N1: PWF GameHistory projection in independently published Players read model."
+    },
+    {
+      "id": "dw-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Canonical current league settings."
+    },
+    {
+      "id": "dw-canonical-rosters",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/rosters.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Canonical fantasy roster membership."
+    },
+    {
+      "id": "dw-raw-rosters",
+      "root": "source",
+      "pattern": "providers/sleeper/leagues/*/rosters.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_ordered_starter_slots",
+      "role": "input",
+      "note": "N2: raw slot ordering cross-checked against canonical starters."
+    },
+    {
+      "id": "dw-identities",
+      "root": "source",
+      "pattern": "nfl/identities/players.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Canonical player identity bridge."
+    },
+    {
+      "id": "dw-espn-availability",
+      "root": "source",
+      "pattern": "nfl/player-availability/espn.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "N2: current availability observation; absent or unreadable stays unknown."
+    },
+    {
+      "id": "population-nfl-rosters",
+      "root": "source",
+      "pattern": "nfl/rosters/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:roster_basis",
+      "role": "input",
+      "note": "N2: season roster membership incl explicit previous-season fallback."
+    },
+    {
+      "id": "population-weekly-rosters",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:roster_basis",
+      "role": "input",
+      "note": "N2: weekly roster evidence in current player population."
+    },
+    {
+      "id": "population-nfl-draft",
+      "root": "source",
+      "pattern": "nfl/draft/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:draft_basis",
+      "role": "input",
+      "note": "N2: NFL draft evidence in current player population."
+    },
+    {
+      "id": "dw-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Selected repairability model for league and season."
     }
   ]
 }
