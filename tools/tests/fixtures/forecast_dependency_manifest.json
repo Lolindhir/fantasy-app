@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "AC6A checkpoint 2: bounded Python call-site rules for fixture-tested historical reads and delivery/comparison. Not a complete dependency inventory. Expand on actual runtime evidence; unknown/ambiguous reads fail closed.",
+  "scope": "AC6A checkpoint 2: bounded call-site rules for fixture-tested Python historical reads, delivery/comparison, and PowerShell metadata reader. Not a complete dependency inventory. Expand on actual runtime evidence; unknown/ambiguous reads fail closed.",
   "rules": [
     {
       "id": "recaps-pwf",
@@ -64,6 +64,15 @@
       "caller": null,
       "role": "comparison",
       "note": "N3: compare App candidate after calculation, never a forecast input."
+    },
+    {
+      "id": "pwsh-league-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "public/requests/utils/LeagueMetadataUtils.psm1:Get-LeagueMetadata",
+      "caller": null,
+      "role": "input",
+      "note": "Actual pwsh module reader for versioned league model configuration; missing paths rejected before read."
     }
   ]
 }
