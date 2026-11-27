@@ -22,6 +22,11 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
+if __package__:
+    from .data_roots import DATA_DERIVED_ROOT
+else:
+    from data_roots import DATA_DERIVED_ROOT
+
 PER_PAGE = 100
 MAX_SEARCH_RESULTS = 1000
 Fetcher = Callable[[str, dict[str, Any]], dict[str, Any]]
@@ -540,11 +545,11 @@ def verify_publication_commit(
         reasons.add("commit-files-unavailable-or-truncated")
         files = []
     allowed = (
-        "public/data/", "data-derived/player-week-fantasy/",
-        "data-derived/team-week-performance/", "data-derived/league-transactions/",
-        "data-derived/league-drafts/",
+        "public/data/", f"{DATA_DERIVED_ROOT}/player-week-fantasy/",
+        f"{DATA_DERIVED_ROOT}/team-week-performance/", f"{DATA_DERIVED_ROOT}/league-transactions/",
+        f"{DATA_DERIVED_ROOT}/league-drafts/",
     ) if scope == "league" else (
-        "public/data/", "data-derived/league-standings/",
+        "public/data/", f"{DATA_DERIVED_ROOT}/league-standings/",
     )
     if any(not v["filename"].startswith(allowed) for v in files):
         reasons.add("commit-files-outside-writer-scope")

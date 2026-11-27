@@ -54,7 +54,9 @@ SCAN_GLOBS = (
 
 
 def read_model_names(repo_root: Path) -> list[str]:
-    return sorted((p.stem for p in (repo_root / "public/data").glob("*.json")), key=len, reverse=True)
+    # ADR-100: classify the approved new App name even before its first real publication.
+    # This adds a scanned name; no consumer-read exception is granted.
+    return sorted({p.stem for p in (repo_root / "public/data").glob("*.json")} | {"LeagueRecords"}, key=len, reverse=True)
 
 
 def sleeper_functions(repo_root: Path) -> list[str]:

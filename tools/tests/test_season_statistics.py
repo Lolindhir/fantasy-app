@@ -309,5 +309,134 @@ class PersistedProductTests(unittest.TestCase):
             self.assertEqual([], [s["Season"] for s in summary["Seasons"] if s.get("WouldWrite")])
 
 
+
+def reference_biggest_upset(documents):
+    """Frozen pre-ADR-100 selection, retained only for migration regression tests."""
+    candidates = [{"Season": year, **doc["BiggestUpset"]} for year, doc in documents.items()
+                  if doc["BiggestUpset"] is not None]
+    return min(candidates, key=lambda x: (x["WinnerPregameWinProbability"], x["Season"], x["Week"]),
+               default=None)
+
+
+class LeagueRecordsFoundationTests(unittest.TestCase):
+    def source(self, year, chance=None, week=3):
+        return {
+            "Product": "season-statistics", "SchemaVersion": 2,
+            "CanonicalLeagueID": "league-test", "Season": year,
+            "Models": {"SeasonStats": "season-stats-v1", "WinProb": "win-prob-v1"},
+            "Thresholds": {"UpsetWinProbability": 0.35},
+            "AsOf": {"LeagueScoredWeek": 4, "CompletedWeeks": 4},
+            "RegularSeasonGames": 14,
+            "Teams": [{"TeamID": i, "CanonicalLeagueRosterID": f"league-test-{year}-{i}",
+                       "KnownChanceGames": 4} for i in (1, 2)],
+            "BiggestUpset": None if chance is None else {
+                "Week": week, "WinnerTeamID": 1, "LoserTeamID": 2,
+                "WinnerPoints": 100.0, "LoserPoints": 90.0,
+                "WinnerPregameWinProbability": chance,
+            },
+        }
+
+    def test_ties_and_identity_and_null(self):
+        from derived_data_lib.league_records import build, legacy_biggest_upset
+        docs = {2025: self.source(2025, 0.1, 1), 2024: self.source(2024, 0.1, 3)}
+        result = build("league-test", [2025, 2024], docs)
+        self.assertEqual(2024, legacy_biggest_upset(result)["Season"])
+        self.assertEqual("league-test-2024-1", result["Records"]["BiggestUpset"]["WinnerCanonicalLeagueRosterID"])
+        self.assertEqual(result, build("league-test", [2024, 2025], dict(reversed(list(docs.items())))))
+        self.assertIsNone(legacy_biggest_upset(build("league-test", [2024], {2024: self.source(2024)})))
+
+    def test_rejects_missing_season_and_wrong_identity_and_incomplete_weeks(self):
+        from derived_data_lib.league_records import build
+        doc = self.source(2024, 0.1)
+        with self.assertRaises(ValueError):
+            build("league-test", [2024, 2025], {2024: doc})
+        with self.assertRaises(ValueError):
+            build("wrong-league", [2024], {2024: doc})
+        doc["AsOf"]["CompletedWeeks"] = 3
+        with self.assertRaises(ValueError):
+            build("league-test", [2024], {2024: doc})
+
+    def test_materializer_noop_and_legacy_parity(self):
+        import tempfile
+        from league_records_materialize import materialize
+        from derived_data_lib.league_records import legacy_biggest_upset
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            source = output / "season-statistics" / "league-test"
+            source.mkdir(parents=True)
+            docs = {2024: self.source(2024, 0.2), 2025: self.source(2025, 0.1)}
+            for year, doc in docs.items():
+                (source / f"{year}.json").write_text(json.dumps(doc), encoding="utf-8")
+            from unittest.mock import patch
+            lineage = {"CanonicalLeagueID": "league-test", "CurrentCanonicalLeagueSeasonID": "league-test-2025",
+                       "Seasons": [{"Season": year} for year in docs]}
+            with patch("league_records_materialize.manifest", return_value=lineage):
+                preview = materialize(REPO, output, "league-test")
+                path = output / "league-records" / "league-test.json"
+                self.assertFalse(path.exists())
+                self.assertEqual(1, preview["WouldWrite"])
+                first = materialize(REPO, output, "league-test", write=True)
+                self.assertEqual(1, first["Written"])
+                before = path.read_bytes()
+                self.assertEqual(0, materialize(REPO, output, "league-test", write=True)["Written"])
+                self.assertEqual(before, path.read_bytes())
+                self.assertEqual(reference_biggest_upset(docs), legacy_biggest_upset(first["Document"]))
+                (source / "2024.json").unlink()
+                with self.assertRaises(OSError):
+                    materialize(REPO, output, "league-test", write=True)
+                self.assertEqual(before, path.read_bytes())
+
+    def test_delivery_and_compatibility_field_read_same_persisted_record(self):
+        import tempfile
+        from datetime import datetime, timezone
+        from unittest.mock import patch
+        from app_delivery import Writer
+        from derived_data_lib.league_records import build, legacy_biggest_upset
+        from league_records_app_publish import publish as publish_records
+        from season_statistics_app_publish import publish as publish_stats
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "data-derived"
+            source = output / "season-statistics" / "league-test"
+            source.mkdir(parents=True)
+            docs = {2024: self.source(2024, 0.1), 2025: self.source(2025, 0.2)}
+            for year, doc in docs.items():
+                (source / f"{year}.json").write_text(json.dumps(doc), encoding="utf-8")
+            product = build("league-test", list(docs), docs)
+            folder = output / "league-records"
+            folder.mkdir()
+            path = folder / "league-test.json"
+            path.write_text(json.dumps(product), encoding="utf-8")
+            lineage = {"CurrentCanonicalLeagueSeasonID": "league-test-2025"}
+            with patch("season_statistics_app_publish.manifest", return_value=lineage):
+                first = Writer(root, datetime(2026, 1, 1, tzinfo=timezone.utc))
+                publish_records(root, "league-test", first)
+                publish_stats(root, "league-test", "current", first)
+                first.finish()
+                records = json.loads((first.data / "LeagueRecords.json").read_text())
+                statistics = json.loads((first.data / "SeasonStatistics.json").read_text())
+                self.assertEqual(product, records)
+                self.assertEqual(legacy_biggest_upset(product), statistics["BiggestUpsetAllTime"])
+                second = Writer(root, datetime(2026, 1, 2, tzinfo=timezone.utc))
+                publish_records(root, "league-test", second)
+                publish_stats(root, "league-test", "current", second)
+                self.assertEqual([], second.finish())
+                path.unlink()
+                with self.assertRaises(OSError):
+                    publish_records(root, "league-test", second)
+                publish_stats(root, "league-test", "current", second)
+                statistics = json.loads((second.data / "SeasonStatistics.json").read_text())
+                self.assertEqual(legacy_biggest_upset(product), statistics["BiggestUpsetAllTime"])
+                self.assertEqual([], second.finish())
+
+    def test_persisted_inputs_match_existing_selection(self):
+        from derived_data_lib.league_records import legacy_biggest_upset
+        from league_records_materialize import resolve
+        from season_statistics_app_publish import persisted_documents
+        output = REPO / "data-derived"
+        for league in sorted(p.name for p in (output / "season-statistics").iterdir() if p.is_dir()):
+            self.assertEqual(reference_biggest_upset(persisted_documents(output, league)),
+                             legacy_biggest_upset(resolve(REPO, output, league)))
+
 if __name__ == "__main__":
     unittest.main()

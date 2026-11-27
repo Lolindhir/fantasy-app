@@ -43,39 +43,6 @@ export function signClass(value: number | null | undefined): 'pos' | 'neg' | 'ze
   return value > 0 ? 'pos' : 'neg';
 }
 
-export interface BiggestUpsetHighlight {
-  key: string;
-  icon: string;
-  title: string;
-  owner: string;
-  valueDisplay: string;
-  reason: string;
-}
-
-/** Hall of Fame tile of the all-time biggest upset; the generator chose the game, this only renders it. */
-export function buildBiggestUpsetHighlight(
-  current: SeasonStatisticsReadModel | null,
-  bySeason: ReadonlyMap<string, SeasonStatisticsReadModel>
-): BiggestUpsetHighlight | null {
-  const upset = current?.BiggestUpsetAllTime;
-  if (!upset) return null;
-  const doc = upset.Season === current?.Season ? current : bySeason.get(String(upset.Season));
-  const teams = statisticsByTeam(doc?.Teams);
-  const winner = teams.get(String(upset.WinnerTeamID));
-  const loser = teams.get(String(upset.LoserTeamID));
-  if (!winner) return null;
-  const chance = Math.round(upset.WinnerPregameWinProbability * 100);
-  return {
-    key: 'biggest-upset',
-    icon: '💥',
-    title: 'Biggest Upset',
-    owner: winner.Owner,
-    valueDisplay: `${chance}% win chance`,
-    reason: `${upset.Season} Week ${upset.Week}: ${winner.TeamName} beat ${loser?.TeamName ?? 'the favorite'} `
-      + `${formatDecimal(upset.WinnerPoints, 2)}-${formatDecimal(upset.LoserPoints, 2)} with a ${chance}% pregame win chance.`
-  };
-}
-
 export interface SeasonUpsetCard {
   week: number;
   winnerName: string;

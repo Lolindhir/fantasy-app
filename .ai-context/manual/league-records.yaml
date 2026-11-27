@@ -1,0 +1,56 @@
+schemaVersion: 1
+product: league-records
+status: active
+trackingIssue: 1672
+model: league-records-v1
+logicalLayer: Shared Derived Data
+physicalStorage: data-derived/league-records/<CanonicalLeagueID>.json
+purpose: >
+  Consumer-neutral cross-season records from persisted shared facts. V1 contains
+  only BiggestUpset and preserves the existing regular-season selection.
+identity:
+  - CanonicalLeagueID
+  - Model
+  - Season and season-specific CanonicalLeagueRosterID for event participants
+inputs:
+  - Canonical league manifest (expected seasons through current season)
+  - data-derived/season-statistics/<CanonicalLeagueID>/<season>.json
+rules:
+  - A missing expected season or contradictory identity prevents publication.
+  - CompletedWeeks must cover the scored regular-season interval; probability coverage is explicitly reported per team.
+  - A null upstream BiggestUpset means no qualifying known event, not missing data.
+  - Select minimum persisted WinnerPregameWinProbability, then earlier Season, then earlier Week.
+  - Preserve upstream scores, TeamIDs, eligibility, rounding and model versions. No new threshold, no playoffs added.
+  - No consumer file is an input. No clock or hard-coded league/year.
+  - Other record definitions require independent eligibility and tie rules before addition.
+contract:
+  fields: [SchemaVersion, Product, CanonicalLeagueID, Model, Coverage, Records]
+  records: Records.BiggestUpset is null or the existing event fields plus season-specific canonical roster IDs.
+  coverage: Per season source schema/model, scored and completed weeks, regular season length, known chance game counts by team and source threshold.
+materializer: tools/league_records_materialize.py
+validation:
+  - Existing season-statistics regression suite includes selection, missing data, identity, read-only preview, no-op and legacy parity.
+  - Restore probe rebuilds league-records after season-statistics; first live publication and exact parity are required before consumer cutover.
+activation:
+  status: active
+  approvedScope: Existing league-live and update-history rebuild-and-retry writers; only new league-records prefix and additive App delivery.
+  next: Verify App delivery before Hall of Fame cutover.
+  rollback: Remove new writer calls and path allowances; retain inert generated files; restore prior consumer selection if cut over.
+writers:
+  - workflow: .github/workflows/league-live.yml
+    scope: all expected seasons, after successful current season-statistics materialization
+  - workflow: .github/workflows/update-history.yml
+    scope: all expected seasons, after successful full season-statistics materialization
+publication:
+  class: rebuild-and-retry
+  writePrefix: data-derived/league-records
+  failure: Warn and retain previous record on missing or invalid evidence; no consumer cutover until readback.
+  check: Second invocation is read-only and must be a semantic no-op; a failed check aborts the rebuild transaction.
+  schedule: Existing League Live cadence and weekly historical reconciliation, no new trigger.
+appDelivery:
+  path: public/data/LeagueRecords.json
+  publisher: tools/league_records_app_publish.py
+  timestampsKey: LeagueRecords
+  shape: Unchanged persisted shared product.
+  compatibility: SeasonStatistics.json.BiggestUpsetAllTime is a field-only projection of the same shared record, last coherent current file retained if its input is unavailable; no duplicate record selection.
+  activation: App delivery and alias must be published and verified before the Hall of Fame switches to the new file.

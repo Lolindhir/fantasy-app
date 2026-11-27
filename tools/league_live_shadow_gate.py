@@ -18,19 +18,24 @@ import subprocess
 import sys
 from typing import Any
 
+if __package__:
+    from .data_roots import DATA_SOURCE_ROOT, DATA_DERIVED_ROOT, DATA_META_ROOT
+else:
+    from data_roots import DATA_SOURCE_ROOT, DATA_DERIVED_ROOT, DATA_META_ROOT
+
 SCHEMA = 1
 STAGE_INPUTS = {
     "standings": (
-        "data-source", "data-meta", "data-derived", "public/data",
+        DATA_SOURCE_ROOT, DATA_META_ROOT, DATA_DERIVED_ROOT, "public/data",
         "tools", ".ai-context/manual", ".github/workflows",
     ),
     "league": (
-        "data-source", "data-meta", "data-derived", "public/data",
+        DATA_SOURCE_ROOT, DATA_META_ROOT, DATA_DERIVED_ROOT, "public/data",
         "public/requests", "tools", ".ai-context/manual", ".github/workflows",
     ),
 }
 STAGE_OUTPUTS = {
-    "standings": ("public/data/Standings.json", "data-derived/league-standings"),
+    "standings": ("public/data/Standings.json", f"{DATA_DERIVED_ROOT}/league-standings"),
     "league": ("public/data/League.json", "public/data/DecisionWindows.json",
                "public/data/Matchups.json", "public/data/FantasyGameContext.json",
                "public/data/PlayerWeekFantasy.json", "public/data/WeeklyRecaps.json",
@@ -39,7 +44,7 @@ STAGE_OUTPUTS = {
                # future-season partitions and owner parity require separate
                # canonical evidence before any real early exit.
                "public/data/Drafts.json", "public/data/Transactions.json",
-               "data-derived/league-drafts", "data-derived/league-transactions"),
+               f"{DATA_DERIVED_ROOT}/league-drafts", f"{DATA_DERIVED_ROOT}/league-transactions"),
 }
 
 
@@ -334,8 +339,8 @@ def compare_observed_logs(previous_log: str, current_log: str) -> dict[str, Any]
 # is never an independently verified production skip authorization.
 OFFLINE_REQUIRED_SURFACES = {
     "standings": STAGE_OUTPUTS["standings"],
-    "league": (*STAGE_OUTPUTS["league"], "data-derived/player-week-fantasy",
-               "data-derived/team-week-performance"),
+    "league": (*STAGE_OUTPUTS["league"], f"{DATA_DERIVED_ROOT}/player-week-fantasy",
+               f"{DATA_DERIVED_ROOT}/team-week-performance"),
 }
 
 

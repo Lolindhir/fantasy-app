@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "tools") not in sys.path:
     sys.path.insert(0, str(ROOT / "tools"))
 
+from tools.data_roots import DATA_SOURCE_ROOT
 from tools import league_source_refresh_witness as source
 
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
@@ -126,7 +127,7 @@ def audit_full_witness(
             raise ValueError("Untracked, duplicated, or unsafe evidence path")
         _git(root, "ls-files", "--error-unmatch", "--",
              witness_path.as_posix(), *source_paths,
-             "data-source/nfl/game-finality/" + str(season) + ".json")
+             f"{DATA_SOURCE_ROOT}/nfl/game-finality/" + str(season) + ".json")
         succeeded = _timestamp(witness["SucceededAtUtc"])
         age = (at - succeeded).total_seconds()
         if age < 0:

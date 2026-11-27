@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from tools.data_roots import DATA_SOURCE_ROOT, DATA_META_ROOT
 from tools import audit_workflow_job_costs as github
 from tools import league_source_receipt_audit as receipts
 
@@ -30,7 +31,7 @@ NO_CHANGE = "No canonical League data-source changes detected."
 PARTS = {"league-core", "transactions", "drafts"}
 # Conservative coverage of Source inputs and generation logic, not every
 # possible shared NFL/finality/model dependency. Never a live skip criterion.
-INPUT_ROOTS = ("data-source", "data-meta", "tools", ".ai-context", ".github", "public")
+INPUT_ROOTS = (DATA_SOURCE_ROOT, DATA_META_ROOT, "tools", ".ai-context", ".github", "public")
 
 
 def _parse_job_log(log: str) -> dict[str, Any]:

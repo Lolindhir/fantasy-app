@@ -33,6 +33,7 @@ import type { PlayerAwardHistoryReadModel } from '../models/player-award-history
 import type { InjuryImpactReadModel } from '../models/injury-impact.models';
 import type { PlayerInjuryHistoryReadModel } from '../models/player-injury-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
+import type { LeagueRecordsReadModel } from '../models/league-records.models';
 import type { ScheduleOutlookReadModel } from '../models/schedule-outlook.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
 import { buildPlayerWeekProjections, type PlayerWeekProjectionView } from '../../shared/utils/player-week-projection.util';
@@ -356,6 +357,11 @@ export class DataService {
   /** Fantasy Injury Impact per team and week; null when the file is unavailable so the column is hidden. */
   getInjuryImpact(): Observable<InjuryImpactReadModel | null> {
     return this.dataApiService.getInjuryImpactRaw().pipe(catchError(() => of(null)));
+  }
+
+  /** Optional published all-time records; a missing file is not a null record. */
+  getLeagueRecords(): Observable<LeagueRecordsReadModel | null> {
+    return this.dataApiService.getLeagueRecordsRaw().pipe(catchError(() => of(null)));
   }
 
   getSeasonStatistics(): Observable<SeasonStatisticsReadModel> {

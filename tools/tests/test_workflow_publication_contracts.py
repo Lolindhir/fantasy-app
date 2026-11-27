@@ -198,6 +198,18 @@ class WorkflowPublicationContractTests(unittest.TestCase):
                     f"{name} delegates to a workflow that is not rebuild-and-retry classified",
                 )
 
+    def test_league_records_has_only_the_two_bounded_existing_writers(self) -> None:
+        writers = {"league-live.yml", "update-history.yml"}
+        for path in workflow_paths():
+            text = path.read_text(encoding="utf-8")
+            self.assertEqual(path.name in writers, "--path data-derived/league-records" in text)
+            self.assertEqual(path.name in writers, "tools/league_records_materialize.py --write" in text)
+            if path.name in writers:
+                self.assertEqual(self.classifications[path.relative_to(ROOT).as_posix()], "rebuild-and-retry")
+                self.assertIn("tools/league_records_materialize.py --check", text)
+                self.assertLess(text.index("materialize --product season-statistics"),
+                                text.index("tools/league_records_materialize.py --write"))
+
     def test_no_known_app_writer_has_naked_head_main_push(self) -> None:
         for name in sorted(REBUILD_WRITERS):
             with self.subTest(workflow=name):

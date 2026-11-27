@@ -45,11 +45,9 @@ export class TeamListComponent implements OnInit {
   ngOnInit(): void {
     
     forkJoin({
-      players: this.dataService.getAllPlayers(['Salary']),
-      teams: this.dataService.getFantasyTeams(['Salary']),
-      league: this.dataService.getLeague(['Salary']),
+      data: this.dataService.getLeagueWithPlayers(['Salary']),
       ts: this.dataService.getLatestTimestamp()
-    }).subscribe(({ players, teams, league, ts }) => {
+    }).subscribe(({ data: { players, teams, league }, ts }) => {
       // TopPlayers pro Team aus League-Daten
       this.salaryRelevantTeamSize = league.SalaryRelevantTeamSize || 20;
 

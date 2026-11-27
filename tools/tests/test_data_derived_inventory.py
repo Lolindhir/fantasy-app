@@ -35,7 +35,6 @@ class DataDerivedInventoryTests(unittest.TestCase):
         dirs = {p.name for p in DERIVED.iterdir() if p.is_dir()}
         rows = set(_readme_rows())
         self.assertFalse(dirs - rows)
-        # Every documented product has been filled productively and has a directory.
         self.assertFalse(rows - dirs)
 
     def test_contract_materializer_and_writer_workflows_exist(self):

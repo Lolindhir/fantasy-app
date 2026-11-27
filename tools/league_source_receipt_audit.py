@@ -19,6 +19,7 @@ from typing import Any, Callable
 ROOT = str(Path(__file__).resolve().parents[1])
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
+from tools.data_roots import DATA_SOURCE_ROOT
 from tools import audit_workflow_job_costs as github
 
 SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -38,8 +39,8 @@ PUSH_LINE = re.compile(
 )
 NOOP_CANONICAL = "No canonical League data-source changes detected."
 ROOTS = {
-    "raw": ("data-source/providers/sleeper/leagues/", "data-source/leagues/"),
-    "canonical": ("data-source/leagues/", "data-source/_sync/"),
+    "raw": (f"{DATA_SOURCE_ROOT}/providers/sleeper/leagues/", f"{DATA_SOURCE_ROOT}/leagues/"),
+    "canonical": (f"{DATA_SOURCE_ROOT}/leagues/", f"{DATA_SOURCE_ROOT}/_sync/"),
 }
 
 

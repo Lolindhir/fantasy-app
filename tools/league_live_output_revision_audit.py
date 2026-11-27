@@ -20,6 +20,7 @@ from typing import Any, Callable
 ROOT = str(__import__("pathlib").Path(__file__).resolve().parents[1])
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
+from tools.data_roots import DATA_SOURCE_ROOT, DATA_DERIVED_ROOT, DATA_META_ROOT
 from tools import audit_workflow_job_costs as github
 from tools import league_live_shadow_gate as shadow
 
@@ -28,8 +29,8 @@ LEAGUE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 YEAR_FILE = re.compile(r"^(20\d\d|21\d\d)\.json$")
 WEEK_FILE = re.compile(r"^(\d\d)\.json$")
 OUTPUT_PREFIXES = (
-    "data-derived/league-drafts", "data-derived/league-transactions",
-    "data-derived/player-week-fantasy", "data-derived/team-week-performance",
+    f"{DATA_DERIVED_ROOT}/league-drafts", f"{DATA_DERIVED_ROOT}/league-transactions",
+    f"{DATA_DERIVED_ROOT}/player-week-fantasy", f"{DATA_DERIVED_ROOT}/team-week-performance",
 )
 APP_FILES = tuple(p for p in shadow.STAGE_OUTPUTS["league"] if p.endswith(".json"))
 
@@ -174,12 +175,12 @@ def audit_immutable_outputs(fetch: github.Fetcher, commit_sha: str) -> dict[str,
     }
     try:
         snapshot = Snapshot(fetch, commit_sha)
-        meta_rows = snapshot.directory("data-meta")
+        meta_rows = snapshot.directory(DATA_META_ROOT)
         league_ids = sorted(meta_rows)
         if (not league_ids or any(not LEAGUE.fullmatch(name)
                or row["type"] != "tree" for name, row in meta_rows.items())):
             raise SnapshotError("canonical-league-collection-unknown")
-        source_leagues = snapshot.directory("data-source/leagues")
+        source_leagues = snapshot.directory(f"{DATA_SOURCE_ROOT}/leagues")
         if set(source_leagues) != set(league_ids) or any(
             row["type"] != "tree" for row in source_leagues.values()
         ):
@@ -194,8 +195,8 @@ def audit_immutable_outputs(fetch: github.Fetcher, commit_sha: str) -> dict[str,
         output: dict[str, str] = {}
         coverage: list[dict[str, Any]] = []
         for league in league_ids:
-            metadata = snapshot.json(f"data-meta/{league}/metadata.json")
-            manifest = snapshot.json(f"data-source/leagues/{league}/manifest.json")
+            metadata = snapshot.json(f"{DATA_META_ROOT}/{league}/metadata.json")
+            manifest = snapshot.json(f"{DATA_SOURCE_ROOT}/leagues/{league}/manifest.json")
             season_id = manifest.get("CurrentCanonicalLeagueSeasonID")
             current = (int(season_id.rsplit("-", 1)[1])
                        if isinstance(season_id, str)
