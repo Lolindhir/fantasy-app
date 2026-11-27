@@ -1,4 +1,4 @@
-import type { RawNFLTeam, RawPlayer } from '../models/player.models';
+import type { GameHistory, RawNFLTeam, RawPlayer } from '../models/player.models';
 import { mapRawPlayerToPlayer, type PlayerMappingContext } from './player.mapper';
 
 describe('player mapper NFL team resolution', () => {
@@ -43,6 +43,42 @@ describe('player mapper NFL team resolution', () => {
     expect(player.TeamNFL.ID).toBe('ZZZ');
     expect(player.TeamNFL.Name).toBe('Unknown team');
     expect(player.TeamNFL.Logo).toBeTruthy();
+  });
+
+  it('distinguishes missing game history from recorded zero and negative points', () => {
+    const raw = makeRawPlayer('AAA');
+    const game = (week: number, points: number): GameHistory => ({
+      GameID: `game-${week}`,
+      TeamID: 'AAA',
+      TeamAbv: 'AAA',
+      GameDetails: {
+        Week: week, WeekFinal: true, WeekScored: true, WeekPlayoff: false,
+        Date: '', Home: 'AAA', HomeID: 'AAA', Away: 'BBB', AwayID: 'BBB',
+        HomePoints: 0, AwayPoints: 0
+      },
+      FantasyPoints: points,
+      SnapCount: 1,
+      SnapPercentage: 1,
+      Attempts: 0
+    });
+    const zero = game(1, 0);
+    const negative = game(3, -2.5);
+    raw.GameHistory = [zero, negative];
+    const player = mapRawPlayerToPlayer(raw, { ...context, currentWeek: 3 });
+
+    expect(player.GameHistory).toBe(raw.GameHistory);
+    expect(player.GameHistoryFull?.map(row => [row.Week, row.Game?.FantasyPoints ?? null]))
+      .toEqual([[1, 0], [2, null], [3, -2.5]]);
+    expect(player.GameHistoryFull?.[0].Game).toBe(zero);
+    expect(player.GameHistoryFull?.[1].Game).toBeNull();
+    expect(player.GameHistoryFull?.[2].Game).toBe(negative);
+  });
+
+  it('keeps absent raw history absent and provides only missing display rows', () => {
+    const raw = makeRawPlayer('AAA');
+    const player = mapRawPlayerToPlayer(raw, { ...context, currentWeek: 2 });
+    expect(player.GameHistory).toBeUndefined();
+    expect(player.GameHistoryFull?.map(row => row.Game)).toEqual([null, null]);
   });
 
   it('keeps the free-agent team for free agents regardless of their team reference', () => {

@@ -87,6 +87,11 @@ projectionJoin:
     Result is "met" when the game FantasyPoints reach the projection (equal counts) and "missed" below it. It is classified
     only when the week is final (GameDetails.WeekFinal) and the product Actual state is final; otherwise null. The
     classification exists once, in the generator; the frontend only shows it (green met, red missed).
+  gameLogDisplay: >-
+    Angular GameHistoryFull is a display-only list of week rows with a nullable Game reference. A missing published
+    GameHistory entry is not a game, a zero score, a bye or a diagnosis; render an unavailable dash. Preserve recorded
+    FantasyPoints verbatim, including zero and negative values. Projection consumers continue to read the unmodified
+    GameHistory. Opponent display uses the recorded game's team identity, not the player's present affiliation.
   unchanged: >-
     The Form grading keeps its published game objects without Projection (copies are taken before the join); all other fields
     and the semantic no-op comparison are unchanged.
