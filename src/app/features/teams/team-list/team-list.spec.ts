@@ -1,3 +1,4 @@
+import { of } from 'rxjs';
 import type { Player } from '../../../core/models/fantasy.models';
 import type { DataService } from '../../../core/services/data.service';
 import type { MatDialog } from '@angular/material/dialog';
@@ -28,6 +29,30 @@ describe('legacy team salary view L10', () => {
       CapOutlook: withOutlook ? { Current: { Usage: 180 }, Projected: { Usage: 200 } } : undefined
     };
   }
+
+  it('loads one combined league context and preserves published cap values', () => {
+    const timestamp = '2026-11-27T00:00:00Z';
+    const getLeagueWithPlayers = jasmine.createSpy('getLeagueWithPlayers').and.returnValue(of({
+      league: { SalaryRelevantTeamSize: 2, SalaryCap: 300, SalaryCapProjected: 320, SeasonAsNumber: 2026, IsFinished: false },
+      players,
+      teams: [team()],
+      drafts: []
+    }));
+    const getLatestTimestamp = jasmine.createSpy('getLatestTimestamp').and.returnValue(of(timestamp));
+    const data = { getLeagueWithPlayers, getLatestTimestamp } as unknown as DataService;
+    const view = new TeamListComponent(data, {} as MatDialog);
+
+    view.ngOnInit();
+
+    expect(getLeagueWithPlayers).toHaveBeenCalledOnceWith(['Salary']);
+    expect(getLatestTimestamp).toHaveBeenCalledTimes(1);
+    expect(view.salaryCap).toBe(300);
+    expect(view.salaryCapProjected).toBe(320);
+    expect(view.fantasyTeams[0].Salary).toBe(180);
+    expect(view.fantasyTeams[0].SalaryProjected).toBe(200);
+    expect(view.allPlayers.length).toBe(3);
+    expect(view.timestamp).toBe(timestamp);
+  });
 
   it('uses published central cap for an unchanged real roster', () => {
     const { view, calculate } = component();
