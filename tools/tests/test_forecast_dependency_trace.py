@@ -757,6 +757,136 @@ print('AC6A_WRITES=' + json.dumps([r['ChangedCount'] for r in reports]))
         print(f"AC6A PWF/TWP: PWF sample partitions={len(calculated)}, "
               f"official TWP partitions={len(official)}, byte parity=true", flush=True)
 
+    @deep_only("Real App delivery of accepted current/history forecast products")
+    def test_real_app_forecast_delivery_from_accepted_products(self):
+        # App filenames have no league dimension. Exercise each actual league
+        # in its own scratch root, with accepted upstream products fixed.
+        from league_metadata import list_league_ids
+        from league_standings_sources import manifest, manifest_seasons, current_season
+
+        checkout = TOOLS.parent
+        leagues = list_league_ids(checkout / ROOTS["meta"])
+        self.assertTrue(leagues)
+        for league in leagues:
+            with self.subTest(league=league), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                lineage = manifest(checkout, league)
+                current = current_season(lineage)
+                years = [year for year in manifest_seasons(lineage) if year <= current]
+                for key in ("source", "canonical", "meta"):
+                    upstream = checkout / ROOTS[key]
+                    if upstream.is_dir():
+                        (root / ROOTS[key]).symlink_to(upstream, target_is_directory=True)
+                out = root / ROOTS["derived"]
+                out.mkdir()
+                for product in ("player-week-fantasy", "player-valuation", "season-statistics",
+                                "league-records", "weekly-recaps", "matchup-context",
+                                "league-schedule-outlook", "team-injury-impact"):
+                    upstream = checkout / ROOTS["derived"] / product
+                    self.assertTrue(upstream.is_dir(), product)
+                    (out / product).symlink_to(upstream, target_is_directory=True)
+                # Select an explicit accepted PWF partition for delivery; no
+                # prediction of a different target from this file inventory.
+                pf = out / "player-week-fantasy" / league / str(current)
+                weeks = sorted(int(p.stem) for p in pf.glob("*.json"))
+                self.assertTrue(weeks)
+                week = weeks[-1]
+                app = root / ROOTS["app"]
+                app.mkdir(parents=True)
+                # Legacy FantasyGameContext history delivery includes existing
+                # archive names. Seed that coverage only (wrong bodies), so
+                # all eligible earlier seasons are actually exercised.
+                for year in years:
+                    if year >= current or year < 2022:
+                        continue
+                    target = app / "past_seasons" / "FantasyGameContext" / f"FantasyGameContext_{year}.json"
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text('{"poison": true}', encoding="utf-8")
+                code = f"""
+from pathlib import Path
+from datetime import datetime, timezone
+import json
+from app_delivery import Writer
+import matchup_context_app_publish as c
+import weekly_recaps_app_publish as w
+import season_statistics_app_publish as s
+import league_schedule_outlook_app_publish as o
+import injury_impact_app_publish as i
+import player_week_fantasy_app_publish as p
+import players_app_publish as players
+root = Path.cwd()
+league = {league!r}
+year = {current!r}
+now = datetime(year, 11, 28, 12, tzinfo=timezone.utc)
+writer = Writer(root, now)
+c.write_current(root, league, writer, now)
+c.write_history(root, league, writer, now)
+w.write_current(root, league, writer)
+w.write_history(root, league, writer)
+w.write_award_history(root, league, writer)
+s.publish(root, league, 'all', writer)
+o.publish(root, league, writer)
+writer.put('InjuryImpact.json', i.render(root, league), 'InjuryImpact')
+changed = writer.finish()
+_, pwf_changed = p.materialize_app_player_week_fantasy(root, league, year, {week!r})
+players_changed, warnings = players.write(root, league, now.date().isoformat(), now)
+print('AC6A_WRITES=' + json.dumps([len(changed), int(pwf_changed), int(players_changed)]))
+"""
+                def run_delivery():
+                    result = trace_python(root, ["-c", code], timeout=480)
+                    self.assertEqual(0, result.process.returncode,
+                                     result.process.stdout + result.process.stderr)
+                    uncovered = {}
+                    for event in result.events:
+                        if event["kind"] == "open" and event["read"]:
+                            matches = [rule.id for rule in self.rules if rule.matches(event)]
+                            if len(matches) != 1:
+                                key = (event["root"], tuple(event["sites"][:2]), tuple(matches))
+                                uncovered.setdefault(key, event["path"])
+                    self.assertFalse(uncovered, repr(uncovered))
+                    rows = classify_reads(result.events, self.rules)
+                    self.assertTrue(any(row["role"] == "delivery" for row in rows))
+                    self.assertTrue(all(row["role"] == "comparison"
+                                        for row in rows if row["root"] == "app"))
+                    writes = [event for event in result.events if event.get("write")]
+                    self.assertTrue(all(event["root"] == "app" for event in writes), writes[:10])
+                    summary = next(line.split("=", 1)[1] for line in result.process.stdout.splitlines()
+                                   if line.startswith("AC6A_WRITES="))
+                    return sum(json.loads(summary)), len(writes), rows
+
+                def snapshot():
+                    return {p.relative_to(app).as_posix(): p.read_bytes()
+                            for p in sorted(app.rglob("*.json"))
+                            if "backup" not in p.relative_to(app).parts}
+
+                first, writes, reads = run_delivery()
+                self.assertGreater(first, 0)
+                self.assertGreater(writes, 0)
+                expected = snapshot()
+                for name in ("Matchups", "FantasyGameContext", "MatchupProjections",
+                             "WeeklyRecaps", "SeasonStatistics", "ScheduleOutlook",
+                             "InjuryImpact", "PlayerWeekFantasy", "Players"):
+                    self.assertIn(name + ".json", expected)
+                player_rows = json.loads(expected["Players.json"])
+                projected = [g["Projection"] for row in player_rows
+                             for g in row.get("GameHistory") or []
+                             if g.get("Projection") is not None]
+                self.assertTrue(projected, "N1 did not exercise GameHistory projections")
+                second, writes, reads = run_delivery()
+                self.assertEqual((0, 0), (second, writes))
+                self.assertEqual(expected, snapshot())
+                # Candidate model values must not be derived from stale App
+                # delivery values. Keep timestamp bookkeeping unchanged.
+                for name in ("MatchupProjections.json", "SeasonStatistics.json", "PlayerWeekFantasy.json"):
+                    (app / name).write_text('{"poison": true}', encoding="utf-8")
+                (app / "Players.json").write_text("[]", encoding="utf-8")
+                repaired, writes, reads = run_delivery()
+                self.assertGreater(repaired, 0)
+                self.assertGreater(writes, 0)
+                self.assertEqual(expected, snapshot())
+                print(f"AC6A App delivery {league}: files={len(expected)}, "
+                      f"GameHistory projections={len(projected)}, poisoned repair parity=true", flush=True)
+
     def test_real_powershell_metadata_read_boundary(self):
         pwsh = shutil.which("pwsh")
         if pwsh is None:
