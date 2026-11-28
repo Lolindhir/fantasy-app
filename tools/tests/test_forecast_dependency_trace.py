@@ -889,6 +889,54 @@ print('AC6A_WRITES=' + json.dumps([len(changed), int(pwf_changed), int(players_c
                 print(f"AC6A App delivery {league}: files={len(expected)}, "
                       f"GameHistory projections={len(projected)}, poisoned repair parity=true", flush=True)
 
+    def test_fm_external_projection_scoring_is_separate_from_internal_forecasts(self):
+        # Actual FM canonical scoring reader + external projection adapter.
+        # This is a bounded runtime witness, not a full FM Operations build.
+        for league, pass_td in (("league-a", 4), ("league-b", 5)):
+            self.put(ROOTS["source"] / "leagues" / league / "manifest.json", {
+                "CanonicalLeagueID": league,
+                "CurrentCanonicalLeagueSeasonID": f"{league}-2025",
+                "Seasons": [{"CanonicalLeagueSeasonID": f"{league}-2025", "Season": 2025}],
+            })
+            self.put(ROOTS["source"] / "leagues" / league / "seasons" / "2025" / "league.json", {
+                "CanonicalLeagueID": league, "Season": 2025,
+                "ScoringSettings": {"pass_yd": 0.04, "pass_td": pass_td, "pass_int": -1,
+                                    "rush_yd": 0.1, "rush_td": 6},
+            })
+            self.put(ROOTS["derived"] / "player-week-fantasy" / league / "2025" / "01.json",
+                     {"Poison": "not external season stats"})
+        for name in ("MatchupProjections", "PlayerWeekFantasy", "ScheduleOutlook", "League"):
+            self.put(ROOTS["app"] / (name + ".json"), {"Poison": True})
+        script_dir = TOOLS.parent / "fantasy-management" / "_ai" / "scripts"
+        result = self.run_code(f"""
+from pathlib import Path
+from types import SimpleNamespace
+import sys
+sys.path.insert(0, {str(script_dir)!r})
+from canonical_league_ownership import load_canonical_league_scoring_settings
+from build_player_signal_dataset_with_projection_extensions import projection_view_factory
+source = SimpleNamespace(definition={{
+    'source_id': 'external-fixture',
+    'output': {{'section': 'projections', 'key': 'external-fixture'}},
+    'format_context': {{'position_scope': 'QB'}},
+}})
+result = {{'source_id': 'external-fixture', 'coverage_status': 'listed',
+           'applicable': True, 'listed': True, 'join_method': 'fixture',
+           'signals': {{'pass_yards': 4000, 'pass_touchdowns': 30,
+                       'interceptions': 10, 'rush_yards': 500, 'rush_touchdowns': 5,
+                       'percentile': 80}}}}
+for league, expected in (('league-a', 350.0), ('league-b', 380.0)):
+    scoring = load_canonical_league_scoring_settings(Path.cwd(), canonical_league_id=league)
+    view = projection_view_factory(scoring)([source], {{'external-fixture': result}})
+    assert view['providers']['external-fixture']['league_scoring']['core_points'] == expected, view
+    assert view['summary']['provider_fantasy_points_policy'] == 'kept_separate_not_averaged'
+""")
+        rows = classify_reads(result.events, self.rules)
+        self.assertEqual(["fm-scoring-manifest", "fm-scoring-league"] * 2,
+                         [row["rule"] for row in rows])
+        self.assertTrue(all(row["root"] == "source" for row in rows))
+        self.assertFalse(any(event.get("write") for event in result.events))
+
     def test_real_powershell_metadata_read_boundary(self):
         pwsh = shutil.which("pwsh")
         if pwsh is None:

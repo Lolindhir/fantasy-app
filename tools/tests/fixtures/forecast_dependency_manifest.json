@@ -1495,6 +1495,24 @@
       "caller": "tools/players_game_history.py:build_game_histories",
       "role": "delivery",
       "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "fm-scoring-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "fantasy-management/_ai/scripts/canonical_league_ownership.py:_read_json",
+      "caller": "fantasy-management/_ai/scripts/canonical_league_ownership.py:resolve_current_canonical_season",
+      "role": "delivery",
+      "note": "FM external-season projection adapter selects the canonical current league, not an App projection."
+    },
+    {
+      "id": "fm-scoring-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "fantasy-management/_ai/scripts/canonical_league_ownership.py:_read_json",
+      "caller": "fantasy-management/_ai/scripts/canonical_league_ownership.py:load_canonical_league_scoring_settings",
+      "role": "delivery",
+      "note": "Canonical scoring settings reconcile external provider season stats; not internal weekly team forecasts."
     }
   ]
 }
