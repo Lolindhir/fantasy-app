@@ -274,6 +274,22 @@ describe('DataService', () => {
       );
     }
 
+    it('loads raw membership without projections and enriches the same context only on demand', async () => {
+      const context = createFantasyGameContext();
+      stub(context, createPlayerWeekFantasy(), createMatchupProjections());
+      const base = await firstValueFrom(service.getFantasyGameContextBase());
+      expect(base).toBe(context);
+      expect(dataApiService.getPlayerWeekFantasyRaw).not.toHaveBeenCalled();
+      expect(dataApiService.getMatchupProjectionsRaw).not.toHaveBeenCalled();
+
+      const enriched = await firstValueFrom(service.getFantasyGameContextWithProjections(base));
+      expect(dataApiService.getFantasyGameContextRaw).toHaveBeenCalledTimes(1);
+      expect(dataApiService.getPlayerWeekFantasyRaw).toHaveBeenCalledTimes(1);
+      expect(dataApiService.getMatchupProjectionsRaw).toHaveBeenCalledTimes(1);
+      expect(enriched.FantasyMatchups[0].Projection?.Teams.length).toBe(2);
+      expect(base.FantasyMatchups[0].Projection).toBeUndefined();
+    });
+
     it('joins player projections, display settings and matchup projections by id', async () => {
       stub(createFantasyGameContext(), createPlayerWeekFantasy(), createMatchupProjections());
 

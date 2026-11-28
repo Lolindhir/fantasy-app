@@ -36,6 +36,9 @@
       </mat-form-field>
     </div>
 
+    @if (matchupOpenError()) {
+      <p role="status">Matchup details could not be loaded. Please try again.</p>
+    }
     @if (!data()) {
       <mat-card class="weeks-empty-card">
         <mat-card-content>Loading season…</mat-card-content>
@@ -166,7 +169,8 @@
               [class.week-matchup--schedule]="overview"
               [class.week-matchup--open]="matchup.state === 'open'"
               [class.week-matchup--static]="!canOpenWeekMatchup(week, matchup.matchupID)"
-              [disabled]="!canOpenWeekMatchup(week, matchup.matchupID)"
+              [disabled]="!canOpenWeekMatchup(week, matchup.matchupID) || openingMatchup() !== null"
+              [attr.aria-busy]="openingMatchup() === matchup.matchupID ? 'true' : null"
               [attr.aria-label]="scheduleMatchupLabel(matchup)"
               (click)="openWeekMatchup(week, matchup.matchupID)">
               @if (matchup.playoffLabel) {
