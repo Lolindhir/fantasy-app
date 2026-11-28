@@ -1,17 +1,29 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { BehaviorSubject, combineLatest, of } from 'rxjs';
-import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, combineLatest, defer, of } from 'rxjs';
+import { catchError, distinctUntilChanged, map, shareReplay, startWith, switchMap } from 'rxjs/operators';
 import { DataService } from '../../core/services/data.service';
 import type { PastSeasonIndexEntry } from '../../core/services/data-api.service';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { TeamSeasonService, teamsWithSeasonIdentity } from '../../shared/services/team-season.service';
 import { DraftsViewModelService } from './services/drafts-view-model.service';
+import type { DraftViewModel } from './models/drafts-view.models';
 import { CurrentDraftsTabComponent } from './tabs/current-drafts/current-drafts-tab';
 import { FutureDraftsTabComponent } from './tabs/future-drafts/future-drafts-tab';
 
 
 type DraftsTab = 'current' | 'future' | 'past';
+
+interface PastDraftsState {
+  pastSeasons: PastSeasonIndexEntry[];
+  selectedPastSeason: string | null;
+  pastDrafts: DraftViewModel[];
+  pastLoading: boolean;
+}
+
+const EMPTY_PAST: PastDraftsState = {
+  pastSeasons: [], selectedPastSeason: null, pastDrafts: [], pastLoading: false
+};
 
 @Component({
   selector: 'app-drafts-page',
@@ -29,91 +41,70 @@ export class DraftsPageComponent {
   private dataService = inject(DataService);
   private draftsViewModelService = inject(DraftsViewModelService);
   private teamSeasons = inject(TeamSeasonService);
-  private teamSeasonLookup$ = this.teamSeasons.getLookup().pipe(catchError(() => of(null)));
-  private selectedPastSeasonSubject = new BehaviorSubject<string | null>(null);
+  private readonly selectedPastSeasonSubject = new BehaviorSubject<string | null>(null);
+  private readonly activeTabSubject = new BehaviorSubject<DraftsTab>('current');
 
-  activeTab: DraftsTab = 'current';
+  get activeTab(): DraftsTab {
+    return this.activeTabSubject.value;
+  }
 
-  private leagueData$ = this.dataService.getLeagueWithPlayers().pipe(
+  private readonly leagueData$ = this.dataService.getLeagueWithPlayers().pipe(
     shareReplay(1)
   );
 
-  private pastSeasons$ = combineLatest([
-    this.dataService.getPastSeasonsIndex(),
+  // The index and historical identities are not prerequisites for Current or Future.
+  private readonly pastSeasons$ = combineLatest([
+    defer(() => this.dataService.getPastSeasonsIndex()),
     this.leagueData$
   ]).pipe(
     map(([index, leagueData]) => this.getPastDraftSeasons(index.Seasons ?? [], leagueData.league.Season)),
-    tap(seasons => {
-      const selectedSeason = this.selectedPastSeasonSubject.value;
-      const fallbackSeason = seasons[0]?.Season ?? null;
-      const selectionIsAvailable = !!selectedSeason && seasons.some(entry => entry.Season === selectedSeason);
-
-      if (!selectionIsAvailable && selectedSeason !== fallbackSeason) {
-        this.selectedPastSeasonSubject.next(fallbackSeason);
-      }
-    }),
     catchError(() => of([] as PastSeasonIndexEntry[])),
-    shareReplay(1)
+    shareReplay({ bufferSize: 1, refCount: true })
   );
 
-  private pastDrafts$ = combineLatest([
+  private readonly pastDrafts$ = combineLatest([
     this.leagueData$,
     this.pastSeasons$,
-    this.selectedPastSeasonSubject,
-    this.teamSeasonLookup$
+    this.selectedPastSeasonSubject.pipe(distinctUntilChanged()),
+    defer(() => this.teamSeasons.getLookup()).pipe(catchError(() => of(null)))
   ]).pipe(
     switchMap(([leagueData, pastSeasons, selectedSeason, teamSeasonLookup]) => {
-      const season = selectedSeason ?? pastSeasons[0]?.Season ?? null;
-      const selectedEntry = season ? pastSeasons.find(entry => entry.Season === season) : undefined;
+      const selectedEntry = pastSeasons.find(entry => entry.Season === selectedSeason) ?? pastSeasons[0];
+      const season = selectedEntry?.Season ?? null;
+      const selection = { pastSeasons, selectedPastSeason: season };
       const draftsPath = selectedEntry?.Resources?.Drafts?.Path;
-      const draftsExist = selectedEntry?.Resources?.Drafts?.Exists === true;
-
-      if (!draftsPath || !draftsExist) {
-        return of([]);
+      if (!draftsPath || selectedEntry?.Resources?.Drafts?.Exists !== true) {
+        return of({ ...selection, pastDrafts: [], pastLoading: false } satisfies PastDraftsState);
       }
 
       return this.dataService.getPastDraftsRaw(draftsPath).pipe(
-        // Past drafts show the team identity of that draft's season (Issue #774); picks stay assigned to the same TeamIDs.
+        // Historical identity and PlayerRef precedence remain owned by the existing mapper.
         map(drafts => this.draftsViewModelService.createDraftViewModels(
           drafts, teamsWithSeasonIdentity(leagueData.teams, teamSeasonLookup, season), leagueData.players)),
-        catchError(() => of([]))
+        catchError(() => of([] as DraftViewModel[])),
+        map(pastDrafts => ({ ...selection, pastDrafts, pastLoading: false })),
+        startWith({ ...selection, pastDrafts: [], pastLoading: true })
       );
     }),
-    shareReplay(1)
+    startWith({ ...EMPTY_PAST, pastLoading: true })
   );
 
-  vm$ = combineLatest([
-    this.leagueData$,
-    this.pastSeasons$,
-    this.selectedPastSeasonSubject,
-    this.pastDrafts$
-  ]).pipe(
-    map(([leagueData, pastSeasons, selectedSeason, pastDrafts]) => {
-      const draftVm = this.draftsViewModelService.createDraftsViewModel(
-        leagueData.league,
-        leagueData.drafts,
-        leagueData.teams,
-        leagueData.players
-      );
-      const resolvedPastSeason = selectedSeason ?? pastSeasons[0]?.Season ?? null;
-
-      return {
-        currentSeason: draftVm.currentSeason,
-        currentSeasonDrafts: draftVm.currentSeasonDrafts,
-        futureDrafts: draftVm.futureDrafts,
-        draftCount: draftVm.draftCount,
-        tradedPickCount: draftVm.tradedPickCount,
-        pickCount: draftVm.pickCount,
-        pickedCount: draftVm.pickedCount,
-        pastSeasons,
-        selectedPastSeason: resolvedPastSeason,
-        pastDrafts
-      };
-    })
+  private readonly currentDrafts$ = this.leagueData$.pipe(
+    map(leagueData => this.draftsViewModelService.createDraftsViewModel(
+      leagueData.league, leagueData.drafts, leagueData.teams, leagueData.players))
   );
+
+  // A single subscription owns the current tab. Leaving Past cancels any in-flight archive read.
+  readonly vm$ = combineLatest([
+    this.currentDrafts$,
+    this.activeTabSubject.pipe(
+      distinctUntilChanged(),
+      switchMap(tab => tab === 'past' ? this.pastDrafts$ : of(EMPTY_PAST))
+    )
+  ]).pipe(map(([draftVm, past]) => ({ ...draftVm, ...past })));
 
   selectTab(tab: DraftsTab): void {
-    this.activeTab = tab;
+    this.activeTabSubject.next(tab);
   }
 
   selectPastSeason(season: string): void {
