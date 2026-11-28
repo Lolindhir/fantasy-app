@@ -68,7 +68,7 @@ describe('hall of fame view util', () => {
       { PlayerID: 'b', Name: 'Second', Count: 4 },
       { PlayerID: 'c', Name: 'Third', Count: 4 }
     ] }, Players: [{ PlayerID: 'b', Picture: 'historic.png' }] } as unknown as PlayerAwardHistoryReadModel;
-    const current: PlayerIdentitySummary[] = [{ ID: 'a', Picture: 'current.png', TeamNFL: { ID: 'NYG', Name: 'Giants', Logo: 'nfl.png', Abv: 'NYG' } }];
+    const current: PlayerIdentitySummary[] = [{ ID: 'a', Name: 'Current A', Position: 'QB', Picture: 'current.png', TeamNFL: { ID: 'NYG', Name: 'Giants', Logo: 'nfl.png', Abv: 'NYG' } }];
     const [award] = buildHallOfFameSections(leagueWith([], '2026', false), [], null, history, current).playerLegends;
     expect(award.valueDisplay).toBe('4×');
     expect(award.players?.map(player => player.name)).toEqual(['First', 'Second', 'Third']);

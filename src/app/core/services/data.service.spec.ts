@@ -108,7 +108,7 @@ describe('DataService', () => {
 
   it('loads only requested player identity summaries from Players and NFL Teams', async () => {
     dataApiService.getPlayersRaw.and.returnValue(of([
-      { ID: 'a', Picture: 'a.png', TeamID: '7', IsFreeAgent: false },
+      { ID: 'a', Name: 'Example A', Position: 'QB', Picture: 'a.png', TeamID: '7', IsFreeAgent: false },
       { ID: 'b', Picture: 'b.png', TeamID: 'AAA', IsFreeAgent: true },
       { ID: 'c', Picture: 'c.png', TeamID: 'missing', IsFreeAgent: false },
       { ID: 'other', Picture: 'other.png', TeamID: 'AAA', IsFreeAgent: false }
@@ -118,7 +118,7 @@ describe('DataService', () => {
 
     const identities = await firstValueFrom(service.getPlayerIdentitySummaries(['a', 'b', 'c', 'a', 'absent']));
     expect(identities.map(player => player.ID)).toEqual(['a', 'b', 'c']);
-    expect(identities[0]).toEqual({ ID: 'a', Picture: 'a.png', TeamNFL: nfl });
+    expect(identities[0]).toEqual({ ID: 'a', Name: 'Example A', Position: 'QB', Picture: 'a.png', TeamNFL: nfl });
     expect(identities[1].TeamNFL.ID).toBe('FA');
     expect(identities[2].TeamNFL.Name).toBe('Unknown team');
     expect(dataApiService.getPlayersRaw).toHaveBeenCalledTimes(1);

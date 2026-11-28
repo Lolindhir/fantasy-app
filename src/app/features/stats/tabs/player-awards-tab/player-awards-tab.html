@@ -11,6 +11,8 @@
       </label>
     </div>
 
+    <p *ngIf="playerOpenError()" class="pa-note" role="status">Player details could not be loaded. Please try again.</p>
+
     <div class="pa-table" role="table" aria-label="Weekly player awards" *ngIf="rows().length > 0; else noRows">
       <div class="pa-row pa-row--head" role="row">
         <span class="pa-rank" role="columnheader">#</span>
@@ -22,7 +24,7 @@
       <div *ngFor="let row of visibleRows(); trackBy: trackRow" class="pa-row" role="row">
         <span class="pa-rank" role="cell">{{ row.rank }}</span>
         <span class="pa-player" role="cell">
-          <button type="button" class="pa-identity" [disabled]="!row.player" (click)="openPlayer(row.player)" [attr.aria-label]="'Open ' + row.name + ' details'">
+          <button type="button" class="pa-identity" [disabled]="!row.interactive || openingPlayerId() !== null" [attr.aria-busy]="openingPlayerId() === row.playerId ? 'true' : null" (click)="openPlayer(row)" [attr.aria-label]="'Open ' + row.name + ' details'">
             <span class="pa-photo-wrap">
               <img *ngIf="row.picture" class="pa-photo" [src]="row.picture" alt="" loading="lazy" />
               <span *ngIf="!row.picture" class="pa-photo pa-photo--empty" aria-hidden="true"></span>
