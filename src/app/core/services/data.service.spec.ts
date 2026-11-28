@@ -64,7 +64,8 @@ describe('DataService', () => {
     };
     dataApiService.getMovesData.and.returnValue(of(movesData));
 
-    const transactions = await firstValueFrom(service.getTransactions());
+    const { transactions, nflTeams } = await firstValueFrom(service.getLeagueWithPlayersAndTransactions());
+    expect(nflTeams).toBe(movesData.nflTeamsRaw);
 
     expect(dataApiService.getMovesData).toHaveBeenCalledTimes(1);
     expect(freeAgentMarketService.enrich).toHaveBeenCalled();

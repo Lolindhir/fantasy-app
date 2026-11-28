@@ -1,6 +1,6 @@
 import { GlyphComponent } from '../glyph/glyph';
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, Optional, TemplateRef } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 
@@ -8,6 +8,7 @@ import type { DecisionWindowsReadModel } from '../../../core/models/decision-win
 import type { FantasyTeam, League } from '../../../core/models/league.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
+import { OverviewDataScope } from '../../services/overview-data-scope.service';
 import { createAdaptiveCountdownClock } from '../../utils/countdown-clock.util';
 import {
   buildLeagueTimelineView,
@@ -48,7 +49,8 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
 
   constructor(
     private dataService: DataService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    @Optional() private readonly overviewData: OverviewDataScope | null = null
   ) {}
 
   ngOnInit(): void {
@@ -60,7 +62,7 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
     if (!this.isActiveLeagueStatus()) return;
 
     this.subscriptions.add(
-      this.dataService.getNflTeams().subscribe({
+      (this.overviewData?.nflTeams$ ?? this.dataService.getNflTeams()).subscribe({
         next: teams => {
           this.nflTeams = teams;
         },
@@ -71,7 +73,7 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.add(
-      this.dataService.getDecisionWindows().subscribe({
+      (this.overviewData?.decisionWindows$ ?? this.dataService.getDecisionWindows()).subscribe({
         next: model => {
           this.decisionWindows = model;
           this.decisionWindowsUnavailable = false;

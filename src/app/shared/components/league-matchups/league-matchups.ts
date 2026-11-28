@@ -27,6 +27,7 @@ import type {
 import type { NFLTeam } from '../../../core/models/player.models';
 import type { WeeklyRecapsReadModel } from '../../../core/models/weekly-recap.models';
 import { DataService } from '../../../core/services/data.service';
+import { OverviewDataScope } from '../../services/overview-data-scope.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import {
   getMustWatchGames,
@@ -126,6 +127,7 @@ export class LeagueMatchupsComponent {
   @Input({ required: true }) league!: League;
 
   private readonly dataService = inject(DataService);
+  private readonly overviewData = inject(OverviewDataScope, { optional: true });
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
   private readonly rivalryService = inject(TeamRivalryService);
@@ -153,7 +155,7 @@ export class LeagueMatchupsComponent {
     { initialValue: null }
   );
 
-  private readonly nflTeams$ = this.dataService.getNflTeams().pipe(
+  private readonly nflTeams$ = (this.overviewData?.nflTeams$ ?? this.dataService.getNflTeams()).pipe(
     catchError(() => of([] as NFLTeam[])),
     shareReplay({ bufferSize: 1, refCount: true })
   );
@@ -169,7 +171,7 @@ export class LeagueMatchupsComponent {
 
   readonly fantasyContextState$ = combineLatest({
     context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null))),
-    decisionWindows: this.dataService.getDecisionWindows().pipe(catchError(() => of(null))),
+    decisionWindows: (this.overviewData?.decisionWindows$ ?? this.dataService.getDecisionWindows()).pipe(catchError(() => of(null))),
     matchups: this.matchups$,
     nflTeams: this.nflTeams$
   }).pipe(
