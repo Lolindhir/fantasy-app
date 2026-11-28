@@ -40,10 +40,20 @@
             </mat-select>
           </mat-form-field>
 
-          <app-current-drafts-tab
-            [drafts]="vm.pastDrafts"
-            [sectionTitle]="'Past Drafts ' + vm.selectedPastSeason"
-            emptyMessage="No past drafts found for this season." />
+          @if (vm.pastLoading) {
+            <mat-card class="empty-card">
+              <mat-card-content role="status">Loading past drafts…</mat-card-content>
+            </mat-card>
+          } @else {
+            <app-current-drafts-tab
+              [drafts]="vm.pastDrafts"
+              [sectionTitle]="'Past Drafts ' + vm.selectedPastSeason"
+              emptyMessage="No past drafts found for this season." />
+          }
+        } @else if (vm.pastLoading) {
+          <mat-card class="empty-card">
+            <mat-card-content role="status">Loading past draft seasons…</mat-card-content>
+          </mat-card>
         } @else {
           <mat-card class="empty-card">
             <mat-card-content>No past draft seasons found.</mat-card-content>
