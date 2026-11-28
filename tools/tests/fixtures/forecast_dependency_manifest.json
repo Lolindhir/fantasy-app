@@ -442,6 +442,15 @@
       "caller": null,
       "role": "comparison",
       "note": "Existing output byte comparison after calculation."
+    },
+    {
+      "id": "recaps-scope-completed-season",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/matchup_context_materialize.py:completed_seasons",
+      "caller": "tools/weekly_recaps_materialize.py:seasons_for_scope",
+      "role": "input",
+      "note": "Historical/current recap season selection from canonical completion, not previous output."
     }
   ]
 }
