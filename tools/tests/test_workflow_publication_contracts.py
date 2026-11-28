@@ -186,6 +186,19 @@ class WorkflowPublicationContractTests(unittest.TestCase):
                     f"{name} must have a bounded rebuild retry loop",
                 )
 
+    def test_nfl_source_delegates_only_legacy_publication_checks(self) -> None:
+        text = self.read("sync-nfl-source-data.yml")
+        helper = "tools/nfl_source_data_lib/publication_legacy.sh"
+        self.assertTrue((ROOT / helper).is_file())
+        self.assertIn(f"source {helper}", text)
+        self.assertLess(text.index(f"source {helper}"), text.index("reset_to_main()"))
+        self.assertIn("clean_source_worktree", text)
+        self.assertIn('assert_semantic_noop "$noop_log" "$materialization_scope"', text)
+        self.assertIn("git add -- data-source", text)
+        self.assertNotIn("git add -- data-canonical", text)
+        self.assertEqual(self.classifications[".github/workflows/sync-nfl-source-data.yml"],
+                         "rebuild-and-retry")
+
     def test_delegated_rebuild_writers_call_rebuild_classified_workflow(self) -> None:
         for name, delegated_name in sorted(DELEGATED_REBUILD_WRITERS.items()):
             with self.subTest(workflow=name):
