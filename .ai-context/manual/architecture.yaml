@@ -208,16 +208,17 @@ dataPlatformTarget:
   status: logical-target-current-paths-transitional
   canonicalRootPreparation:
     issue: 1618
-    checkpoint: M2a
+    checkpoint: M2b-routing-preflight
     root: data-canonical
     status: reserved-inactive
-    locator: tools/data_roots.py::canonical_partition_path
+    locator: tools/canonical_routing.py
     rules:
       - Only the Combine family is modeled; all production paths remain unchanged.
+      - Family routing is legacy by default, with explicit transition exceptions and no existence fallback.
+      - The pinned Git commit tree owns accepted inventory; no admission manifest.
+      - Existing partition preflight verifies tracked bytes and fails closed before writes.
+      - New partition admission and materializer integration are not implemented by this checkpoint.
       - No production callers or write-scope expansion until separately approved cutover.
-      - An explicit route selects exactly one location for reads and writes; no existence fallback.
-      - Missing migrated partitions always fail closed; missing legacy partitions fail closed unless the caller explicitly allows creation.
-      - M2a does not verify new-partition evidence; enforce that evidence before introducing any production caller.
 
   principle: >
     Repository location does not define domain ownership. Data that can serve

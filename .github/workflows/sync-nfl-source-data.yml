@@ -455,10 +455,13 @@ jobs:
           push_url="https://x-access-token:${PAT_PUSH}@github.com/${GITHUB_REPOSITORY}.git"
           max_attempts=3
 
+          # Load the legacy helpers once, before any reset/retry.
+          source tools/nfl_source_data_lib/publication_legacy.sh
+
           reset_to_main() {
             git fetch origin main
             git reset --hard origin/main
-            git clean -fd -- data-source
+            clean_source_worktree
           }
 
           # Materialization reads only these inputs. Pushes by other writers to any
@@ -546,74 +549,6 @@ jobs:
             done
             echo "main kept advancing outside materialization inputs; rebuild required."
             return 1
-          }
-
-          assert_source_data_only() {
-            mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
-            unexpected=()
-            for path in "${changed[@]}"; do
-              if [[ "$path" != data-source/* ]]; then
-                unexpected+=("$path")
-              fi
-            done
-            if (( ${#unexpected[@]} > 0 )); then
-              printf 'Unexpected changes outside data-source/:\n' >&2
-              printf ' - %s\n' "${unexpected[@]}" >&2
-              return 1
-            fi
-          }
-
-          assert_scoped_raw_write_set() {
-            if [[ "$materialization_scope" != "injuries" ]]; then
-              return 0
-            fi
-            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
-            unexpected=()
-            for path in "${changed[@]}"; do
-              if [[ "$path" == "data-source/providers/nflverse/injuries/raw-${injury_year}.csv" ||
-                    "$path" == "data-source/providers/nflverse/injuries/metadata-${injury_year}.json" ||
-                    "$path" == "$failure_diagnostic_file" ]]; then
-                continue
-              fi
-              unexpected+=("$path")
-            done
-            if (( ${#unexpected[@]} > 0 )); then
-              printf 'Scoped injury Raw sync touched unexpected paths:\\n' >&2
-              printf ' - %s\\n' "${unexpected[@]}" >&2
-              return 1
-            fi
-          }
-
-          assert_scoped_canonical_write_set() {
-            if [[ "$materialization_scope" == "full" ]]; then
-              return 0
-            fi
-            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
-            unexpected=()
-            for path in "${changed[@]}"; do
-              if [[ "$materialization_scope" == "game-finality" ]]; then
-                if [[ "$path" == data-source/nfl/schedules/* || "$path" == data-source/nfl/game-finality/* ]]; then
-                  continue
-                fi
-              elif [[ "$materialization_scope" == "schedule-odds" ]]; then
-                if [[ "$path" == data-source/nfl/schedule-odds/* ]]; then
-                  continue
-                fi
-              elif [[ "$materialization_scope" == "injuries" ]]; then
-                if [[ "$path" == data-source/nfl/injuries/"$injury_year"/* ]]; then
-                  continue
-                fi
-              fi
-              if [[ "$path" == "$failure_diagnostic_file" ]]; then
-                continue
-              fi
-              unexpected+=("$path")
-            done
-            if (( ${#unexpected[@]} > 0 )); then
-              printf 'Scoped %s materialization touched unexpected paths:\n' "$materialization_scope" >&2
-              printf ' - %s\n' "${unexpected[@]}" >&2
-              return 1
-            fi
           }
 
           write_failure_diagnostic() {
@@ -940,45 +875,7 @@ jobs:
             python tools/nfl_source_data.py "${materialize_args[@]}" 2>&1 | tee "$noop_log"
             noop_status=${PIPESTATUS[0]}
             if (( noop_status == 0 )); then
-              python - "$noop_log" "$materialization_scope" <<'PY'
-          import json
-          import sys
-          from pathlib import Path
-
-          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          scope = sys.argv[2]
-          if scope == "game-finality":
-              expected = {
-                  "scheduleFilesChanged": 0,
-                  "scheduleChangedPaths": [],
-                  "gameFinalityFilesChanged": 0,
-                  "gameFinalityChangedPaths": [],
-              }
-          elif scope == "schedule-odds":
-              expected = {
-                  "oddsFilesChanged": 0,
-                  "oddsChangedPaths": [],
-              }
-          elif scope == "injuries":
-              expected = {
-                  "injuryCanonicalFilesChanged": 0,
-                  "injuryCanonicalChangedPaths": [],
-                  "injuryObsoleteRequiresReview": [],
-              }
-          else:
-              expected = {
-                  "identityChanged": False,
-                  "providerMappingsChanged": False,
-                  "draftFilesChanged": 0,
-                  "auditChanged": False,
-              }
-          actual = {key: result.get(key) for key in expected}
-          if actual != expected:
-              raise SystemExit(
-                  "Semantic no-op verification failed: "
-                  + json.dumps({"scope": scope, "expected": expected, "actual": actual}, sort_keys=True)
-              )
-          PY
+              assert_semantic_noop "$noop_log" "$materialization_scope"
               noop_status=$?
             fi
             if (( noop_status == 0 )) && [[ "${INJURY_HISTORY_DUE:-false}" == "true" ]]; then

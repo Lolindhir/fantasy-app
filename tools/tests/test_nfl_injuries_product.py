@@ -1984,8 +1984,9 @@ class NflInjuriesProductTests(unittest.TestCase):
         source = (root / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn("nfl_injuries_derived:", source)
         self.assertIn("--path data-derived/nfl-injuries", source)
-        self.assertIn("elif scope == \"injuries\"", source)
-        self.assertIn('data-source/nfl/injuries/"$injury_year"/*', source)
+        publication = (root / "tools/nfl_source_data_lib/publication_legacy.sh").read_text(encoding="utf-8")
+        self.assertIn("elif scope == \"injuries\"", publication)
+        self.assertIn('data-source/nfl/injuries/"$injury_year"/*', publication)
         self.assertIn("assert_scoped_raw_write_set", source)
         self.assertIn('materialize_args+=(--scope injuries --season "$injury_year")', source)
 
