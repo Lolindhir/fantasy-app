@@ -6,28 +6,28 @@
       "id": "recaps-pwf",
       "root": "derived",
       "pattern": "player-week-fantasy/*/*/*.json",
-      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
-      "caller": "tools/derived_data_lib/weekly_recaps.py:_pwf_projections",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/historical_pregame_inputs.py:_pwf_projections",
       "role": "input",
-      "note": "Conditional player projection for historical team-range assembly."
+      "note": "Conditional player projection for historical team-range assembly. Shared historical adapter for Stats and Recaps; stable rule ID retained."
     },
     {
       "id": "recaps-roster",
       "root": "source",
       "pattern": "nfl/weekly-rosters/*/*.json",
-      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
-      "caller": "tools/derived_data_lib/weekly_recaps.py:_weekly_roster_rows",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/historical_pregame_inputs.py:_weekly_roster_rows",
       "role": "input",
-      "note": "Weekly identity and position evidence."
+      "note": "Weekly identity and position evidence. Shared historical adapter for Stats and Recaps; stable rule ID retained."
     },
     {
       "id": "recaps-matchups",
       "root": "source",
       "pattern": "leagues/*/seasons/*/matchups/week-*.json",
-      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
-      "caller": "tools/derived_data_lib/weekly_recaps.py:_load_matchup_rows",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/historical_pregame_inputs.py:_load_matchup_rows",
       "role": "input",
-      "note": "Recorded matchup facts."
+      "note": "Recorded matchup facts. Shared historical adapter for Stats and Recaps; stable rule ID retained."
     },
     {
       "id": "stats-twp",
@@ -330,7 +330,7 @@
       "id": "recaps-twp",
       "root": "derived",
       "pattern": "team-week-performance/*/*/*.json",
-      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
       "caller": "tools/derived_data_lib/weekly_recaps.py:team_awards_and_performance",
       "role": "input",
       "note": "Reviewed existing historical materializer input."
@@ -339,7 +339,7 @@
       "id": "recaps-schedule",
       "root": "source",
       "pattern": "nfl/schedules/*.json",
-      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
       "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
       "role": "input",
       "note": "Reviewed existing historical materializer input."
@@ -348,7 +348,7 @@
       "id": "recaps-league",
       "root": "source",
       "pattern": "leagues/*/seasons/*/league.json",
-      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
       "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
       "role": "input",
       "note": "Reviewed existing historical materializer input."

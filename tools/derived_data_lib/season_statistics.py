@@ -20,7 +20,7 @@ from .fantasy_game_context import canonical_matchup_facts
 from .historical_pregame import historical_team_projection, raw_matchup_probability
 from .models.registry import get_model
 from .week_finality import resolve_week_finality
-from .weekly_recaps import (
+from .historical_pregame_inputs import (
     EvidenceGap,
     _load_matchup_rows,
     _pwf_projections,

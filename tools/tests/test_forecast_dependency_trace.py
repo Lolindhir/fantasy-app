@@ -60,13 +60,15 @@ class ForecastTraceTests(unittest.TestCase):
 from pathlib import Path
 from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib import weekly_recaps as w
+from derived_data_lib import season_statistics as s
 import subprocess, sys
 for league, year in (('league-a', 2024), ('league-b', 2025)):
-    assert w._pwf_projections(Path.cwd(), league, year, 1) == {{'c': {{'Points': 17}}}}
-    assert len(w._weekly_roster_rows(Path.cwd(), year, 1)) == 1
+    adapter = w if league == 'league-a' else s
+    assert adapter._pwf_projections(Path.cwd(), league, year, 1) == {{'c': {{'Points': 17}}}}
+    assert len(adapter._weekly_roster_rows(Path.cwd(), year, 1)) == 1
     season_dir = Path.cwd() / DATA_SOURCE_ROOT / 'leagues' / league / 'seasons' / str(year)
-    assert w._load_matchup_rows(season_dir, 1) == [{{'RosterID': 1}}]
-    assert w._pwf_projections(Path.cwd(), league, year, 2) == {{}}
+    assert adapter._load_matchup_rows(season_dir, 1) == [{{'RosterID': 1}}]
+    assert adapter._pwf_projections(Path.cwd(), league, year, 2) == {{}}
 subprocess.run([sys.executable, '-c', {child!r}], check=True)
 """
         result = self.run_code(code)

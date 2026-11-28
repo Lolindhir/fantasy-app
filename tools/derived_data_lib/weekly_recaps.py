@@ -7,7 +7,6 @@ is involved. Selection rules, tiebreaks and fail-closed behaviour are those of t
 """
 from __future__ import annotations
 
-import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +17,16 @@ from league_metadata import data_meta_root, load_league_metadata, model_for
 
 from .fantasy_game_context import canonical_matchup_facts
 from .historical_pregame import historical_team_projection, raw_matchup_probability
+from .historical_pregame_inputs import (
+    EvidenceGap,
+    WeeklyRecapsError,
+    _load_matchup_rows,
+    _pwf_projections,
+    _read,
+    _text,
+    _weekly_roster_rows,
+    roster_identity_map,
+)
 from .matchup_context import (
     MatchupContextError,
     canonical_pairings,
@@ -36,31 +45,10 @@ KEY_PLAYER_COUNT = 3
 KEY_GAME_COUNT = 2
 
 
-class WeeklyRecapsError(ValueError):
-    """Incomplete or contradicting evidence (fail closed)."""
-
-
-class EvidenceGap(WeeklyRecapsError):
-    """A week lacks the starter, identity or game evidence the recap needs (the week is left out of the season model)."""
-
-
-def _text(value: Any) -> str:
-    return "" if value is None else str(value).strip()
-
-
 def _num(value: float) -> int | float:
     """Whole numbers as integers, like the PowerShell JSON output."""
     value = float(value)
     return int(value) if value.is_integer() else value
-
-
-def _read(path: Path, what: str) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8-sig"))
-    except FileNotFoundError as exc:
-        raise WeeklyRecapsError(f"{what} is missing: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise WeeklyRecapsError(f"{what} is unreadable: {path}: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -102,26 +90,6 @@ def kickoff_utc(game: Any) -> str:
         except ValueError:
             pass
     raise EvidenceGap(f"WeeklyRecaps cannot resolve kickoff for game '{_text(value_of(game, 'gameID', 'GameID'))}'.")
-
-
-def roster_identity_map(rows: list[Any]) -> dict[str, dict[str, dict[str, str]]]:
-    """Canonical player ID and Sleeper player ID to the week-specific team and position (New-WrRosterIdentityMap)."""
-    by_canonical: dict[str, dict[str, str]] = {}
-    by_player: dict[str, dict[str, str]] = {}
-    for row in rows:
-        canonical_id = _text(value_of(row, "CanonicalPlayerID"))
-        team_ref = value_of(row, "Team")
-        team = _text(value_of(row, "TeamAbbr", "TeamAbv")).upper()
-        if team == "" and isinstance(team_ref, str):
-            team = team_ref.strip().upper()
-        position = _text(value_of(row, "Position")).upper()
-        player_id = _text(value_of(value_of(row, "SourceIDs"), "Sleeper"))
-        identity = {"CanonicalPlayerID": canonical_id, "PlayerID": player_id, "TeamAbbr": team, "Position": position}
-        if canonical_id:
-            by_canonical[canonical_id] = identity
-        if player_id:
-            by_player[player_id] = identity
-    return {"ByCanonical": by_canonical, "ByPlayer": by_player}
 
 
 def _nfl_team_id(team_abbr: str, schedule: list[Any], team_key: TeamKey) -> str:
@@ -451,19 +419,6 @@ def season_efficiency(weeks: list[dict[str, Any]]) -> list[dict[str, Any]]:
 # Pregame win probability and upsets (Issue #1443)
 
 
-def _pwf_projections(repo_root: Path, league_id: str, season: int, week: int) -> dict[str, Any]:
-    """Projection per CanonicalPlayerID of the PlayerWeekFantasy partition; empty when the partition is missing (unknown)."""
-    path = repo_root / DATA_DERIVED_ROOT / "player-week-fantasy" / league_id / str(season) / f"{week:02d}.json"
-    if not path.is_file():
-        return {}
-    document = _read(path, "PlayerWeekFantasy partition")
-    return {
-        _text(value_of(record, "CanonicalPlayerID")): value_of(record, "Projection")
-        for record in collection(value_of(document, "Records"))
-        if _text(value_of(record, "CanonicalPlayerID")) != ""
-    }
-
-
 def pregame_win_probabilities(
     facts: list[dict[str, Any]],
     team_values: dict[str, Any],
@@ -658,23 +613,6 @@ def upset_counts(weeks: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Season model
-
-
-def _load_matchup_rows(season_dir: Path, week: int) -> list[Any] | None:
-    path = season_dir / "matchups" / f"week-{week}.json"
-    if not path.is_file():
-        return None
-    payload = _read(path, f"Canonical matchups week {week}")
-    return payload if isinstance(payload, list) else [payload]
-
-
-def _weekly_roster_rows(repo_root: Path, season: int, week: int) -> list[Any]:
-    path = repo_root / DATA_SOURCE_ROOT / "nfl" / "weekly-rosters" / str(season) / f"{week:02d}.json"
-    try:
-        document = _read(path, f"WeeklyRecaps canonical weekly-roster evidence for {season} Week {week}")
-    except WeeklyRecapsError as exc:
-        raise EvidenceGap(str(exc)) from exc
-    return collection(value_of(document, "Records", "Rows", "Players", "Data"))
 
 
 def resolve_weekly_recaps(repo_root: Path, league_id: str, season: int) -> dict[str, Any]:
