@@ -68,6 +68,23 @@ class CanonicalRoutingTests(unittest.TestCase):
             self.preflight()
         self.assertFalse(self.legacy.exists())
 
+    def test_index_only_deletion_fails_even_with_intact_bytes(self):
+        original = self.legacy.read_bytes()
+        self.git("rm", "--cached", self.legacy.relative_to(self.root).as_posix())
+        self.assertEqual(original, self.legacy.read_bytes())
+        with self.assertRaisesRegex(ValueError, "Staged Combine changes"):
+            self.preflight()
+
+    def test_non_directory_and_symlink_parents_fail_closed(self):
+        root = self.root / DATA_CANONICAL_ROOT
+        root.write_text("not a directory")
+        with self.assertRaisesRegex(ValueError, "Non-directory parent"):
+            self.preflight()
+        root.unlink()
+        root.symlink_to(self.root / DATA_SOURCE_ROOT, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "Symlink"):
+            self.preflight()
+
     def test_changed_bytes_and_duplicate(self):
         original = self.legacy.read_bytes()
         self.legacy.write_bytes(original + b" ")

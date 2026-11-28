@@ -76,10 +76,12 @@ def _git(root: Path, *args: str) -> bytes:
 
 def _real_route(root: Path, relative: Path) -> Path:
     path = root
-    for part in relative.parts:
+    for index, part in enumerate(relative.parts):
         path = path / part
         if path.is_symlink():
             raise ValueError(f"Symlink in canonical partition route: {path}")
+        if index < len(relative.parts) - 1 and path.exists() and not path.is_dir():
+            raise ValueError(f"Non-directory parent in canonical partition route: {path}")
     return path
 
 
@@ -176,4 +178,11 @@ def preflight_accepted_combine(
             for path in directory.iterdir():
                 if path not in expected_paths:
                     raise ValueError(f"Unexpected Combine route entry: {path}")
+    # The index is not the authority, but staged changes in this family are
+    # not a valid input to a read-before-write transaction. In particular,
+    # git rm --cached can leave the working bytes intact after staging a delete.
+    staged = _git(root, "diff", "--cached", "--name-only", "-z", base_commit, "--",
+                  *(path.as_posix() for path in directories))
+    if staged:
+        raise ValueError("Staged Combine changes differ from the accepted Git tree")
     return AcceptedSnapshot(base_commit, MappingProxyType(accepted))
