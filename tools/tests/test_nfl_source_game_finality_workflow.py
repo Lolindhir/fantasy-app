@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github" / "workflows"
+PUBLICATION = ROOT / "tools/nfl_source_data_lib/publication_legacy.sh"
 
 
 class GameFinalityWorkflowContractTests(unittest.TestCase):
@@ -64,7 +65,7 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
     def test_scoped_workflow_has_explicit_write_guard_and_no_full_audit(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn("assert_scoped_canonical_write_set", source)
-        self.assertIn('data-source/nfl/game-finality/*', source)
+        self.assertIn('data-source/nfl/game-finality/*', PUBLICATION.read_text(encoding="utf-8"))
         self.assertIn('materialize_args+=(--scope game-finality)', source)
         self.assertIn('if [[ "$materialization_scope" == "full" ]]; then', source)
         self.assertIn("python tools/nfl_source_data.py audit", source)
@@ -77,9 +78,10 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn('if [[ "${DATASET:-}" != "nflverse.schedule-odds" ]]', source)
         self.assertIn("schedule-odds scope does not accept a season filter", source)
         self.assertIn("materialize_args+=(--scope schedule-odds)", source)
-        self.assertIn('data-source/nfl/schedule-odds/*', source)
-        self.assertIn('"oddsFilesChanged": 0', source)
-        self.assertIn('"oddsChangedPaths": []', source)
+        publication = PUBLICATION.read_text(encoding="utf-8")
+        self.assertIn('data-source/nfl/schedule-odds/*', publication)
+        self.assertIn('"oddsFilesChanged": 0', publication)
+        self.assertIn('"oddsChangedPaths": []', publication)
         self.assertIn("data-source/providers/nflverse/schedules", source)
         self.assertIn("data-source/providers/nflverse/schedule-odds", source)
         self.assertIn("data-source/nfl/schedules", source)
@@ -257,7 +259,8 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn('FAILURE_DIAGNOSTIC_FILE="$failure_diagnostic_file"', source)
         self.assertIn('payload["materializationScope"]', source)
         # the scoped write-set guard admits only the own scope's diagnostic
-        self.assertIn('[[ "$path" == "$failure_diagnostic_file" ]]', source)
+        self.assertIn('[[ "$path" == "$failure_diagnostic_file" ]]',
+                      PUBLICATION.read_text(encoding="utf-8"))
         # every publication step that records a failure goes through the scoped helper
         self.assertNotIn('Path("data-source/_sync/last-failure.json")', source)
 
