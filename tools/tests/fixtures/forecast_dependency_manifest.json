@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "AC6A classified reader manifest: Python and pwsh fixtures, real historical four-product chain, candidate current/context, schedule-outlook, injury-impact and PWF/TWP batch read sites; expanded rules pending Deep runtime evidence, not exhaustive.",
+  "scope": "AC6A classified reader manifest: Python and pwsh fixtures, real historical four-product chain, candidate current/context, schedule-outlook, injury-impact, PWF/TWP batch and App delivery read sites. Expanded rules pending Deep runtime evidence, not exhaustive.",
   "rules": [
     {
       "id": "recaps-pwf",
@@ -1099,6 +1099,402 @@
       "caller": null,
       "role": "comparison",
       "note": "Previous TWP bytes compared after canonical calculation."
+    },
+    {
+      "id": "app-context",
+      "root": "derived",
+      "pattern": "matchup-context/*/*/*.json",
+      "reader": "tools/matchup_context_materialize.py:read_document",
+      "caller": "tools/matchup_context_app_publish.py:_product",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-recaps-awards",
+      "root": "derived",
+      "pattern": "weekly-recaps/*/*.json",
+      "reader": "tools/weekly_recaps_materialize.py:read_model",
+      "caller": "tools/weekly_recaps_app_publish.py:product_models",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/season_statistics_app_publish.py:persisted_documents",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-stats-comprehension",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/season_statistics_app_publish.py:<dictcomp>",
+      "caller": "tools/season_statistics_app_publish.py:persisted_documents",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-records",
+      "root": "derived",
+      "pattern": "league-records/*.json",
+      "reader": "tools/league_records_materialize.py:read_persisted",
+      "caller": "tools/season_statistics_app_publish.py:publish",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-outlook-index",
+      "root": "derived",
+      "pattern": "league-schedule-outlook/*/*/index.json",
+      "reader": "tools/league_schedule_outlook_app_publish.py:latest_snapshot",
+      "caller": "tools/league_schedule_outlook_app_publish.py:publish",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-outlook-snapshot",
+      "root": "derived",
+      "pattern": "league-schedule-outlook/*/*/after-week-*.json",
+      "reader": "tools/league_schedule_outlook_app_publish.py:latest_snapshot",
+      "caller": "tools/league_schedule_outlook_app_publish.py:publish",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-injury",
+      "root": "derived",
+      "pattern": "team-injury-impact/*/*.json",
+      "reader": "tools/injury_impact_app_publish.py:render",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-injury-profiles",
+      "root": "source",
+      "pattern": "nfl/player-profiles/nflverse.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/injury_impact_app_publish.py:load_profiles",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-history-scope",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:history_matchup_seasons",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-awards-profiles",
+      "root": "source",
+      "pattern": "nfl/player-profiles/nflverse.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/derived_data_lib/league_player_refs.py:from_repo",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-awards-sleeper",
+      "root": "source",
+      "pattern": "nfl/platform/sleeper/players.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/derived_data_lib/league_player_refs.py:from_repo",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-compare-Matchups",
+      "root": "app",
+      "pattern": "Matchups.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-FantasyGameContext",
+      "root": "app",
+      "pattern": "FantasyGameContext.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-FantasyGameContextHistory",
+      "root": "app",
+      "pattern": "FantasyGameContextHistory.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-MatchupProjections",
+      "root": "app",
+      "pattern": "MatchupProjections.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-WeeklyRecaps",
+      "root": "app",
+      "pattern": "WeeklyRecaps.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-PlayerAwardHistory",
+      "root": "app",
+      "pattern": "PlayerAwardHistory.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-SeasonStatistics",
+      "root": "app",
+      "pattern": "SeasonStatistics.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-ScheduleOutlook",
+      "root": "app",
+      "pattern": "ScheduleOutlook.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-InjuryImpact",
+      "root": "app",
+      "pattern": "InjuryImpact.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-history-compare-Matchups",
+      "root": "app",
+      "pattern": "past_seasons/Matchups/Matchups_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-history-compare-FantasyGameContext",
+      "root": "app",
+      "pattern": "past_seasons/FantasyGameContext/FantasyGameContext_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-history-compare-WeeklyRecaps",
+      "root": "app",
+      "pattern": "past_seasons/WeeklyRecaps/WeeklyRecaps_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-history-compare-SeasonStatistics",
+      "root": "app",
+      "pattern": "past_seasons/SeasonStatistics/SeasonStatistics_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-timestamps",
+      "root": "app",
+      "pattern": "Timestamps.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:finish",
+      "role": "comparison",
+      "note": "Preserve unrelated timestamp keys; publication bookkeeping."
+    },
+    {
+      "id": "players-app-compare",
+      "root": "app",
+      "pattern": "Players.json",
+      "reader": "tools/players_app_publish.py:write",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing Players content compare and backup."
+    },
+    {
+      "id": "players-app-stamp",
+      "root": "app",
+      "pattern": "Timestamps.json",
+      "reader": "tools/players_app_publish.py:write",
+      "caller": null,
+      "role": "comparison",
+      "note": "Preserve unrelated delivery timestamps."
+    },
+    {
+      "id": "players-app-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/players_app_publish.py:write",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_valuation_sources.py:league_manifest",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-byes",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_valuation_sources.py:team_bye_weeks",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-valuation",
+      "root": "derived",
+      "pattern": "player-valuation/*/*/week-*.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_inputs",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-salary-history",
+      "root": "derived",
+      "pattern": "player-valuation/*/*/week-*.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_salary_seasons",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-depth-chart",
+      "root": "source",
+      "pattern": "nfl/platform/sleeper/players.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_inputs",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-settings",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:league_scoring_settings",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:build_weekly_scores",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:build_weekly_scores",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-events",
+      "root": "source",
+      "pattern": "nfl/special-teams-fumble-events/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:build_weekly_scores",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_index_games",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-finality",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_week_final",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_partition_records",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-qbr",
+      "root": "source",
+      "pattern": "nfl/qbr-week/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_qbr_index",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-long-gains",
+      "root": "source",
+      "pattern": "nfl/player-game-long-gains/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_long_gain_index",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:build_game_histories",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
     }
   ]
 }
