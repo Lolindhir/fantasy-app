@@ -1,0 +1,5469 @@
+{
+  "schema": "cp7c-multiyear-synthetic-v0",
+  "asOf": "2026-10-05",
+  "status": "paired synthetic NFL futures and contracts, NOT real manager offers, salaries or future playoff odds",
+  "assumptions": {
+    "seeds": [
+      11
+    ],
+    "shocks": [
+      -0.1
+    ],
+    "timelines": [
+      "enforce_before_reset",
+      "reset_before_enforce"
+    ],
+    "modes": [
+      "none",
+      "retained_cycle",
+      "guaranteed_vintage"
+    ],
+    "pairs": [
+      {
+        "mode": "none",
+        "timeline": "enforce_before_reset"
+      },
+      {
+        "mode": "retained_cycle",
+        "timeline": "enforce_before_reset"
+      },
+      {
+        "mode": "retained_cycle",
+        "timeline": "reset_before_enforce"
+      }
+    ],
+    "seasons": 5,
+    "wait": 0.5,
+    "rosterMax": 45,
+    "noTaxi": true,
+    "noIR": true,
+    "rookieDraft": 5,
+    "annualVeterans": true,
+    "annualSalary": "annual CP6r Criticality market reprice for veterans; fixed rookie schedules",
+    "cap": "CP6r Top120/6 after same draft and performance update times cap-only shock",
+    "tenure": "2027 initial synthetic acquiredYear = synthetic contract vintage, resets on trade",
+    "P1": "cycle-only 50/30/15/5% on cut, P1 reset-first has zero binding cut debt at Compliance",
+    "P2": "contract guarantee 100/50/25 veteran, Rookie guarantees by actual fantasy round",
+    "market": "1:1 full contract pre-cut two-agent utility, buyer current-cap and positions legal; no picks",
+    "FA": "P1 same-cycle discounted active salary for cut players, restored to new full market Salary at following annual Salary check; P2 cut re-signing blocked (undefined price)",
+    "observedNFL": false,
+    "realOwners": false,
+    "realBuyerConsent": false,
+    "realInjuries": false,
+    "actualCalendar": false,
+    "retirement": "NFL exit triggers ordinary current-regime cut debt, experimental not approved",
+    "expiry": "provisional renewal can decline without binding year-1 guarantee",
+    "future": "future salary obligations recorded in trade, annual cap settlement; no loans or writeoffs"
+  },
+  "starts": [
+    {
+      "seed": 11,
+      "cap": 489862209,
+      "teams": [
+        {
+          "team": 0,
+          "roster": 20,
+          "index": 208.508
+        },
+        {
+          "team": 1,
+          "roster": 20,
+          "index": 202.55899999999997
+        },
+        {
+          "team": 2,
+          "roster": 20,
+          "index": 199.99400000000003
+        },
+        {
+          "team": 3,
+          "roster": 20,
+          "index": 177.278
+        },
+        {
+          "team": 4,
+          "roster": 20,
+          "index": 169.40899999999996
+        },
+        {
+          "team": 5,
+          "roster": 20,
+          "index": 162.089
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "seed": 11,
+      "mode": "none",
+      "timeline": "enforce_before_reset",
+      "shock": -0.1,
+      "seasons": 5,
+      "annualVeterans": true,
+      "years": [
+        {
+          "year": 2027,
+          "cap": 442584566,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 500982134,
+              "roster": 25,
+              "index": 208.508
+            },
+            {
+              "team": 1,
+              "cost": 494270768,
+              "roster": 25,
+              "index": 204.79073529842861
+            },
+            {
+              "team": 2,
+              "cost": 514966161,
+              "roster": 25,
+              "index": 200.38649262556982
+            },
+            {
+              "team": 3,
+              "cost": 376371183,
+              "roster": 25,
+              "index": 177.73365948205273
+            },
+            {
+              "team": 4,
+              "cost": 325546772,
+              "roster": 25,
+              "index": 172.01833707736813
+            },
+            {
+              "team": 5,
+              "cost": 284707786,
+              "roster": 25,
+              "index": 164.12996890804075
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 415989016,
+              "roster": 25,
+              "index": 200.49985025926154,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 423812353,
+              "roster": 25,
+              "index": 193.67500492130648,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 413026770,
+              "roster": 25,
+              "index": 190.818107575583,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 413513925,
+              "roster": 25,
+              "index": 182.85665948205272,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 325546772,
+              "roster": 25,
+              "index": 172.01833707736813,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 403016577,
+              "roster": 25,
+              "index": 177.75113231403904,
+              "legal": true
+            }
+          ],
+          "exits": [],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 3,
+          "cutCount": 5,
+          "screened": {
+            "pairs": 2511,
+            "capBlocked": 480,
+            "rosterBlocked": 635,
+            "noMutualUtility": 1271,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 5,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 28.481513181893405,
+          "maxIndex": 200.49985025926154,
+          "failures": [],
+          "trades": [
+            {
+              "from": 0,
+              "to": 5,
+              "playerSold": "9226",
+              "playerGiven": "S11T1D23",
+              "salarySold": 50117800,
+              "salaryGiven": 2267424,
+              "capReliefSeller": 47850376,
+              "sellerBefore": 500982134,
+              "sellerAfter": 453131758,
+              "buyerBefore": 284707786,
+              "buyerAfter": 332558162,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2027,
+                "annual": 50117800,
+                "dead": {},
+                "now": 0,
+                "relief": 50117800,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "9226",
+                "seller": 0,
+                "teamTenureProxy": 1
+              },
+              "cutReplacement": "S11T1U34",
+              "cutAlternativeSellerRelief": 48893144,
+              "sellerTradeVsCutRelief": -1042768,
+              "sellerUtilityVsCut": 2.274,
+              "buyerUtilityVsStay": 2.515,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 40641839,
+                  "buyerBefore": 46747180,
+                  "sellerAfter": 43476119,
+                  "buyerAfter": 43912900,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2834280,
+                  "frozenCapStressBuyerHeadroom": 398671666,
+                  "frozenCapStressSellerHeadroom": 399108447
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 33617364,
+                  "buyerBefore": 48750554,
+                  "sellerAfter": 37018500,
+                  "buyerAfter": 45349418,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3401136,
+                  "frozenCapStressBuyerHeadroom": 397235148,
+                  "frozenCapStressSellerHeadroom": 405566066
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 0,
+              "to": 3,
+              "playerSold": "8130",
+              "playerGiven": "S11T1D18",
+              "salarySold": 39288760,
+              "salaryGiven": 2146018,
+              "capReliefSeller": 37142742,
+              "sellerBefore": 453131758,
+              "sellerAfter": 415989016,
+              "buyerBefore": 376371183,
+              "buyerAfter": 413513925,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2027,
+                "annual": 39288760,
+                "dead": {},
+                "now": 0,
+                "relief": 39288760,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "8130",
+                "seller": 0,
+                "teamTenureProxy": 0
+              },
+              "cutReplacement": "12506",
+              "cutAlternativeSellerRelief": 35528413,
+              "sellerTradeVsCutRelief": 1614329,
+              "sellerUtilityVsCut": 2.216,
+              "buyerUtilityVsStay": 2.979,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 43476119,
+                  "buyerBefore": 46539008,
+                  "sellerAfter": 46158642,
+                  "buyerAfter": 43856485,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2682523,
+                  "frozenCapStressBuyerHeadroom": 398728081,
+                  "frozenCapStressSellerHeadroom": 396425924
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 37018500,
+                  "buyerBefore": 46800505,
+                  "sellerAfter": 40237527,
+                  "buyerAfter": 43581478,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3219027,
+                  "frozenCapStressBuyerHeadroom": 399003088,
+                  "frozenCapStressSellerHeadroom": 402347039
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 1,
+              "to": 5,
+              "playerSold": "4034",
+              "playerGiven": "S11T1D25",
+              "salarySold": 72539063,
+              "salaryGiven": 2080648,
+              "capReliefSeller": 70458415,
+              "sellerBefore": 494270768,
+              "sellerAfter": 423812353,
+              "buyerBefore": 332558162,
+              "buyerAfter": 403016577,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2027,
+                "annual": 72539063,
+                "dead": {},
+                "now": 0,
+                "relief": 72539063,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "4034",
+                "seller": 1,
+                "teamTenureProxy": 2
+              },
+              "cutReplacement": "S11T1U34",
+              "cutAlternativeSellerRelief": 71314407,
+              "sellerTradeVsCutRelief": -855992,
+              "sellerUtilityVsCut": 0.679,
+              "buyerUtilityVsStay": 5.191,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 39639683,
+                  "buyerBefore": 43912900,
+                  "sellerAfter": 42240493,
+                  "buyerAfter": 41312090,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2600810,
+                  "frozenCapStressBuyerHeadroom": 401272476,
+                  "frozenCapStressSellerHeadroom": 400344073
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 37596849,
+                  "buyerBefore": 45349418,
+                  "sellerAfter": 40717821,
+                  "buyerAfter": 42228446,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3120972,
+                  "frozenCapStressBuyerHeadroom": 400356120,
+                  "frozenCapStressSellerHeadroom": 401866745
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            }
+          ],
+          "cuts": [
+            {
+              "team": 2,
+              "player": "4983",
+              "replacement": "S11T1U32",
+              "oldSalary": 24038727,
+              "replacementSalary": 1224656,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 22814071,
+              "afterUsed": 492152090
+            },
+            {
+              "team": 2,
+              "player": "5844",
+              "replacement": "S11T1U48",
+              "oldSalary": 11477019,
+              "replacementSalary": 1347813,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 10129206,
+              "afterUsed": 482022884
+            },
+            {
+              "team": 2,
+              "player": "S11T1D6",
+              "replacement": "S11T1U46",
+              "oldSalary": 6105490,
+              "replacementSalary": 1224656,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4880834,
+              "afterUsed": 477142050
+            },
+            {
+              "team": 2,
+              "player": "10859",
+              "replacement": "S11T1U38",
+              "oldSalary": 19391551,
+              "replacementSalary": 1224656,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 18166895,
+              "afterUsed": 458975155
+            },
+            {
+              "team": 2,
+              "player": "9221",
+              "replacement": "5967",
+              "oldSalary": 62088556,
+              "replacementSalary": 16140171,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 45948385,
+              "afterUsed": 413026770
+            }
+          ]
+        },
+        {
+          "year": 2028,
+          "cap": 439038067,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 456746994,
+              "roster": 30,
+              "index": 195.0430732918864
+            },
+            {
+              "team": 1,
+              "cost": 405752894,
+              "roster": 29,
+              "index": 173.5079869119616
+            },
+            {
+              "team": 2,
+              "cost": 451432108,
+              "roster": 29,
+              "index": 188.41245285586416
+            },
+            {
+              "team": 3,
+              "cost": 450968622,
+              "roster": 30,
+              "index": 181.39686760052624
+            },
+            {
+              "team": 4,
+              "cost": 350167106,
+              "roster": 29,
+              "index": 169.92751612153475
+            },
+            {
+              "team": 5,
+              "cost": 448083089,
+              "roster": 30,
+              "index": 177.01894471652255
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 403655455,
+              "roster": 30,
+              "index": 189.79555223739652,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 435053808,
+              "roster": 29,
+              "index": 183.0160056258898,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 422131194,
+              "roster": 29,
+              "index": 183.6414772755562,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 434989619,
+              "roster": 30,
+              "index": 181.39686760052624,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 350167106,
+              "roster": 29,
+              "index": 169.92751612153475,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 429364058,
+              "roster": 30,
+              "index": 177.01894471652255,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 1,
+              "id": "4984",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 2,
+              "id": "11783",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 4,
+              "id": "2449",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 1,
+          "cutCount": 6,
+          "screened": {
+            "pairs": 1580,
+            "capBlocked": 640,
+            "rosterBlocked": 148,
+            "noMutualUtility": 784,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 6,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 19.86803611586177,
+          "maxIndex": 189.79555223739652,
+          "failures": [],
+          "trades": [
+            {
+              "from": 2,
+              "to": 1,
+              "playerSold": "6804",
+              "playerGiven": "S11T2D22",
+              "salarySold": 31439020,
+              "salaryGiven": 2138106,
+              "capReliefSeller": 29300914,
+              "sellerBefore": 451432108,
+              "sellerAfter": 422131194,
+              "buyerBefore": 405752894,
+              "buyerAfter": 435053808,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2028,
+                "annual": 31439020,
+                "dead": {},
+                "now": 0,
+                "relief": 31439020,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "6804",
+                "seller": 2,
+                "teamTenureProxy": 2
+              },
+              "cutReplacement": "S11T2U56",
+              "cutAlternativeSellerRelief": 30332559,
+              "sellerTradeVsCutRelief": -1031645,
+              "sellerUtilityVsCut": 1.315,
+              "buyerUtilityVsStay": 3.821,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2029,
+                  "sellerBefore": 65281727,
+                  "buyerBefore": 69931896,
+                  "sellerAfter": 67954360,
+                  "buyerAfter": 67259263,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2672633,
+                  "frozenCapStressBuyerHeadroom": 371778804,
+                  "frozenCapStressSellerHeadroom": 371083707
+                },
+                {
+                  "year": 2030,
+                  "sellerBefore": 34884749,
+                  "buyerBefore": 35056890,
+                  "sellerAfter": 38091908,
+                  "buyerAfter": 31849731,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3207159,
+                  "frozenCapStressBuyerHeadroom": 407188336,
+                  "frozenCapStressSellerHeadroom": 400946159
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            }
+          ],
+          "cuts": [
+            {
+              "team": 0,
+              "player": "S11T1D13",
+              "replacement": "S11T2U44",
+              "oldSalary": 6705231,
+              "replacementSalary": 1106461,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5598770,
+              "afterUsed": 451148224
+            },
+            {
+              "team": 0,
+              "player": "S11T2D9",
+              "replacement": "S11T2U41",
+              "oldSalary": 6148716,
+              "replacementSalary": 1198699,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4950017,
+              "afterUsed": 446198207
+            },
+            {
+              "team": 0,
+              "player": "S11T1D17",
+              "replacement": "S11T2U47",
+              "oldSalary": 4113648,
+              "replacementSalary": 1106461,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 3007187,
+              "afterUsed": 443191020
+            },
+            {
+              "team": 0,
+              "player": "4881",
+              "replacement": "11560",
+              "oldSalary": 61075513,
+              "replacementSalary": 21539948,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 39535565,
+              "afterUsed": 403655455
+            },
+            {
+              "team": 3,
+              "player": "1479",
+              "replacement": "S11T2U35",
+              "oldSalary": 17085464,
+              "replacementSalary": 1106461,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15979003,
+              "afterUsed": 434989619
+            },
+            {
+              "team": 5,
+              "player": "S11T1D0",
+              "replacement": "S11T2U37",
+              "oldSalary": 19959438,
+              "replacementSalary": 1240407,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 18719031,
+              "afterUsed": 429364058
+            }
+          ]
+        },
+        {
+          "year": 2029,
+          "cap": 437120085,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 421164877,
+              "roster": 34,
+              "index": 185.49645686838795
+            },
+            {
+              "team": 1,
+              "cost": 471601890,
+              "roster": 34,
+              "index": 184.71570552753278
+            },
+            {
+              "team": 2,
+              "cost": 456954203,
+              "roster": 33,
+              "index": 183.04264910408702
+            },
+            {
+              "team": 3,
+              "cost": 463461224,
+              "roster": 35,
+              "index": 178.65711021144114
+            },
+            {
+              "team": 4,
+              "cost": 392272769,
+              "roster": 34,
+              "index": 167.06645635239045
+            },
+            {
+              "team": 5,
+              "cost": 467044206,
+              "roster": 35,
+              "index": 175.6131823668861
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 421164877,
+              "roster": 34,
+              "index": 185.49645686838795,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 424302103,
+              "roster": 34,
+              "index": 184.71570552753278,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 429180115,
+              "roster": 33,
+              "index": 183.00389781711056,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 428005306,
+              "roster": 34,
+              "index": 178.65711021144114,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 392272769,
+              "roster": 34,
+              "index": 167.06645635239045,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 434988884,
+              "roster": 35,
+              "index": 175.6131823668861,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 0,
+              "id": "4217",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 2,
+              "id": "5967",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 9,
+          "screened": {
+            "pairs": 875,
+            "capBlocked": 450,
+            "rosterBlocked": 47,
+            "noMutualUtility": 378,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 9,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 18.430000515997506,
+          "maxIndex": 185.49645686838795,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 1,
+              "player": "1466",
+              "replacement": "S11T3U48",
+              "oldSalary": 18437758,
+              "replacementSalary": 1181144,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 17256614,
+              "afterUsed": 454345276
+            },
+            {
+              "team": 1,
+              "player": "S11T1D3",
+              "replacement": "S11T3U38",
+              "oldSalary": 17537594,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16439999,
+              "afterUsed": 437905277
+            },
+            {
+              "team": 1,
+              "player": "S11T2D2",
+              "replacement": "S11T3U42",
+              "oldSalary": 14700769,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13603174,
+              "afterUsed": 424302103
+            },
+            {
+              "team": 2,
+              "player": "S11T1D4",
+              "replacement": "S11T3U37",
+              "oldSalary": 16791377,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15693782,
+              "afterUsed": 441260421
+            },
+            {
+              "team": 2,
+              "player": "S11T2D3",
+              "replacement": "S11T3U58",
+              "oldSalary": 13177901,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12080306,
+              "afterUsed": 429180115
+            },
+            {
+              "team": 3,
+              "player": "S11T1D1",
+              "replacement": null,
+              "oldSalary": 19769673,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 19769673,
+              "afterUsed": 443691551
+            },
+            {
+              "team": 3,
+              "player": "4033",
+              "replacement": "S11T3U33",
+              "oldSalary": 16783840,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15686245,
+              "afterUsed": 428005306
+            },
+            {
+              "team": 5,
+              "player": "S11T2D4",
+              "replacement": "S11T3U55",
+              "oldSalary": 17644985,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16547390,
+              "afterUsed": 450496816
+            },
+            {
+              "team": 5,
+              "player": "5846",
+              "replacement": "S11T3U32",
+              "oldSalary": 16605527,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15507932,
+              "afterUsed": 434988884
+            }
+          ]
+        },
+        {
+          "year": 2030,
+          "cap": 436993124,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 495756605,
+              "roster": 39,
+              "index": 193.25242941251065
+            },
+            {
+              "team": 1,
+              "cost": 458740503,
+              "roster": 39,
+              "index": 181.58700933385194
+            },
+            {
+              "team": 2,
+              "cost": 493950086,
+              "roster": 38,
+              "index": 184.38622925487064
+            },
+            {
+              "team": 3,
+              "cost": 478215103,
+              "roster": 39,
+              "index": 176.75051540207826
+            },
+            {
+              "team": 4,
+              "cost": 448845396,
+              "roster": 39,
+              "index": 168.20482446854137
+            },
+            {
+              "team": 5,
+              "cost": 467367973,
+              "roster": 40,
+              "index": 174.33252968474767
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 434978682,
+              "roster": 39,
+              "index": 193.25242941251065,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 433490124,
+              "roster": 39,
+              "index": 181.58700933385194,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 435586349,
+              "roster": 37,
+              "index": 184.33713844211968,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 430350874,
+              "roster": 37,
+              "index": 176.75051540207826,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 432846322,
+              "roster": 39,
+              "index": 168.20482446854137,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 435959682,
+              "roster": 39,
+              "index": 174.33252968474767,
+              "legal": true
+            }
+          ],
+          "exits": [],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 22,
+          "screened": {
+            "pairs": 0,
+            "capBlocked": 0,
+            "rosterBlocked": 0,
+            "noMutualUtility": 0,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 22,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 25.047604943969276,
+          "maxIndex": 193.25242941251065,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 0,
+              "player": "S11T2D7",
+              "replacement": "S11T4U45",
+              "oldSalary": 14485626,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13392826,
+              "afterUsed": 482363779
+            },
+            {
+              "team": 0,
+              "player": "S11T1D23",
+              "replacement": "S11T4U34",
+              "oldSalary": 13558115,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12465315,
+              "afterUsed": 469898464
+            },
+            {
+              "team": 0,
+              "player": "S11T3D5",
+              "replacement": "S11T4U31",
+              "oldSalary": 10985420,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 9892620,
+              "afterUsed": 460005844
+            },
+            {
+              "team": 0,
+              "player": "S11T1D18",
+              "replacement": "S11T4U36",
+              "oldSalary": 10106354,
+              "replacementSalary": 1171740,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 8934614,
+              "afterUsed": 451071230
+            },
+            {
+              "team": 0,
+              "player": "S11T1D20",
+              "replacement": "S11T4U51",
+              "oldSalary": 8181019,
+              "replacementSalary": 1547187,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 6633832,
+              "afterUsed": 444437398
+            },
+            {
+              "team": 0,
+              "player": "12493",
+              "replacement": "S11T4U53",
+              "oldSalary": 6503856,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5411056,
+              "afterUsed": 439026342
+            },
+            {
+              "team": 0,
+              "player": "S11T3D12",
+              "replacement": "S11T4U50",
+              "oldSalary": 5317078,
+              "replacementSalary": 1269418,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4047660,
+              "afterUsed": 434978682
+            },
+            {
+              "team": 1,
+              "player": "S11T1D10",
+              "replacement": "S11T4U57",
+              "oldSalary": 14961127,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13868327,
+              "afterUsed": 444872176
+            },
+            {
+              "team": 1,
+              "player": "S11T1D16",
+              "replacement": "S11T4U41",
+              "oldSalary": 13087758,
+              "replacementSalary": 1705706,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11382052,
+              "afterUsed": 433490124
+            },
+            {
+              "team": 2,
+              "player": "S11T1D14",
+              "replacement": "S11T4U48",
+              "oldSalary": 17330635,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16237835,
+              "afterUsed": 477712251
+            },
+            {
+              "team": 2,
+              "player": "1945",
+              "replacement": "S11T3U49",
+              "oldSalary": 9537488,
+              "replacementSalary": 1728026,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 7809462,
+              "afterUsed": 469902789
+            },
+            {
+              "team": 2,
+              "player": "S11T1D21",
+              "replacement": "S11T4U38",
+              "oldSalary": 16024137,
+              "replacementSalary": 1513511,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14510626,
+              "afterUsed": 455392163
+            },
+            {
+              "team": 2,
+              "player": "S11T3D8",
+              "replacement": "S11T3U43",
+              "oldSalary": 7881654,
+              "replacementSalary": 1371994,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 6509660,
+              "afterUsed": 448882503
+            },
+            {
+              "team": 2,
+              "player": "11603",
+              "replacement": null,
+              "oldSalary": 5575153,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5575153,
+              "afterUsed": 443307350
+            },
+            {
+              "team": 2,
+              "player": "12524",
+              "replacement": "S11T3U46",
+              "oldSalary": 6161284,
+              "replacementSalary": 1527559,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4633725,
+              "afterUsed": 438673625
+            },
+            {
+              "team": 2,
+              "player": "S11T1U46",
+              "replacement": "S11T4U46",
+              "oldSalary": 4939489,
+              "replacementSalary": 1852213,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 3087276,
+              "afterUsed": 435586349
+            },
+            {
+              "team": 3,
+              "player": "S11T2D0",
+              "replacement": null,
+              "oldSalary": 17861660,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 17861660,
+              "afterUsed": 460353443
+            },
+            {
+              "team": 3,
+              "player": "8144",
+              "replacement": null,
+              "oldSalary": 16591728,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16591728,
+              "afterUsed": 443761715
+            },
+            {
+              "team": 3,
+              "player": "S11T3D4",
+              "replacement": "S11T4U55",
+              "oldSalary": 14765443,
+              "replacementSalary": 1354602,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13410841,
+              "afterUsed": 430350874
+            },
+            {
+              "team": 4,
+              "player": "S11T3D2",
+              "replacement": "S11T4U37",
+              "oldSalary": 17620574,
+              "replacementSalary": 1621500,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15999074,
+              "afterUsed": 432846322
+            },
+            {
+              "team": 5,
+              "player": "S11T3D0",
+              "replacement": null,
+              "oldSalary": 18185863,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 18185863,
+              "afterUsed": 449182110
+            },
+            {
+              "team": 5,
+              "player": "5872",
+              "replacement": "S11T4U42",
+              "oldSalary": 14315228,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13222428,
+              "afterUsed": 435959682
+            }
+          ]
+        },
+        {
+          "year": 2031,
+          "cap": 437644682,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 437047427,
+              "roster": 43,
+              "index": 183.10407815550062
+            },
+            {
+              "team": 1,
+              "cost": 473854651,
+              "roster": 43,
+              "index": 182.44846500303964
+            },
+            {
+              "team": 2,
+              "cost": 509432514,
+              "roster": 42,
+              "index": 185.87675245050312
+            },
+            {
+              "team": 3,
+              "cost": 502258297,
+              "roster": 42,
+              "index": 179.2607130888278
+            },
+            {
+              "team": 4,
+              "cost": 486222389,
+              "roster": 44,
+              "index": 169.62449697623092
+            },
+            {
+              "team": 5,
+              "cost": 491698010,
+              "roster": 43,
+              "index": 171.47742185964805
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 437047427,
+              "roster": 43,
+              "index": 183.10407815550062,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 427479364,
+              "roster": 43,
+              "index": 182.44846500303964,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 435977484,
+              "roster": 42,
+              "index": 185.87675245050312,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 432243403,
+              "roster": 38,
+              "index": 179.2607130888278,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 433711696,
+              "roster": 44,
+              "index": 169.62449697623092,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 429171164,
+              "roster": 41,
+              "index": 171.47742185964805,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 0,
+              "id": "8150",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 1,
+              "id": "6794",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 4,
+              "id": "2747",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 5,
+              "id": "11584",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 25,
+          "screened": {
+            "pairs": 637,
+            "capBlocked": 621,
+            "rosterBlocked": 0,
+            "noMutualUtility": 16,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 25,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 16.252255474272204,
+          "maxIndex": 185.87675245050312,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 1,
+              "player": "S11T4D1",
+              "replacement": "S11T5U54",
+              "oldSalary": 13743766,
+              "replacementSalary": 1399523,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12344243,
+              "afterUsed": 461510408
+            },
+            {
+              "team": 1,
+              "player": "S11T2D14",
+              "replacement": "S11T5U58",
+              "oldSalary": 13270640,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12178157,
+              "afterUsed": 449332251
+            },
+            {
+              "team": 1,
+              "player": "2216",
+              "replacement": "S11T5U45",
+              "oldSalary": 12714328,
+              "replacementSalary": 1244594,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11469734,
+              "afterUsed": 437862517
+            },
+            {
+              "team": 1,
+              "player": "S11T1D22",
+              "replacement": "S11T5U35",
+              "oldSalary": 11475636,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 10383153,
+              "afterUsed": 427479364
+            },
+            {
+              "team": 2,
+              "player": "S11T3D1",
+              "replacement": "S11T5U51",
+              "oldSalary": 16564886,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15472403,
+              "afterUsed": 493960111
+            },
+            {
+              "team": 2,
+              "player": "S11T4D3",
+              "replacement": "S11T5U33",
+              "oldSalary": 14262245,
+              "replacementSalary": 1172488,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13089757,
+              "afterUsed": 480870354
+            },
+            {
+              "team": 2,
+              "player": "S11T2D19",
+              "replacement": "S11T5U37",
+              "oldSalary": 10935867,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 9843384,
+              "afterUsed": 471026970
+            },
+            {
+              "team": 2,
+              "player": "S11T2D22",
+              "replacement": "S11T5U55",
+              "oldSalary": 10718694,
+              "replacementSalary": 1169269,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 9549425,
+              "afterUsed": 461477545
+            },
+            {
+              "team": 2,
+              "player": "S11T2D16",
+              "replacement": "S11T5U41",
+              "oldSalary": 10174971,
+              "replacementSalary": 1334123,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 8840848,
+              "afterUsed": 452636697
+            },
+            {
+              "team": 2,
+              "player": "S11T4D9",
+              "replacement": "S11T5U31",
+              "oldSalary": 8742628,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 7650145,
+              "afterUsed": 444986552
+            },
+            {
+              "team": 2,
+              "player": "S11T2D29",
+              "replacement": "S11T5U52",
+              "oldSalary": 6349107,
+              "replacementSalary": 1169548,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5179559,
+              "afterUsed": 439806993
+            },
+            {
+              "team": 2,
+              "player": "12713",
+              "replacement": "S11T5U39",
+              "oldSalary": 4921992,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 3829509,
+              "afterUsed": 435977484
+            },
+            {
+              "team": 3,
+              "player": "S11T2D20",
+              "replacement": null,
+              "oldSalary": 14989574,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14989574,
+              "afterUsed": 487268723
+            },
+            {
+              "team": 3,
+              "player": "S11T2D15",
+              "replacement": null,
+              "oldSalary": 14889823,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14889823,
+              "afterUsed": 472378900
+            },
+            {
+              "team": 3,
+              "player": "S11T4D4",
+              "replacement": null,
+              "oldSalary": 14496958,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14496958,
+              "afterUsed": 457881942
+            },
+            {
+              "team": 3,
+              "player": "4035",
+              "replacement": null,
+              "oldSalary": 14023788,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14023788,
+              "afterUsed": 443858154
+            },
+            {
+              "team": 3,
+              "player": "S11T1D15",
+              "replacement": "S11T5U40",
+              "oldSalary": 12783708,
+              "replacementSalary": 1168957,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11614751,
+              "afterUsed": 432243403
+            },
+            {
+              "team": 4,
+              "player": "S11T4D2",
+              "replacement": "S11T5U32",
+              "oldSalary": 15902291,
+              "replacementSalary": 1177804,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14724487,
+              "afterUsed": 471497902
+            },
+            {
+              "team": 4,
+              "player": "S11T1D19",
+              "replacement": "S11T5U50",
+              "oldSalary": 14707056,
+              "replacementSalary": 1168957,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13538099,
+              "afterUsed": 457959803
+            },
+            {
+              "team": 4,
+              "player": "10229",
+              "replacement": "S11T5U42",
+              "oldSalary": 14524249,
+              "replacementSalary": 1546738,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12977511,
+              "afterUsed": 444982292
+            },
+            {
+              "team": 4,
+              "player": "S11T3D7",
+              "replacement": "S11T5U47",
+              "oldSalary": 12515190,
+              "replacementSalary": 1244594,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11270596,
+              "afterUsed": 433711696
+            },
+            {
+              "team": 5,
+              "player": "S11T4D0",
+              "replacement": null,
+              "oldSalary": 19124004,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 19124004,
+              "afterUsed": 472574006
+            },
+            {
+              "team": 5,
+              "player": "S11T2D6",
+              "replacement": "S11T5U46",
+              "oldSalary": 17193946,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16101463,
+              "afterUsed": 456472543
+            },
+            {
+              "team": 5,
+              "player": "S11T2D10",
+              "replacement": null,
+              "oldSalary": 14493392,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14493392,
+              "afterUsed": 441979151
+            },
+            {
+              "team": 5,
+              "player": "8136",
+              "replacement": "S11T4U44",
+              "oldSalary": 14304161,
+              "replacementSalary": 1496174,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12807987,
+              "afterUsed": 429171164
+            }
+          ]
+        }
+      ],
+      "legalAll": true,
+      "failedYear": null,
+      "trades": 4,
+      "cuts": 67
+    },
+    {
+      "seed": 11,
+      "mode": "retained_cycle",
+      "timeline": "enforce_before_reset",
+      "shock": -0.1,
+      "seasons": 5,
+      "annualVeterans": true,
+      "years": [
+        {
+          "year": 2027,
+          "cap": 442584566,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 500982134,
+              "roster": 25,
+              "index": 208.508
+            },
+            {
+              "team": 1,
+              "cost": 494270768,
+              "roster": 25,
+              "index": 204.79073529842861
+            },
+            {
+              "team": 2,
+              "cost": 514966161,
+              "roster": 25,
+              "index": 200.38649262556982
+            },
+            {
+              "team": 3,
+              "cost": 376371183,
+              "roster": 25,
+              "index": 177.73365948205273
+            },
+            {
+              "team": 4,
+              "cost": 325546772,
+              "roster": 25,
+              "index": 172.01833707736813
+            },
+            {
+              "team": 5,
+              "cost": 284707786,
+              "roster": 25,
+              "index": 164.12996890804075
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 410647632,
+              "roster": 25,
+              "index": 197.87309377135665,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 396534529,
+              "roster": 24,
+              "index": 190.27321340355596,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 400636288,
+              "roster": 25,
+              "index": 186.18633774571114,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 429497573,
+              "roster": 25,
+              "index": 183.29665948205275,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 325546772,
+              "roster": 25,
+              "index": 172.01833707736813,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 436245771,
+              "roster": 25,
+              "index": 183.01013231403905,
+              "legal": true
+            }
+          ],
+          "exits": [],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 4,
+          "cutCount": 3,
+          "screened": {
+            "pairs": 3221,
+            "capBlocked": 668,
+            "rosterBlocked": 777,
+            "noMutualUtility": 1069,
+            "waiverWaitBlocked": 91
+          },
+          "operatorSteps": 3,
+          "deadCurrent": 17701537,
+          "deadFuture": 0,
+          "indexSpread": 25.85475669398852,
+          "maxIndex": 197.87309377135665,
+          "failures": [],
+          "trades": [
+            {
+              "from": 2,
+              "to": 5,
+              "playerSold": "9221",
+              "playerGiven": "11575",
+              "salarySold": 62088556,
+              "salaryGiven": 2310812,
+              "capReliefSeller": 59777744,
+              "sellerBefore": 514966161,
+              "sellerAfter": 455188417,
+              "buyerBefore": 284707786,
+              "buyerAfter": 344485530,
+              "cutAlternative": {
+                "mode": "retained_cycle",
+                "year": 2027,
+                "annual": 62088556,
+                "dead": {
+                  "2027": 31044278
+                },
+                "now": 31044278,
+                "relief": 31044278,
+                "activeAfterCut": 31044278,
+                "futureDebt": 0,
+                "nextFAContractPrice": 31044278,
+                "player": "9221",
+                "seller": 2,
+                "teamTenureProxy": 0
+              },
+              "cutReplacement": null,
+              "cutAlternativeSellerRelief": 31044278,
+              "sellerTradeVsCutRelief": 28733466,
+              "sellerUtilityVsCut": 5.682,
+              "buyerUtilityVsStay": 4.732,
+              "buyerWaiverWaitOpportunity": 1.552,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 36159618,
+                  "buyerBefore": 46747180,
+                  "sellerAfter": 36159618,
+                  "buyerAfter": 46747180,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 0,
+                  "frozenCapStressBuyerHeadroom": 395837386,
+                  "frozenCapStressSellerHeadroom": 406424948
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 37836667,
+                  "buyerBefore": 48750554,
+                  "sellerAfter": 37836667,
+                  "buyerAfter": 48750554,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 0,
+                  "frozenCapStressBuyerHeadroom": 393834012,
+                  "frozenCapStressSellerHeadroom": 404747899
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 2,
+              "to": 5,
+              "playerSold": "9509",
+              "playerGiven": "11584",
+              "salarySold": 57285782,
+              "salaryGiven": 2733653,
+              "capReliefSeller": 54552129,
+              "sellerBefore": 455188417,
+              "sellerAfter": 400636288,
+              "buyerBefore": 344485530,
+              "buyerAfter": 399037659,
+              "cutAlternative": {
+                "mode": "retained_cycle",
+                "year": 2027,
+                "annual": 57285782,
+                "dead": {
+                  "2027": 28642891
+                },
+                "now": 28642891,
+                "relief": 28642891,
+                "activeAfterCut": 28642891,
+                "futureDebt": 0,
+                "nextFAContractPrice": 28642891,
+                "player": "9509",
+                "seller": 2,
+                "teamTenureProxy": 0
+              },
+              "cutReplacement": "5967",
+              "cutAlternativeSellerRelief": 12502720,
+              "sellerTradeVsCutRelief": 42049409,
+              "sellerUtilityVsCut": 8.186,
+              "buyerUtilityVsStay": 4.122,
+              "buyerWaiverWaitOpportunity": 1.432,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 36159618,
+                  "buyerBefore": 46747180,
+                  "sellerAfter": 36159618,
+                  "buyerAfter": 46747180,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 0,
+                  "frozenCapStressBuyerHeadroom": 395837386,
+                  "frozenCapStressSellerHeadroom": 406424948
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 37836667,
+                  "buyerBefore": 48750554,
+                  "sellerAfter": 37836667,
+                  "buyerAfter": 48750554,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 0,
+                  "frozenCapStressBuyerHeadroom": 393834012,
+                  "frozenCapStressSellerHeadroom": 404747899
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 0,
+              "to": 5,
+              "playerSold": "8130",
+              "playerGiven": "S11T1D25",
+              "salarySold": 39288760,
+              "salaryGiven": 2080648,
+              "capReliefSeller": 37208112,
+              "sellerBefore": 500982134,
+              "sellerAfter": 463774022,
+              "buyerBefore": 399037659,
+              "buyerAfter": 436245771,
+              "cutAlternative": {
+                "mode": "retained_cycle",
+                "year": 2027,
+                "annual": 39288760,
+                "dead": {
+                  "2027": 19644380
+                },
+                "now": 19644380,
+                "relief": 19644380,
+                "activeAfterCut": 19644380,
+                "futureDebt": 0,
+                "nextFAContractPrice": 19644380,
+                "player": "8130",
+                "seller": 0,
+                "teamTenureProxy": 0
+              },
+              "cutReplacement": null,
+              "cutAlternativeSellerRelief": 19644380,
+              "sellerTradeVsCutRelief": 17563732,
+              "sellerUtilityVsCut": 6.109,
+              "buyerUtilityVsStay": 4.203,
+              "buyerWaiverWaitOpportunity": 0.982,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 40641839,
+                  "buyerBefore": 46747180,
+                  "sellerAfter": 43242649,
+                  "buyerAfter": 44146370,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2600810,
+                  "frozenCapStressBuyerHeadroom": 398438196,
+                  "frozenCapStressSellerHeadroom": 399341917
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 33617364,
+                  "buyerBefore": 48750554,
+                  "sellerAfter": 36738336,
+                  "buyerAfter": 45629582,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3120972,
+                  "frozenCapStressBuyerHeadroom": 396954984,
+                  "frozenCapStressSellerHeadroom": 405846230
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 0,
+              "to": 3,
+              "playerSold": "9493",
+              "playerGiven": "S11T1D18",
+              "salarySold": 55272408,
+              "salaryGiven": 2146018,
+              "capReliefSeller": 53126390,
+              "sellerBefore": 463774022,
+              "sellerAfter": 410647632,
+              "buyerBefore": 376371183,
+              "buyerAfter": 429497573,
+              "cutAlternative": {
+                "mode": "retained_cycle",
+                "year": 2027,
+                "annual": 55272408,
+                "dead": {
+                  "2027": 8290861
+                },
+                "now": 8290861,
+                "relief": 46981547,
+                "activeAfterCut": 46981547,
+                "futureDebt": 0,
+                "nextFAContractPrice": 46981547,
+                "player": "9493",
+                "seller": 0,
+                "teamTenureProxy": 2
+              },
+              "cutReplacement": "S11T1U32",
+              "cutAlternativeSellerRelief": 45756891,
+              "sellerTradeVsCutRelief": 7369499,
+              "sellerUtilityVsCut": 3.055,
+              "buyerUtilityVsStay": 2.757,
+              "buyerWaiverWaitOpportunity": 0.415,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 43242649,
+                  "buyerBefore": 46539008,
+                  "sellerAfter": 45925172,
+                  "buyerAfter": 43856485,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2682523,
+                  "frozenCapStressBuyerHeadroom": 398728081,
+                  "frozenCapStressSellerHeadroom": 396659394
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 36738336,
+                  "buyerBefore": 46800505,
+                  "sellerAfter": 39957363,
+                  "buyerAfter": 43581478,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3219027,
+                  "frozenCapStressBuyerHeadroom": 399003088,
+                  "frozenCapStressSellerHeadroom": 402627203
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            }
+          ],
+          "cuts": [
+            {
+              "team": 1,
+              "player": "11604",
+              "replacement": "S11T1U48",
+              "oldSalary": 14930852,
+              "replacementSalary": 1347813,
+              "deadNow": 2239628,
+              "deadFuture": 0,
+              "salaryAfterRelease": 12691224,
+              "netRelief": 11343411,
+              "afterUsed": 482927357
+            },
+            {
+              "team": 1,
+              "player": "6794",
+              "replacement": null,
+              "oldSalary": 30540330,
+              "replacementSalary": 0,
+              "deadNow": 4581050,
+              "deadFuture": 0,
+              "salaryAfterRelease": 25959280,
+              "netRelief": 25959280,
+              "afterUsed": 456968077
+            },
+            {
+              "team": 1,
+              "player": "4034",
+              "replacement": "S11T1U34",
+              "oldSalary": 72539063,
+              "replacementSalary": 1224656,
+              "deadNow": 10880859,
+              "deadFuture": 0,
+              "salaryAfterRelease": 61658204,
+              "netRelief": 60433548,
+              "afterUsed": 396534529
+            }
+          ]
+        },
+        {
+          "year": 2028,
+          "cap": 439038067,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 445276098,
+              "roster": 30,
+              "index": 193.2517800818668
+            },
+            {
+              "team": 1,
+              "cost": 358705109,
+              "roster": 29,
+              "index": 170.45764719871792
+            },
+            {
+              "team": 2,
+              "cost": 441739457,
+              "roster": 29,
+              "index": 183.63779659988182
+            },
+            {
+              "team": 3,
+              "cost": 470852532,
+              "roster": 30,
+              "index": 183.92851652942124
+            },
+            {
+              "team": 4,
+              "cost": 350167106,
+              "roster": 29,
+              "index": 169.92751612153475
+            },
+            {
+              "team": 5,
+              "cost": 484387800,
+              "roster": 30,
+              "index": 183.3512561370963
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 427907105,
+              "roster": 30,
+              "index": 188.1753791308211,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 431951829,
+              "roster": 29,
+              "index": 189.22046690102056,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 404167883,
+              "roster": 29,
+              "index": 177.63255370604415,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 428961944,
+              "roster": 29,
+              "index": 183.92851652942124,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 350167106,
+              "roster": 29,
+              "index": 169.92751612153475,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 430379520,
+              "roster": 28,
+              "index": 183.3512561370963,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 1,
+              "id": "4984",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 2,
+              "id": "11783",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 4,
+              "id": "2449",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 3,
+          "cutCount": 6,
+          "screened": {
+            "pairs": 3272,
+            "capBlocked": 931,
+            "rosterBlocked": 320,
+            "noMutualUtility": 1957,
+            "waiverWaitBlocked": 2
+          },
+          "operatorSteps": 6,
+          "deadCurrent": 18996721,
+          "deadFuture": 0,
+          "indexSpread": 19.292950779485807,
+          "maxIndex": 189.22046690102056,
+          "failures": [],
+          "trades": [
+            {
+              "from": 2,
+              "to": 1,
+              "playerSold": "8183",
+              "playerGiven": "S11T2D27",
+              "salarySold": 39282013,
+              "salaryGiven": 1710439,
+              "capReliefSeller": 37571574,
+              "sellerBefore": 441739457,
+              "sellerAfter": 404167883,
+              "buyerBefore": 358705109,
+              "buyerAfter": 396276683,
+              "cutAlternative": {
+                "mode": "retained_cycle",
+                "year": 2028,
+                "annual": 39282013,
+                "dead": {
+                  "2028": 5892302
+                },
+                "now": 5892302,
+                "relief": 33389711,
+                "activeAfterCut": 33389711,
+                "futureDebt": 0,
+                "nextFAContractPrice": 33389711,
+                "player": "8183",
+                "seller": 2,
+                "teamTenureProxy": 2
+              },
+              "cutReplacement": "S11T2U56",
+              "cutAlternativeSellerRelief": 32283250,
+              "sellerTradeVsCutRelief": 5288324,
+              "sellerUtilityVsCut": 1.77,
+              "buyerUtilityVsStay": 4.733,
+              "buyerWaiverWaitOpportunity": 0.412,
+              "futureTransfers": [
+                {
+                  "year": 2029,
+                  "sellerBefore": 66907290,
+                  "buyerBefore": 70669628,
+                  "sellerAfter": 69045339,
+                  "buyerAfter": 68531579,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2138049,
+                  "frozenCapStressBuyerHeadroom": 370506488,
+                  "frozenCapStressSellerHeadroom": 369992728
+                },
+                {
+                  "year": 2030,
+                  "sellerBefore": 34884749,
+                  "buyerBefore": 35056890,
+                  "sellerAfter": 37450408,
+                  "buyerAfter": 32491231,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2565659,
+                  "frozenCapStressBuyerHeadroom": 406546836,
+                  "frozenCapStressSellerHeadroom": 401587659
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 0,
+              "to": 1,
+              "playerSold": "3198",
+              "playerGiven": "S11T2D22",
+              "salarySold": 37813252,
+              "salaryGiven": 2138106,
+              "capReliefSeller": 35675146,
+              "sellerBefore": 445276098,
+              "sellerAfter": 409600952,
+              "buyerBefore": 396276683,
+              "buyerAfter": 431951829,
+              "cutAlternative": {
+                "mode": "retained_cycle",
+                "year": 2028,
+                "annual": 37813252,
+                "dead": {
+                  "2028": 11343976
+                },
+                "now": 11343976,
+                "relief": 26469276,
+                "activeAfterCut": 26469276,
+                "futureDebt": 0,
+                "nextFAContractPrice": 26469276,
+                "player": "3198",
+                "seller": 0,
+                "teamTenureProxy": 1
+              },
+              "cutReplacement": "S11T2U44",
+              "cutAlternativeSellerRelief": 25362815,
+              "sellerTradeVsCutRelief": 10312331,
+              "sellerUtilityVsCut": 3.327,
+              "buyerUtilityVsStay": 1.359,
+              "buyerWaiverWaitOpportunity": 0.794,
+              "futureTransfers": [
+                {
+                  "year": 2029,
+                  "sellerBefore": 67368579,
+                  "buyerBefore": 68531579,
+                  "sellerAfter": 70041212,
+                  "buyerAfter": 65858946,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2672633,
+                  "frozenCapStressBuyerHeadroom": 373179121,
+                  "frozenCapStressSellerHeadroom": 368996855
+                },
+                {
+                  "year": 2030,
+                  "sellerBefore": 32893461,
+                  "buyerBefore": 32491231,
+                  "sellerAfter": 36100620,
+                  "buyerAfter": 29284072,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3207159,
+                  "frozenCapStressBuyerHeadroom": 409753995,
+                  "frozenCapStressSellerHeadroom": 402937447
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 5,
+              "to": 0,
+              "playerSold": "S11T1D0",
+              "playerGiven": "12860",
+              "salarySold": 19959438,
+              "salaryGiven": 1653285,
+              "capReliefSeller": 18306153,
+              "sellerBefore": 484387800,
+              "sellerAfter": 466081647,
+              "buyerBefore": 409600952,
+              "buyerAfter": 427907105,
+              "cutAlternative": {
+                "mode": "retained_cycle",
+                "year": 2028,
+                "annual": 19959438,
+                "dead": {
+                  "2028": 5987831
+                },
+                "now": 5987831,
+                "relief": 13971607,
+                "activeAfterCut": 13971607,
+                "futureDebt": 0,
+                "nextFAContractPrice": 13971607,
+                "player": "S11T1D0",
+                "seller": 5,
+                "teamTenureProxy": 1
+              },
+              "cutReplacement": null,
+              "cutAlternativeSellerRelief": 13971607,
+              "sellerTradeVsCutRelief": 4334546,
+              "sellerUtilityVsCut": 0.125,
+              "buyerUtilityVsStay": 1.77,
+              "buyerWaiverWaitOpportunity": 0.419,
+              "futureTransfers": [
+                {
+                  "year": 2029,
+                  "sellerBefore": 86202224,
+                  "buyerBefore": 70041212,
+                  "sellerAfter": 62250899,
+                  "buyerAfter": 93992537,
+                  "salaryToBuyer": 23951325,
+                  "salaryToSeller": 0,
+                  "frozenCapStressBuyerHeadroom": 345045530,
+                  "frozenCapStressSellerHeadroom": 376787168
+                },
+                {
+                  "year": 2030,
+                  "sellerBefore": 48687170,
+                  "buyerBefore": 36100620,
+                  "sellerAfter": 48687170,
+                  "buyerAfter": 36100620,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 0,
+                  "frozenCapStressBuyerHeadroom": 402937447,
+                  "frozenCapStressSellerHeadroom": 390350897
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            }
+          ],
+          "cuts": [
+            {
+              "team": 3,
+              "player": "6790",
+              "replacement": null,
+              "oldSalary": 19223540,
+              "replacementSalary": 0,
+              "deadNow": 2883531,
+              "deadFuture": 0,
+              "salaryAfterRelease": 16340009,
+              "netRelief": 16340009,
+              "afterUsed": 454512523
+            },
+            {
+              "team": 3,
+              "player": "1479",
+              "replacement": "S11T2U47",
+              "oldSalary": 17085464,
+              "replacementSalary": 1106461,
+              "deadNow": 854273,
+              "deadFuture": 0,
+              "salaryAfterRelease": 16231191,
+              "netRelief": 15124730,
+              "afterUsed": 439387793
+            },
+            {
+              "team": 3,
+              "player": "S11T1D1",
+              "replacement": "S11T2U44",
+              "oldSalary": 16474728,
+              "replacementSalary": 1106461,
+              "deadNow": 4942418,
+              "deadFuture": 0,
+              "salaryAfterRelease": 11532310,
+              "netRelief": 10425849,
+              "afterUsed": 428961944
+            },
+            {
+              "team": 5,
+              "player": "5947",
+              "replacement": null,
+              "oldSalary": 15284108,
+              "replacementSalary": 0,
+              "deadNow": 764205,
+              "deadFuture": 0,
+              "salaryAfterRelease": 14519903,
+              "netRelief": 14519903,
+              "afterUsed": 451561744
+            },
+            {
+              "team": 5,
+              "player": "8136",
+              "replacement": null,
+              "oldSalary": 16165004,
+              "replacementSalary": 0,
+              "deadNow": 4849501,
+              "deadFuture": 0,
+              "salaryAfterRelease": 11315503,
+              "netRelief": 11315503,
+              "afterUsed": 440246241
+            },
+            {
+              "team": 5,
+              "player": "5872",
+              "replacement": "S11T2U35",
+              "oldSalary": 15675975,
+              "replacementSalary": 1106461,
+              "deadNow": 4702793,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10973182,
+              "netRelief": 9866721,
+              "afterUsed": 430379520
+            }
+          ]
+        },
+        {
+          "year": 2029,
+          "cap": 437120085,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 468200869,
+              "roster": 34,
+              "index": 192.4240464571279
+            },
+            {
+              "team": 1,
+              "cost": 455055437,
+              "roster": 34,
+              "index": 186.59022332852123
+            },
+            {
+              "team": 2,
+              "cost": 462849727,
+              "roster": 34,
+              "index": 181.96898691436888
+            },
+            {
+              "team": 3,
+              "cost": 445133884,
+              "roster": 34,
+              "index": 181.15269222685927
+            },
+            {
+              "team": 4,
+              "cost": 394108357,
+              "roster": 34,
+              "index": 167.0296860251212
+            },
+            {
+              "team": 5,
+              "cost": 456149619,
+              "roster": 33,
+              "index": 181.92069013961012
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 436249066,
+              "roster": 34,
+              "index": 192.2937655300947,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 431780175,
+              "roster": 33,
+              "index": 186.59022332852123,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 433827193,
+              "roster": 34,
+              "index": 181.94932964135538,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 432401400,
+              "roster": 34,
+              "index": 181.15269222685927,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 394108357,
+              "roster": 34,
+              "index": 167.0296860251212,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 433001103,
+              "roster": 32,
+              "index": 181.92069013961012,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 0,
+              "id": "4217",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 14,
+          "screened": {
+            "pairs": 572,
+            "capBlocked": 149,
+            "rosterBlocked": 32,
+            "noMutualUtility": 391,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 14,
+          "deadCurrent": 32280752,
+          "deadFuture": 0,
+          "indexSpread": 25.264079504973495,
+          "maxIndex": 192.2937655300947,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 0,
+              "player": "11533",
+              "replacement": "S11T1U59",
+              "oldSalary": 16826845,
+              "replacementSalary": 1836984,
+              "deadNow": 2524027,
+              "deadFuture": 0,
+              "salaryAfterRelease": 14302818,
+              "netRelief": 12465834,
+              "afterUsed": 455735035
+            },
+            {
+              "team": 0,
+              "player": "S11T2D7",
+              "replacement": "S11T3U42",
+              "oldSalary": 12071355,
+              "replacementSalary": 1097595,
+              "deadNow": 3621407,
+              "deadFuture": 0,
+              "salaryAfterRelease": 8449948,
+              "netRelief": 7352353,
+              "afterUsed": 448382682
+            },
+            {
+              "team": 0,
+              "player": "12493",
+              "replacement": "S11T3U48",
+              "oldSalary": 5829838,
+              "replacementSalary": 1181144,
+              "deadNow": 291492,
+              "deadFuture": 0,
+              "salaryAfterRelease": 5538346,
+              "netRelief": 4357202,
+              "afterUsed": 444025480
+            },
+            {
+              "team": 0,
+              "player": "S11T1D13",
+              "replacement": "S11T1U44",
+              "oldSalary": 8046278,
+              "replacementSalary": 2944674,
+              "deadNow": 1206942,
+              "deadFuture": 0,
+              "salaryAfterRelease": 6839336,
+              "netRelief": 3894662,
+              "afterUsed": 440130818
+            },
+            {
+              "team": 0,
+              "player": "S11T2D9",
+              "replacement": "S11T2U41",
+              "oldSalary": 7685895,
+              "replacementSalary": 1498374,
+              "deadNow": 2305769,
+              "deadFuture": 0,
+              "salaryAfterRelease": 5380126,
+              "netRelief": 3881752,
+              "afterUsed": 436249066
+            },
+            {
+              "team": 1,
+              "player": "S11T2D2",
+              "replacement": null,
+              "oldSalary": 14700769,
+              "replacementSalary": 0,
+              "deadNow": 4410231,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10290538,
+              "netRelief": 10290538,
+              "afterUsed": 444764899
+            },
+            {
+              "team": 1,
+              "player": "S11T1D10",
+              "replacement": "S11T3U37",
+              "oldSalary": 9207720,
+              "replacementSalary": 1097595,
+              "deadNow": 1381158,
+              "deadFuture": 0,
+              "salaryAfterRelease": 7826562,
+              "netRelief": 6728967,
+              "afterUsed": 438035932
+            },
+            {
+              "team": 1,
+              "player": "11562",
+              "replacement": "S11T3U56",
+              "oldSalary": 7821301,
+              "replacementSalary": 1174479,
+              "deadNow": 391065,
+              "deadFuture": 0,
+              "salaryAfterRelease": 7430236,
+              "netRelief": 6255757,
+              "afterUsed": 431780175
+            },
+            {
+              "team": 2,
+              "player": "S11T1D4",
+              "replacement": "S11T3U55",
+              "oldSalary": 16791377,
+              "replacementSalary": 1097595,
+              "deadNow": 2518707,
+              "deadFuture": 0,
+              "salaryAfterRelease": 14272670,
+              "netRelief": 13175075,
+              "afterUsed": 449674652
+            },
+            {
+              "team": 2,
+              "player": "11584",
+              "replacement": "S11T3U44",
+              "oldSalary": 10374256,
+              "replacementSalary": 1097595,
+              "deadNow": 1556138,
+              "deadFuture": 0,
+              "salaryAfterRelease": 8818118,
+              "netRelief": 7720523,
+              "afterUsed": 441954129
+            },
+            {
+              "team": 2,
+              "player": "S11T2D3",
+              "replacement": "S11T3U38",
+              "oldSalary": 13177901,
+              "replacementSalary": 1097595,
+              "deadNow": 3953370,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9224531,
+              "netRelief": 8126936,
+              "afterUsed": 433827193
+            },
+            {
+              "team": 3,
+              "player": "8110",
+              "replacement": "S11T3U58",
+              "oldSalary": 14557978,
+              "replacementSalary": 1097595,
+              "deadNow": 727899,
+              "deadFuture": 0,
+              "salaryAfterRelease": 13830079,
+              "netRelief": 12732484,
+              "afterUsed": 432401400
+            },
+            {
+              "team": 5,
+              "player": "S11T2D4",
+              "replacement": null,
+              "oldSalary": 17644985,
+              "replacementSalary": 0,
+              "deadNow": 5293496,
+              "deadFuture": 0,
+              "salaryAfterRelease": 12351489,
+              "netRelief": 12351489,
+              "afterUsed": 443798130
+            },
+            {
+              "team": 5,
+              "player": "5012",
+              "replacement": "S11T3U33",
+              "oldSalary": 13993673,
+              "replacementSalary": 1097595,
+              "deadNow": 2099051,
+              "deadFuture": 0,
+              "salaryAfterRelease": 11894622,
+              "netRelief": 10797027,
+              "afterUsed": 433001103
+            }
+          ]
+        },
+        {
+          "year": 2030,
+          "cap": 436993124,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 537003641,
+              "roster": 39,
+              "index": 199.2587700314543
+            },
+            {
+              "team": 1,
+              "cost": 453259252,
+              "roster": 38,
+              "index": 184.03586723227
+            },
+            {
+              "team": 2,
+              "cost": 491371762,
+              "roster": 39,
+              "index": 182.79106403779556
+            },
+            {
+              "team": 3,
+              "cost": 482443498,
+              "roster": 39,
+              "index": 180.0093714727836
+            },
+            {
+              "team": 4,
+              "cost": 451139881,
+              "roster": 39,
+              "index": 168.20482446854137
+            },
+            {
+              "team": 5,
+              "cost": 459584632,
+              "roster": 36,
+              "index": 178.84816110734337
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 435668906,
+              "roster": 38,
+              "index": 191.23059178902392,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 434594243,
+              "roster": 38,
+              "index": 184.03586723227,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 434522321,
+              "roster": 37,
+              "index": 182.7419732250446,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 435105342,
+              "roster": 36,
+              "index": 180.0093714727836,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 436176449,
+              "roster": 39,
+              "index": 168.20324125391667,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 427579710,
+              "roster": 34,
+              "index": 178.84816110734337,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 5,
+              "id": "5846",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 23,
+          "screened": {
+            "pairs": 0,
+            "capBlocked": 0,
+            "rosterBlocked": 0,
+            "noMutualUtility": 0,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 23,
+          "deadCurrent": 35177517,
+          "deadFuture": 0,
+          "indexSpread": 23.027350535107246,
+          "maxIndex": 191.23059178902392,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 0,
+              "player": "S11T3D1",
+              "replacement": "S11T4U34",
+              "oldSalary": 13804071,
+              "replacementSalary": 1092800,
+              "deadNow": 4141221,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9662850,
+              "netRelief": 8570050,
+              "afterUsed": 528433591
+            },
+            {
+              "team": 0,
+              "player": "S11T1D18",
+              "replacement": "S11T4U36",
+              "oldSalary": 10106354,
+              "replacementSalary": 1171740,
+              "deadNow": 505318,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9601036,
+              "netRelief": 8429296,
+              "afterUsed": 520004295
+            },
+            {
+              "team": 0,
+              "player": "S11T1D17",
+              "replacement": "S11T4U45",
+              "oldSalary": 9159205,
+              "replacementSalary": 1092800,
+              "deadNow": 457960,
+              "deadFuture": 0,
+              "salaryAfterRelease": 8701245,
+              "netRelief": 7608445,
+              "afterUsed": 512395850
+            },
+            {
+              "team": 0,
+              "player": "S11T1D20",
+              "replacement": "S11T4U31",
+              "oldSalary": 8181019,
+              "replacementSalary": 1092800,
+              "deadNow": 409051,
+              "deadFuture": 0,
+              "salaryAfterRelease": 7771968,
+              "netRelief": 6679168,
+              "afterUsed": 505716682
+            },
+            {
+              "team": 0,
+              "player": "S11T3D8",
+              "replacement": "S11T4U53",
+              "oldSalary": 7881654,
+              "replacementSalary": 1092800,
+              "deadNow": 2364496,
+              "deadFuture": 0,
+              "salaryAfterRelease": 5517158,
+              "netRelief": 4424358,
+              "afterUsed": 501292324
+            },
+            {
+              "team": 0,
+              "player": "S11T1U44",
+              "replacement": null,
+              "oldSalary": 23235916,
+              "replacementSalary": 0,
+              "deadNow": 6970775,
+              "deadFuture": 0,
+              "salaryAfterRelease": 16265141,
+              "netRelief": 16265141,
+              "afterUsed": 485027183
+            },
+            {
+              "team": 0,
+              "player": "S11T1D25",
+              "replacement": "S11T4U46",
+              "oldSalary": 5491558,
+              "replacementSalary": 1852213,
+              "deadNow": 274578,
+              "deadFuture": 0,
+              "salaryAfterRelease": 5216980,
+              "netRelief": 3364767,
+              "afterUsed": 481662416
+            },
+            {
+              "team": 0,
+              "player": "8150",
+              "replacement": "S11T4U51",
+              "oldSalary": 50042839,
+              "replacementSalary": 1547187,
+              "deadNow": 2502142,
+              "deadFuture": 0,
+              "salaryAfterRelease": 47540697,
+              "netRelief": 45993510,
+              "afterUsed": 435668906
+            },
+            {
+              "team": 1,
+              "player": "S11T1D16",
+              "replacement": "S11T4U41",
+              "oldSalary": 13087758,
+              "replacementSalary": 1705706,
+              "deadNow": 654388,
+              "deadFuture": 0,
+              "salaryAfterRelease": 12433370,
+              "netRelief": 10727664,
+              "afterUsed": 442531588
+            },
+            {
+              "team": 1,
+              "player": "S11T1D22",
+              "replacement": "S11T4U50",
+              "oldSalary": 9691329,
+              "replacementSalary": 1269418,
+              "deadNow": 484566,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9206763,
+              "netRelief": 7937345,
+              "afterUsed": 434594243
+            },
+            {
+              "team": 2,
+              "player": "10859",
+              "replacement": "S11T4U48",
+              "oldSalary": 14566011,
+              "replacementSalary": 1092800,
+              "deadNow": 728301,
+              "deadFuture": 0,
+              "salaryAfterRelease": 13837710,
+              "netRelief": 12744910,
+              "afterUsed": 478626852
+            },
+            {
+              "team": 2,
+              "player": "S11T3D0",
+              "replacement": null,
+              "oldSalary": 18185863,
+              "replacementSalary": 0,
+              "deadNow": 5455759,
+              "deadFuture": 0,
+              "salaryAfterRelease": 12730104,
+              "netRelief": 12730104,
+              "afterUsed": 465896748
+            },
+            {
+              "team": 2,
+              "player": "S11T1D14",
+              "replacement": "S11T4U38",
+              "oldSalary": 17330635,
+              "replacementSalary": 1513511,
+              "deadNow": 866532,
+              "deadFuture": 0,
+              "salaryAfterRelease": 16464103,
+              "netRelief": 14950592,
+              "afterUsed": 450946156
+            },
+            {
+              "team": 2,
+              "player": "5844",
+              "replacement": null,
+              "oldSalary": 9569734,
+              "replacementSalary": 0,
+              "deadNow": 478487,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9091247,
+              "netRelief": 9091247,
+              "afterUsed": 441854909
+            },
+            {
+              "team": 2,
+              "player": "1945",
+              "replacement": "S11T3U49",
+              "oldSalary": 9537488,
+              "replacementSalary": 1728026,
+              "deadNow": 476874,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9060614,
+              "netRelief": 7332588,
+              "afterUsed": 434522321
+            },
+            {
+              "team": 3,
+              "player": "8144",
+              "replacement": null,
+              "oldSalary": 16591728,
+              "replacementSalary": 0,
+              "deadNow": 829586,
+              "deadFuture": 0,
+              "salaryAfterRelease": 15762142,
+              "netRelief": 15762142,
+              "afterUsed": 466681356
+            },
+            {
+              "team": 3,
+              "player": "S11T2D0",
+              "replacement": null,
+              "oldSalary": 17861660,
+              "replacementSalary": 0,
+              "deadNow": 2679249,
+              "deadFuture": 0,
+              "salaryAfterRelease": 15182411,
+              "netRelief": 15182411,
+              "afterUsed": 451498945
+            },
+            {
+              "team": 3,
+              "player": "S11T1D15",
+              "replacement": null,
+              "oldSalary": 10662497,
+              "replacementSalary": 0,
+              "deadNow": 533125,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10129372,
+              "netRelief": 10129372,
+              "afterUsed": 441369573
+            },
+            {
+              "team": 3,
+              "player": "11655",
+              "replacement": "S11T4U54",
+              "oldSalary": 7744243,
+              "replacementSalary": 1092800,
+              "deadNow": 387212,
+              "deadFuture": 0,
+              "salaryAfterRelease": 7357031,
+              "netRelief": 6264231,
+              "afterUsed": 435105342
+            },
+            {
+              "team": 4,
+              "player": "9997",
+              "replacement": "S11T4U57",
+              "oldSalary": 16901297,
+              "replacementSalary": 1092800,
+              "deadNow": 845065,
+              "deadFuture": 0,
+              "salaryAfterRelease": 16056232,
+              "netRelief": 14963432,
+              "afterUsed": 436176449
+            },
+            {
+              "team": 5,
+              "player": "S11T1D23",
+              "replacement": null,
+              "oldSalary": 13558115,
+              "replacementSalary": 0,
+              "deadNow": 677906,
+              "deadFuture": 0,
+              "salaryAfterRelease": 12880209,
+              "netRelief": 12880209,
+              "afterUsed": 446704423
+            },
+            {
+              "team": 5,
+              "player": "S11T1D11",
+              "replacement": null,
+              "oldSalary": 10111540,
+              "replacementSalary": 0,
+              "deadNow": 505577,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9605963,
+              "netRelief": 9605963,
+              "afterUsed": 437098460
+            },
+            {
+              "team": 5,
+              "player": "S11T2D6",
+              "replacement": "S11T3U46",
+              "oldSalary": 12995658,
+              "replacementSalary": 1527559,
+              "deadNow": 1949349,
+              "deadFuture": 0,
+              "salaryAfterRelease": 11046309,
+              "netRelief": 9518750,
+              "afterUsed": 427579710
+            }
+          ]
+        },
+        {
+          "year": 2031,
+          "cap": 437644682,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 485075691,
+              "roster": 43,
+              "index": 189.58708819204347
+            },
+            {
+              "team": 1,
+              "cost": 483598813,
+              "roster": 43,
+              "index": 183.81649753430617
+            },
+            {
+              "team": 2,
+              "cost": 501794696,
+              "roster": 42,
+              "index": 188.0250498746309
+            },
+            {
+              "team": 3,
+              "cost": 498557872,
+              "roster": 41,
+              "index": 181.9294304368505
+            },
+            {
+              "team": 4,
+              "cost": 492015856,
+              "roster": 44,
+              "index": 168.76306675551504
+            },
+            {
+              "team": 5,
+              "cost": 478788819,
+              "roster": 39,
+              "index": 178.52873301189695
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 396736954,
+              "roster": 43,
+              "index": 181.36750137222796,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 428636714,
+              "roster": 41,
+              "index": 183.22997018929536,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 435716700,
+              "roster": 40,
+              "index": 188.0250498746309,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 433825146,
+              "roster": 37,
+              "index": 181.9294304368505,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 432865755,
+              "roster": 43,
+              "index": 168.76306675551504,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 435162629,
+              "roster": 36,
+              "index": 178.52873301189695,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 4,
+              "id": "2747",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 35,
+          "screened": {
+            "pairs": 0,
+            "capBlocked": 0,
+            "rosterBlocked": 0,
+            "noMutualUtility": 0,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 35,
+          "deadCurrent": 55416566,
+          "deadFuture": 0,
+          "indexSpread": 19.261983119115854,
+          "maxIndex": 188.0250498746309,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 0,
+              "player": "S11T2D22",
+              "replacement": "S11T5U45",
+              "oldSalary": 10718694,
+              "replacementSalary": 1244594,
+              "deadNow": 535935,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10182759,
+              "netRelief": 8938165,
+              "afterUsed": 476137526
+            },
+            {
+              "team": 0,
+              "player": "S11T4D5",
+              "replacement": "S11T5U54",
+              "oldSalary": 11120398,
+              "replacementSalary": 1399523,
+              "deadNow": 3336119,
+              "deadFuture": 0,
+              "salaryAfterRelease": 7784279,
+              "netRelief": 6384756,
+              "afterUsed": 469752770
+            },
+            {
+              "team": 0,
+              "player": "S11T2U41",
+              "replacement": "S11T5U51",
+              "oldSalary": 7572431,
+              "replacementSalary": 1092483,
+              "deadNow": 1135865,
+              "deadFuture": 0,
+              "salaryAfterRelease": 6436566,
+              "netRelief": 5344083,
+              "afterUsed": 464408687
+            },
+            {
+              "team": 0,
+              "player": "S11T2D24",
+              "replacement": "S11T5U35",
+              "oldSalary": 5568039,
+              "replacementSalary": 1092483,
+              "deadNow": 278402,
+              "deadFuture": 0,
+              "salaryAfterRelease": 5289637,
+              "netRelief": 4197154,
+              "afterUsed": 460211533
+            },
+            {
+              "team": 0,
+              "player": "S11T2D28",
+              "replacement": "S11T5U58",
+              "oldSalary": 5341842,
+              "replacementSalary": 1092483,
+              "deadNow": 267092,
+              "deadFuture": 0,
+              "salaryAfterRelease": 5074750,
+              "netRelief": 3982267,
+              "afterUsed": 456229266
+            },
+            {
+              "team": 0,
+              "player": "12534",
+              "replacement": "S11T5U41",
+              "oldSalary": 4189820,
+              "replacementSalary": 1334123,
+              "deadNow": 209491,
+              "deadFuture": 0,
+              "salaryAfterRelease": 3980329,
+              "netRelief": 2646206,
+              "afterUsed": 453583060
+            },
+            {
+              "team": 0,
+              "player": "S11T3D17",
+              "replacement": "S11T5U37",
+              "oldSalary": 4289522,
+              "replacementSalary": 1092483,
+              "deadNow": 643428,
+              "deadFuture": 0,
+              "salaryAfterRelease": 3646094,
+              "netRelief": 2553611,
+              "afterUsed": 451029449
+            },
+            {
+              "team": 0,
+              "player": "4881",
+              "replacement": "S11T5U36",
+              "oldSalary": 58430368,
+              "replacementSalary": 1216355,
+              "deadNow": 2921518,
+              "deadFuture": 0,
+              "salaryAfterRelease": 55508850,
+              "netRelief": 54292495,
+              "afterUsed": 396736954
+            },
+            {
+              "team": 1,
+              "player": "S11T3D5",
+              "replacement": null,
+              "oldSalary": 13182504,
+              "replacementSalary": 0,
+              "deadNow": 1977376,
+              "deadFuture": 0,
+              "salaryAfterRelease": 11205128,
+              "netRelief": 11205128,
+              "afterUsed": 472393685
+            },
+            {
+              "team": 1,
+              "player": "2216",
+              "replacement": "S11T5U55",
+              "oldSalary": 12714328,
+              "replacementSalary": 1169269,
+              "deadNow": 635716,
+              "deadFuture": 0,
+              "salaryAfterRelease": 12078612,
+              "netRelief": 10909343,
+              "afterUsed": 461484342
+            },
+            {
+              "team": 1,
+              "player": "S11T4D1",
+              "replacement": null,
+              "oldSalary": 13743766,
+              "replacementSalary": 0,
+              "deadNow": 4123130,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9620636,
+              "netRelief": 9620636,
+              "afterUsed": 451863706
+            },
+            {
+              "team": 1,
+              "player": "1466",
+              "replacement": "S11T5U33",
+              "oldSalary": 10025064,
+              "replacementSalary": 1172488,
+              "deadNow": 501253,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9523811,
+              "netRelief": 8351323,
+              "afterUsed": 443512383
+            },
+            {
+              "team": 1,
+              "player": "S11T2D12",
+              "replacement": "S11T5U52",
+              "oldSalary": 16889702,
+              "replacementSalary": 1169548,
+              "deadNow": 844485,
+              "deadFuture": 0,
+              "salaryAfterRelease": 16045217,
+              "netRelief": 14875669,
+              "afterUsed": 428636714
+            },
+            {
+              "team": 2,
+              "player": "S11T2D11",
+              "replacement": "S11T5U46",
+              "oldSalary": 13694188,
+              "replacementSalary": 1092483,
+              "deadNow": 684709,
+              "deadFuture": 0,
+              "salaryAfterRelease": 13009479,
+              "netRelief": 11916996,
+              "afterUsed": 489877700
+            },
+            {
+              "team": 2,
+              "player": "S11T4D3",
+              "replacement": null,
+              "oldSalary": 14262245,
+              "replacementSalary": 0,
+              "deadNow": 4278674,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9983571,
+              "netRelief": 9983571,
+              "afterUsed": 479894129
+            },
+            {
+              "team": 2,
+              "player": "S11T2D19",
+              "replacement": "S11T5U40",
+              "oldSalary": 10935867,
+              "replacementSalary": 1168957,
+              "deadNow": 546793,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10389074,
+              "netRelief": 9220117,
+              "afterUsed": 470674012
+            },
+            {
+              "team": 2,
+              "player": "S11T3D6",
+              "replacement": "S11T5U56",
+              "oldSalary": 11787986,
+              "replacementSalary": 1208915,
+              "deadNow": 1768198,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10019788,
+              "netRelief": 8810873,
+              "afterUsed": 461863139
+            },
+            {
+              "team": 2,
+              "player": "S11T2D16",
+              "replacement": "S11T5U31",
+              "oldSalary": 10174971,
+              "replacementSalary": 1092483,
+              "deadNow": 508749,
+              "deadFuture": 0,
+              "salaryAfterRelease": 9666222,
+              "netRelief": 8573739,
+              "afterUsed": 453289400
+            },
+            {
+              "team": 2,
+              "player": "S11T2D27",
+              "replacement": "S11T5U32",
+              "oldSalary": 8176809,
+              "replacementSalary": 1177804,
+              "deadNow": 408840,
+              "deadFuture": 0,
+              "salaryAfterRelease": 7767969,
+              "netRelief": 6590165,
+              "afterUsed": 446699235
+            },
+            {
+              "team": 2,
+              "player": "S11T4D9",
+              "replacement": null,
+              "oldSalary": 8742628,
+              "replacementSalary": 0,
+              "deadNow": 2622788,
+              "deadFuture": 0,
+              "salaryAfterRelease": 6119840,
+              "netRelief": 6119840,
+              "afterUsed": 440579395
+            },
+            {
+              "team": 2,
+              "player": "S11T2D29",
+              "replacement": "S11T5U50",
+              "oldSalary": 6349107,
+              "replacementSalary": 1168957,
+              "deadNow": 317455,
+              "deadFuture": 0,
+              "salaryAfterRelease": 6031652,
+              "netRelief": 4862695,
+              "afterUsed": 435716700
+            },
+            {
+              "team": 3,
+              "player": "S11T2D20",
+              "replacement": null,
+              "oldSalary": 14989574,
+              "replacementSalary": 0,
+              "deadNow": 749479,
+              "deadFuture": 0,
+              "salaryAfterRelease": 14240095,
+              "netRelief": 14240095,
+              "afterUsed": 484317777
+            },
+            {
+              "team": 3,
+              "player": "S11T2D15",
+              "replacement": null,
+              "oldSalary": 14889823,
+              "replacementSalary": 0,
+              "deadNow": 744491,
+              "deadFuture": 0,
+              "salaryAfterRelease": 14145332,
+              "netRelief": 14145332,
+              "afterUsed": 470172445
+            },
+            {
+              "team": 3,
+              "player": "S11T4D0",
+              "replacement": null,
+              "oldSalary": 19124004,
+              "replacementSalary": 0,
+              "deadNow": 5737201,
+              "deadFuture": 0,
+              "salaryAfterRelease": 13386803,
+              "netRelief": 13386803,
+              "afterUsed": 456785642
+            },
+            {
+              "team": 3,
+              "player": "4035",
+              "replacement": null,
+              "oldSalary": 14023788,
+              "replacementSalary": 0,
+              "deadNow": 701189,
+              "deadFuture": 0,
+              "salaryAfterRelease": 13322599,
+              "netRelief": 13322599,
+              "afterUsed": 443463043
+            },
+            {
+              "team": 3,
+              "player": "4033",
+              "replacement": "S11T5U43",
+              "oldSalary": 11295137,
+              "replacementSalary": 1092483,
+              "deadNow": 564757,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10730380,
+              "netRelief": 9637897,
+              "afterUsed": 433825146
+            },
+            {
+              "team": 4,
+              "player": "S11T3D2",
+              "replacement": "S11T4U42",
+              "oldSalary": 21144689,
+              "replacementSalary": 1366000,
+              "deadNow": 3171703,
+              "deadFuture": 0,
+              "salaryAfterRelease": 17972986,
+              "netRelief": 16606986,
+              "afterUsed": 475408870
+            },
+            {
+              "team": 4,
+              "player": "10229",
+              "replacement": "S11T5U42",
+              "oldSalary": 14524249,
+              "replacementSalary": 1546738,
+              "deadNow": 726212,
+              "deadFuture": 0,
+              "salaryAfterRelease": 13798037,
+              "netRelief": 12251299,
+              "afterUsed": 463157571
+            },
+            {
+              "team": 4,
+              "player": "S11T4D2",
+              "replacement": null,
+              "oldSalary": 15902291,
+              "replacementSalary": 0,
+              "deadNow": 4770687,
+              "deadFuture": 0,
+              "salaryAfterRelease": 11131604,
+              "netRelief": 11131604,
+              "afterUsed": 452025967
+            },
+            {
+              "team": 4,
+              "player": "S11T2D1",
+              "replacement": "S11T4U44",
+              "oldSalary": 11855862,
+              "replacementSalary": 1496174,
+              "deadNow": 592793,
+              "deadFuture": 0,
+              "salaryAfterRelease": 11263069,
+              "netRelief": 9766895,
+              "afterUsed": 442259072
+            },
+            {
+              "team": 4,
+              "player": "S11T3D7",
+              "replacement": "S11T5U47",
+              "oldSalary": 12515190,
+              "replacementSalary": 1244594,
+              "deadNow": 1877279,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10637911,
+              "netRelief": 9393317,
+              "afterUsed": 432865755
+            },
+            {
+              "team": 5,
+              "player": "S11T2D10",
+              "replacement": null,
+              "oldSalary": 14493392,
+              "replacementSalary": 0,
+              "deadNow": 724670,
+              "deadFuture": 0,
+              "salaryAfterRelease": 13768722,
+              "netRelief": 13768722,
+              "afterUsed": 465020097
+            },
+            {
+              "team": 5,
+              "player": "9756",
+              "replacement": null,
+              "oldSalary": 12834602,
+              "replacementSalary": 0,
+              "deadNow": 641730,
+              "deadFuture": 0,
+              "salaryAfterRelease": 12192872,
+              "netRelief": 12192872,
+              "afterUsed": 452827225
+            },
+            {
+              "team": 5,
+              "player": "S11T4D4",
+              "replacement": null,
+              "oldSalary": 14496958,
+              "replacementSalary": 0,
+              "deadNow": 4349087,
+              "deadFuture": 0,
+              "salaryAfterRelease": 10147871,
+              "netRelief": 10147871,
+              "afterUsed": 442679354
+            },
+            {
+              "team": 5,
+              "player": "S11T3D9",
+              "replacement": "S11T5U44",
+              "oldSalary": 10128480,
+              "replacementSalary": 1092483,
+              "deadNow": 1519272,
+              "deadFuture": 0,
+              "salaryAfterRelease": 8609208,
+              "netRelief": 7516725,
+              "afterUsed": 435162629
+            }
+          ]
+        }
+      ],
+      "legalAll": true,
+      "failedYear": null,
+      "trades": 7,
+      "cuts": 81
+    },
+    {
+      "seed": 11,
+      "mode": "retained_cycle",
+      "timeline": "reset_before_enforce",
+      "shock": -0.1,
+      "seasons": 5,
+      "annualVeterans": true,
+      "years": [
+        {
+          "year": 2027,
+          "cap": 442584566,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 500982134,
+              "roster": 25,
+              "index": 208.508
+            },
+            {
+              "team": 1,
+              "cost": 494270768,
+              "roster": 25,
+              "index": 204.79073529842861
+            },
+            {
+              "team": 2,
+              "cost": 514966161,
+              "roster": 25,
+              "index": 200.38649262556982
+            },
+            {
+              "team": 3,
+              "cost": 376371183,
+              "roster": 25,
+              "index": 177.73365948205273
+            },
+            {
+              "team": 4,
+              "cost": 325546772,
+              "roster": 25,
+              "index": 172.01833707736813
+            },
+            {
+              "team": 5,
+              "cost": 284707786,
+              "roster": 25,
+              "index": 164.12996890804075
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 415989016,
+              "roster": 25,
+              "index": 200.49985025926154,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 423812353,
+              "roster": 25,
+              "index": 193.67500492130648,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 413026770,
+              "roster": 25,
+              "index": 190.818107575583,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 413513925,
+              "roster": 25,
+              "index": 182.85665948205272,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 325546772,
+              "roster": 25,
+              "index": 172.01833707736813,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 403016577,
+              "roster": 25,
+              "index": 177.75113231403904,
+              "legal": true
+            }
+          ],
+          "exits": [],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 3,
+          "cutCount": 5,
+          "screened": {
+            "pairs": 2511,
+            "capBlocked": 480,
+            "rosterBlocked": 635,
+            "noMutualUtility": 1271,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 5,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 28.481513181893405,
+          "maxIndex": 200.49985025926154,
+          "failures": [],
+          "trades": [
+            {
+              "from": 0,
+              "to": 5,
+              "playerSold": "9226",
+              "playerGiven": "S11T1D23",
+              "salarySold": 50117800,
+              "salaryGiven": 2267424,
+              "capReliefSeller": 47850376,
+              "sellerBefore": 500982134,
+              "sellerAfter": 453131758,
+              "buyerBefore": 284707786,
+              "buyerAfter": 332558162,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2027,
+                "annual": 50117800,
+                "dead": {},
+                "now": 0,
+                "relief": 50117800,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "9226",
+                "seller": 0,
+                "teamTenureProxy": 1
+              },
+              "cutReplacement": "S11T1U34",
+              "cutAlternativeSellerRelief": 48893144,
+              "sellerTradeVsCutRelief": -1042768,
+              "sellerUtilityVsCut": 2.274,
+              "buyerUtilityVsStay": 2.515,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 40641839,
+                  "buyerBefore": 46747180,
+                  "sellerAfter": 43476119,
+                  "buyerAfter": 43912900,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2834280,
+                  "frozenCapStressBuyerHeadroom": 398671666,
+                  "frozenCapStressSellerHeadroom": 399108447
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 33617364,
+                  "buyerBefore": 48750554,
+                  "sellerAfter": 37018500,
+                  "buyerAfter": 45349418,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3401136,
+                  "frozenCapStressBuyerHeadroom": 397235148,
+                  "frozenCapStressSellerHeadroom": 405566066
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 0,
+              "to": 3,
+              "playerSold": "8130",
+              "playerGiven": "S11T1D18",
+              "salarySold": 39288760,
+              "salaryGiven": 2146018,
+              "capReliefSeller": 37142742,
+              "sellerBefore": 453131758,
+              "sellerAfter": 415989016,
+              "buyerBefore": 376371183,
+              "buyerAfter": 413513925,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2027,
+                "annual": 39288760,
+                "dead": {},
+                "now": 0,
+                "relief": 39288760,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "8130",
+                "seller": 0,
+                "teamTenureProxy": 0
+              },
+              "cutReplacement": "12506",
+              "cutAlternativeSellerRelief": 35528413,
+              "sellerTradeVsCutRelief": 1614329,
+              "sellerUtilityVsCut": 2.216,
+              "buyerUtilityVsStay": 2.979,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 43476119,
+                  "buyerBefore": 46539008,
+                  "sellerAfter": 46158642,
+                  "buyerAfter": 43856485,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2682523,
+                  "frozenCapStressBuyerHeadroom": 398728081,
+                  "frozenCapStressSellerHeadroom": 396425924
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 37018500,
+                  "buyerBefore": 46800505,
+                  "sellerAfter": 40237527,
+                  "buyerAfter": 43581478,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3219027,
+                  "frozenCapStressBuyerHeadroom": 399003088,
+                  "frozenCapStressSellerHeadroom": 402347039
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            },
+            {
+              "from": 1,
+              "to": 5,
+              "playerSold": "4034",
+              "playerGiven": "S11T1D25",
+              "salarySold": 72539063,
+              "salaryGiven": 2080648,
+              "capReliefSeller": 70458415,
+              "sellerBefore": 494270768,
+              "sellerAfter": 423812353,
+              "buyerBefore": 332558162,
+              "buyerAfter": 403016577,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2027,
+                "annual": 72539063,
+                "dead": {},
+                "now": 0,
+                "relief": 72539063,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "4034",
+                "seller": 1,
+                "teamTenureProxy": 2
+              },
+              "cutReplacement": "S11T1U34",
+              "cutAlternativeSellerRelief": 71314407,
+              "sellerTradeVsCutRelief": -855992,
+              "sellerUtilityVsCut": 0.679,
+              "buyerUtilityVsStay": 5.191,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2028,
+                  "sellerBefore": 39639683,
+                  "buyerBefore": 43912900,
+                  "sellerAfter": 42240493,
+                  "buyerAfter": 41312090,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2600810,
+                  "frozenCapStressBuyerHeadroom": 401272476,
+                  "frozenCapStressSellerHeadroom": 400344073
+                },
+                {
+                  "year": 2029,
+                  "sellerBefore": 37596849,
+                  "buyerBefore": 45349418,
+                  "sellerAfter": 40717821,
+                  "buyerAfter": 42228446,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3120972,
+                  "frozenCapStressBuyerHeadroom": 400356120,
+                  "frozenCapStressSellerHeadroom": 401866745
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            }
+          ],
+          "cuts": [
+            {
+              "team": 2,
+              "player": "4983",
+              "replacement": "S11T1U32",
+              "oldSalary": 24038727,
+              "replacementSalary": 1224656,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 22814071,
+              "afterUsed": 492152090
+            },
+            {
+              "team": 2,
+              "player": "5844",
+              "replacement": "S11T1U48",
+              "oldSalary": 11477019,
+              "replacementSalary": 1347813,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 10129206,
+              "afterUsed": 482022884
+            },
+            {
+              "team": 2,
+              "player": "S11T1D6",
+              "replacement": "S11T1U46",
+              "oldSalary": 6105490,
+              "replacementSalary": 1224656,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4880834,
+              "afterUsed": 477142050
+            },
+            {
+              "team": 2,
+              "player": "10859",
+              "replacement": "S11T1U38",
+              "oldSalary": 19391551,
+              "replacementSalary": 1224656,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 18166895,
+              "afterUsed": 458975155
+            },
+            {
+              "team": 2,
+              "player": "9221",
+              "replacement": "5967",
+              "oldSalary": 62088556,
+              "replacementSalary": 16140171,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 45948385,
+              "afterUsed": 413026770
+            }
+          ]
+        },
+        {
+          "year": 2028,
+          "cap": 439038067,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 456746994,
+              "roster": 30,
+              "index": 195.0430732918864
+            },
+            {
+              "team": 1,
+              "cost": 405752894,
+              "roster": 29,
+              "index": 173.5079869119616
+            },
+            {
+              "team": 2,
+              "cost": 451432108,
+              "roster": 29,
+              "index": 188.41245285586416
+            },
+            {
+              "team": 3,
+              "cost": 450968622,
+              "roster": 30,
+              "index": 181.39686760052624
+            },
+            {
+              "team": 4,
+              "cost": 350167106,
+              "roster": 29,
+              "index": 169.92751612153475
+            },
+            {
+              "team": 5,
+              "cost": 448083089,
+              "roster": 30,
+              "index": 177.01894471652255
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 403655455,
+              "roster": 30,
+              "index": 189.79555223739652,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 435053808,
+              "roster": 29,
+              "index": 183.0160056258898,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 422131194,
+              "roster": 29,
+              "index": 183.6414772755562,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 434989619,
+              "roster": 30,
+              "index": 181.39686760052624,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 350167106,
+              "roster": 29,
+              "index": 169.92751612153475,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 429364058,
+              "roster": 30,
+              "index": 177.01894471652255,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 1,
+              "id": "4984",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 2,
+              "id": "11783",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 4,
+              "id": "2449",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 1,
+          "cutCount": 6,
+          "screened": {
+            "pairs": 1580,
+            "capBlocked": 640,
+            "rosterBlocked": 148,
+            "noMutualUtility": 784,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 6,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 19.86803611586177,
+          "maxIndex": 189.79555223739652,
+          "failures": [],
+          "trades": [
+            {
+              "from": 2,
+              "to": 1,
+              "playerSold": "6804",
+              "playerGiven": "S11T2D22",
+              "salarySold": 31439020,
+              "salaryGiven": 2138106,
+              "capReliefSeller": 29300914,
+              "sellerBefore": 451432108,
+              "sellerAfter": 422131194,
+              "buyerBefore": 405752894,
+              "buyerAfter": 435053808,
+              "cutAlternative": {
+                "mode": "none",
+                "year": 2028,
+                "annual": 31439020,
+                "dead": {},
+                "now": 0,
+                "relief": 31439020,
+                "activeAfterCut": null,
+                "futureDebt": 0,
+                "nextFAContractPrice": null,
+                "player": "6804",
+                "seller": 2,
+                "teamTenureProxy": 2
+              },
+              "cutReplacement": "S11T2U56",
+              "cutAlternativeSellerRelief": 30332559,
+              "sellerTradeVsCutRelief": -1031645,
+              "sellerUtilityVsCut": 1.315,
+              "buyerUtilityVsStay": 3.821,
+              "buyerWaiverWaitOpportunity": 0,
+              "futureTransfers": [
+                {
+                  "year": 2029,
+                  "sellerBefore": 65281727,
+                  "buyerBefore": 69931896,
+                  "sellerAfter": 67954360,
+                  "buyerAfter": 67259263,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 2672633,
+                  "frozenCapStressBuyerHeadroom": 371778804,
+                  "frozenCapStressSellerHeadroom": 371083707
+                },
+                {
+                  "year": 2030,
+                  "sellerBefore": 34884749,
+                  "buyerBefore": 35056890,
+                  "sellerAfter": 38091908,
+                  "buyerAfter": 31849731,
+                  "salaryToBuyer": 0,
+                  "salaryToSeller": 3207159,
+                  "frozenCapStressBuyerHeadroom": 407188336,
+                  "frozenCapStressSellerHeadroom": 400946159
+                }
+              ],
+              "contractBuyerFundingBeyond2027": "not established: future cap unknown",
+              "transactionCreatesDeadCap": 0,
+              "actualHumanConsent": "unobserved",
+              "buyerPaidFullContract": true
+            }
+          ],
+          "cuts": [
+            {
+              "team": 0,
+              "player": "S11T1D13",
+              "replacement": "S11T2U44",
+              "oldSalary": 6705231,
+              "replacementSalary": 1106461,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5598770,
+              "afterUsed": 451148224
+            },
+            {
+              "team": 0,
+              "player": "S11T2D9",
+              "replacement": "S11T2U41",
+              "oldSalary": 6148716,
+              "replacementSalary": 1198699,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4950017,
+              "afterUsed": 446198207
+            },
+            {
+              "team": 0,
+              "player": "S11T1D17",
+              "replacement": "S11T2U47",
+              "oldSalary": 4113648,
+              "replacementSalary": 1106461,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 3007187,
+              "afterUsed": 443191020
+            },
+            {
+              "team": 0,
+              "player": "4881",
+              "replacement": "11560",
+              "oldSalary": 61075513,
+              "replacementSalary": 21539948,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 39535565,
+              "afterUsed": 403655455
+            },
+            {
+              "team": 3,
+              "player": "1479",
+              "replacement": "S11T2U35",
+              "oldSalary": 17085464,
+              "replacementSalary": 1106461,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15979003,
+              "afterUsed": 434989619
+            },
+            {
+              "team": 5,
+              "player": "S11T1D0",
+              "replacement": "S11T2U37",
+              "oldSalary": 19959438,
+              "replacementSalary": 1240407,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 18719031,
+              "afterUsed": 429364058
+            }
+          ]
+        },
+        {
+          "year": 2029,
+          "cap": 437120085,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 421164877,
+              "roster": 34,
+              "index": 185.49645686838795
+            },
+            {
+              "team": 1,
+              "cost": 471601890,
+              "roster": 34,
+              "index": 184.71570552753278
+            },
+            {
+              "team": 2,
+              "cost": 456954203,
+              "roster": 33,
+              "index": 183.04264910408702
+            },
+            {
+              "team": 3,
+              "cost": 463461224,
+              "roster": 35,
+              "index": 178.65711021144114
+            },
+            {
+              "team": 4,
+              "cost": 392272769,
+              "roster": 34,
+              "index": 167.06645635239045
+            },
+            {
+              "team": 5,
+              "cost": 467044206,
+              "roster": 35,
+              "index": 175.6131823668861
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 421164877,
+              "roster": 34,
+              "index": 185.49645686838795,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 424302103,
+              "roster": 34,
+              "index": 184.71570552753278,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 429180115,
+              "roster": 33,
+              "index": 183.00389781711056,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 428005306,
+              "roster": 34,
+              "index": 178.65711021144114,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 392272769,
+              "roster": 34,
+              "index": 167.06645635239045,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 434988884,
+              "roster": 35,
+              "index": 175.6131823668861,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 0,
+              "id": "4217",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 2,
+              "id": "5967",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 9,
+          "screened": {
+            "pairs": 875,
+            "capBlocked": 450,
+            "rosterBlocked": 47,
+            "noMutualUtility": 378,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 9,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 18.430000515997506,
+          "maxIndex": 185.49645686838795,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 1,
+              "player": "1466",
+              "replacement": "S11T3U48",
+              "oldSalary": 18437758,
+              "replacementSalary": 1181144,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 17256614,
+              "afterUsed": 454345276
+            },
+            {
+              "team": 1,
+              "player": "S11T1D3",
+              "replacement": "S11T3U38",
+              "oldSalary": 17537594,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16439999,
+              "afterUsed": 437905277
+            },
+            {
+              "team": 1,
+              "player": "S11T2D2",
+              "replacement": "S11T3U42",
+              "oldSalary": 14700769,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13603174,
+              "afterUsed": 424302103
+            },
+            {
+              "team": 2,
+              "player": "S11T1D4",
+              "replacement": "S11T3U37",
+              "oldSalary": 16791377,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15693782,
+              "afterUsed": 441260421
+            },
+            {
+              "team": 2,
+              "player": "S11T2D3",
+              "replacement": "S11T3U58",
+              "oldSalary": 13177901,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12080306,
+              "afterUsed": 429180115
+            },
+            {
+              "team": 3,
+              "player": "S11T1D1",
+              "replacement": null,
+              "oldSalary": 19769673,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 19769673,
+              "afterUsed": 443691551
+            },
+            {
+              "team": 3,
+              "player": "4033",
+              "replacement": "S11T3U33",
+              "oldSalary": 16783840,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15686245,
+              "afterUsed": 428005306
+            },
+            {
+              "team": 5,
+              "player": "S11T2D4",
+              "replacement": "S11T3U55",
+              "oldSalary": 17644985,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16547390,
+              "afterUsed": 450496816
+            },
+            {
+              "team": 5,
+              "player": "5846",
+              "replacement": "S11T3U32",
+              "oldSalary": 16605527,
+              "replacementSalary": 1097595,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15507932,
+              "afterUsed": 434988884
+            }
+          ]
+        },
+        {
+          "year": 2030,
+          "cap": 436993124,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 495756605,
+              "roster": 39,
+              "index": 193.25242941251065
+            },
+            {
+              "team": 1,
+              "cost": 458740503,
+              "roster": 39,
+              "index": 181.58700933385194
+            },
+            {
+              "team": 2,
+              "cost": 493950086,
+              "roster": 38,
+              "index": 184.38622925487064
+            },
+            {
+              "team": 3,
+              "cost": 478215103,
+              "roster": 39,
+              "index": 176.75051540207826
+            },
+            {
+              "team": 4,
+              "cost": 448845396,
+              "roster": 39,
+              "index": 168.20482446854137
+            },
+            {
+              "team": 5,
+              "cost": 467367973,
+              "roster": 40,
+              "index": 174.33252968474767
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 434978682,
+              "roster": 39,
+              "index": 193.25242941251065,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 433490124,
+              "roster": 39,
+              "index": 181.58700933385194,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 435586349,
+              "roster": 37,
+              "index": 184.33713844211968,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 430350874,
+              "roster": 37,
+              "index": 176.75051540207826,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 432846322,
+              "roster": 39,
+              "index": 168.20482446854137,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 435959682,
+              "roster": 39,
+              "index": 174.33252968474767,
+              "legal": true
+            }
+          ],
+          "exits": [],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 22,
+          "screened": {
+            "pairs": 0,
+            "capBlocked": 0,
+            "rosterBlocked": 0,
+            "noMutualUtility": 0,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 22,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 25.047604943969276,
+          "maxIndex": 193.25242941251065,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 0,
+              "player": "S11T2D7",
+              "replacement": "S11T4U45",
+              "oldSalary": 14485626,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13392826,
+              "afterUsed": 482363779
+            },
+            {
+              "team": 0,
+              "player": "S11T1D23",
+              "replacement": "S11T4U34",
+              "oldSalary": 13558115,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12465315,
+              "afterUsed": 469898464
+            },
+            {
+              "team": 0,
+              "player": "S11T3D5",
+              "replacement": "S11T4U31",
+              "oldSalary": 10985420,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 9892620,
+              "afterUsed": 460005844
+            },
+            {
+              "team": 0,
+              "player": "S11T1D18",
+              "replacement": "S11T4U36",
+              "oldSalary": 10106354,
+              "replacementSalary": 1171740,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 8934614,
+              "afterUsed": 451071230
+            },
+            {
+              "team": 0,
+              "player": "S11T1D20",
+              "replacement": "S11T4U51",
+              "oldSalary": 8181019,
+              "replacementSalary": 1547187,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 6633832,
+              "afterUsed": 444437398
+            },
+            {
+              "team": 0,
+              "player": "12493",
+              "replacement": "S11T4U53",
+              "oldSalary": 6503856,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5411056,
+              "afterUsed": 439026342
+            },
+            {
+              "team": 0,
+              "player": "S11T3D12",
+              "replacement": "S11T4U50",
+              "oldSalary": 5317078,
+              "replacementSalary": 1269418,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4047660,
+              "afterUsed": 434978682
+            },
+            {
+              "team": 1,
+              "player": "S11T1D10",
+              "replacement": "S11T4U57",
+              "oldSalary": 14961127,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13868327,
+              "afterUsed": 444872176
+            },
+            {
+              "team": 1,
+              "player": "S11T1D16",
+              "replacement": "S11T4U41",
+              "oldSalary": 13087758,
+              "replacementSalary": 1705706,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11382052,
+              "afterUsed": 433490124
+            },
+            {
+              "team": 2,
+              "player": "S11T1D14",
+              "replacement": "S11T4U48",
+              "oldSalary": 17330635,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16237835,
+              "afterUsed": 477712251
+            },
+            {
+              "team": 2,
+              "player": "1945",
+              "replacement": "S11T3U49",
+              "oldSalary": 9537488,
+              "replacementSalary": 1728026,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 7809462,
+              "afterUsed": 469902789
+            },
+            {
+              "team": 2,
+              "player": "S11T1D21",
+              "replacement": "S11T4U38",
+              "oldSalary": 16024137,
+              "replacementSalary": 1513511,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14510626,
+              "afterUsed": 455392163
+            },
+            {
+              "team": 2,
+              "player": "S11T3D8",
+              "replacement": "S11T3U43",
+              "oldSalary": 7881654,
+              "replacementSalary": 1371994,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 6509660,
+              "afterUsed": 448882503
+            },
+            {
+              "team": 2,
+              "player": "11603",
+              "replacement": null,
+              "oldSalary": 5575153,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5575153,
+              "afterUsed": 443307350
+            },
+            {
+              "team": 2,
+              "player": "12524",
+              "replacement": "S11T3U46",
+              "oldSalary": 6161284,
+              "replacementSalary": 1527559,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 4633725,
+              "afterUsed": 438673625
+            },
+            {
+              "team": 2,
+              "player": "S11T1U46",
+              "replacement": "S11T4U46",
+              "oldSalary": 4939489,
+              "replacementSalary": 1852213,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 3087276,
+              "afterUsed": 435586349
+            },
+            {
+              "team": 3,
+              "player": "S11T2D0",
+              "replacement": null,
+              "oldSalary": 17861660,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 17861660,
+              "afterUsed": 460353443
+            },
+            {
+              "team": 3,
+              "player": "8144",
+              "replacement": null,
+              "oldSalary": 16591728,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16591728,
+              "afterUsed": 443761715
+            },
+            {
+              "team": 3,
+              "player": "S11T3D4",
+              "replacement": "S11T4U55",
+              "oldSalary": 14765443,
+              "replacementSalary": 1354602,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13410841,
+              "afterUsed": 430350874
+            },
+            {
+              "team": 4,
+              "player": "S11T3D2",
+              "replacement": "S11T4U37",
+              "oldSalary": 17620574,
+              "replacementSalary": 1621500,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15999074,
+              "afterUsed": 432846322
+            },
+            {
+              "team": 5,
+              "player": "S11T3D0",
+              "replacement": null,
+              "oldSalary": 18185863,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 18185863,
+              "afterUsed": 449182110
+            },
+            {
+              "team": 5,
+              "player": "5872",
+              "replacement": "S11T4U42",
+              "oldSalary": 14315228,
+              "replacementSalary": 1092800,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13222428,
+              "afterUsed": 435959682
+            }
+          ]
+        },
+        {
+          "year": 2031,
+          "cap": 437644682,
+          "legal": true,
+          "opening": [
+            {
+              "team": 0,
+              "cost": 437047427,
+              "roster": 43,
+              "index": 183.10407815550062
+            },
+            {
+              "team": 1,
+              "cost": 473854651,
+              "roster": 43,
+              "index": 182.44846500303964
+            },
+            {
+              "team": 2,
+              "cost": 509432514,
+              "roster": 42,
+              "index": 185.87675245050312
+            },
+            {
+              "team": 3,
+              "cost": 502258297,
+              "roster": 42,
+              "index": 179.2607130888278
+            },
+            {
+              "team": 4,
+              "cost": 486222389,
+              "roster": 44,
+              "index": 169.62449697623092
+            },
+            {
+              "team": 5,
+              "cost": 491698010,
+              "roster": 43,
+              "index": 171.47742185964805
+            }
+          ],
+          "after": [
+            {
+              "team": 0,
+              "cost": 437047427,
+              "roster": 43,
+              "index": 183.10407815550062,
+              "legal": true
+            },
+            {
+              "team": 1,
+              "cost": 427479364,
+              "roster": 43,
+              "index": 182.44846500303964,
+              "legal": true
+            },
+            {
+              "team": 2,
+              "cost": 435977484,
+              "roster": 42,
+              "index": 185.87675245050312,
+              "legal": true
+            },
+            {
+              "team": 3,
+              "cost": 432243403,
+              "roster": 38,
+              "index": 179.2607130888278,
+              "legal": true
+            },
+            {
+              "team": 4,
+              "cost": 433711696,
+              "roster": 44,
+              "index": 169.62449697623092,
+              "legal": true
+            },
+            {
+              "team": 5,
+              "cost": 429171164,
+              "roster": 41,
+              "index": 171.47742185964805,
+              "legal": true
+            }
+          ],
+          "exits": [
+            {
+              "team": 0,
+              "id": "8150",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 1,
+              "id": "6794",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 4,
+              "id": "2747",
+              "deadNow": 0,
+              "deadFuture": 0
+            },
+            {
+              "team": 5,
+              "id": "11584",
+              "deadNow": 0,
+              "deadFuture": 0
+            }
+          ],
+          "capacity": [],
+          "rookieSignings": 30,
+          "tradeCount": 0,
+          "cutCount": 25,
+          "screened": {
+            "pairs": 637,
+            "capBlocked": 621,
+            "rosterBlocked": 0,
+            "noMutualUtility": 16,
+            "waiverWaitBlocked": 0
+          },
+          "operatorSteps": 25,
+          "deadCurrent": 0,
+          "deadFuture": 0,
+          "indexSpread": 16.252255474272204,
+          "maxIndex": 185.87675245050312,
+          "failures": [],
+          "trades": [],
+          "cuts": [
+            {
+              "team": 1,
+              "player": "S11T4D1",
+              "replacement": "S11T5U54",
+              "oldSalary": 13743766,
+              "replacementSalary": 1399523,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12344243,
+              "afterUsed": 461510408
+            },
+            {
+              "team": 1,
+              "player": "S11T2D14",
+              "replacement": "S11T5U58",
+              "oldSalary": 13270640,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12178157,
+              "afterUsed": 449332251
+            },
+            {
+              "team": 1,
+              "player": "2216",
+              "replacement": "S11T5U45",
+              "oldSalary": 12714328,
+              "replacementSalary": 1244594,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11469734,
+              "afterUsed": 437862517
+            },
+            {
+              "team": 1,
+              "player": "S11T1D22",
+              "replacement": "S11T5U35",
+              "oldSalary": 11475636,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 10383153,
+              "afterUsed": 427479364
+            },
+            {
+              "team": 2,
+              "player": "S11T3D1",
+              "replacement": "S11T5U51",
+              "oldSalary": 16564886,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 15472403,
+              "afterUsed": 493960111
+            },
+            {
+              "team": 2,
+              "player": "S11T4D3",
+              "replacement": "S11T5U33",
+              "oldSalary": 14262245,
+              "replacementSalary": 1172488,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13089757,
+              "afterUsed": 480870354
+            },
+            {
+              "team": 2,
+              "player": "S11T2D19",
+              "replacement": "S11T5U37",
+              "oldSalary": 10935867,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 9843384,
+              "afterUsed": 471026970
+            },
+            {
+              "team": 2,
+              "player": "S11T2D22",
+              "replacement": "S11T5U55",
+              "oldSalary": 10718694,
+              "replacementSalary": 1169269,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 9549425,
+              "afterUsed": 461477545
+            },
+            {
+              "team": 2,
+              "player": "S11T2D16",
+              "replacement": "S11T5U41",
+              "oldSalary": 10174971,
+              "replacementSalary": 1334123,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 8840848,
+              "afterUsed": 452636697
+            },
+            {
+              "team": 2,
+              "player": "S11T4D9",
+              "replacement": "S11T5U31",
+              "oldSalary": 8742628,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 7650145,
+              "afterUsed": 444986552
+            },
+            {
+              "team": 2,
+              "player": "S11T2D29",
+              "replacement": "S11T5U52",
+              "oldSalary": 6349107,
+              "replacementSalary": 1169548,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 5179559,
+              "afterUsed": 439806993
+            },
+            {
+              "team": 2,
+              "player": "12713",
+              "replacement": "S11T5U39",
+              "oldSalary": 4921992,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 3829509,
+              "afterUsed": 435977484
+            },
+            {
+              "team": 3,
+              "player": "S11T2D20",
+              "replacement": null,
+              "oldSalary": 14989574,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14989574,
+              "afterUsed": 487268723
+            },
+            {
+              "team": 3,
+              "player": "S11T2D15",
+              "replacement": null,
+              "oldSalary": 14889823,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14889823,
+              "afterUsed": 472378900
+            },
+            {
+              "team": 3,
+              "player": "S11T4D4",
+              "replacement": null,
+              "oldSalary": 14496958,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14496958,
+              "afterUsed": 457881942
+            },
+            {
+              "team": 3,
+              "player": "4035",
+              "replacement": null,
+              "oldSalary": 14023788,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14023788,
+              "afterUsed": 443858154
+            },
+            {
+              "team": 3,
+              "player": "S11T1D15",
+              "replacement": "S11T5U40",
+              "oldSalary": 12783708,
+              "replacementSalary": 1168957,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11614751,
+              "afterUsed": 432243403
+            },
+            {
+              "team": 4,
+              "player": "S11T4D2",
+              "replacement": "S11T5U32",
+              "oldSalary": 15902291,
+              "replacementSalary": 1177804,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14724487,
+              "afterUsed": 471497902
+            },
+            {
+              "team": 4,
+              "player": "S11T1D19",
+              "replacement": "S11T5U50",
+              "oldSalary": 14707056,
+              "replacementSalary": 1168957,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 13538099,
+              "afterUsed": 457959803
+            },
+            {
+              "team": 4,
+              "player": "10229",
+              "replacement": "S11T5U42",
+              "oldSalary": 14524249,
+              "replacementSalary": 1546738,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12977511,
+              "afterUsed": 444982292
+            },
+            {
+              "team": 4,
+              "player": "S11T3D7",
+              "replacement": "S11T5U47",
+              "oldSalary": 12515190,
+              "replacementSalary": 1244594,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 11270596,
+              "afterUsed": 433711696
+            },
+            {
+              "team": 5,
+              "player": "S11T4D0",
+              "replacement": null,
+              "oldSalary": 19124004,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 19124004,
+              "afterUsed": 472574006
+            },
+            {
+              "team": 5,
+              "player": "S11T2D6",
+              "replacement": "S11T5U46",
+              "oldSalary": 17193946,
+              "replacementSalary": 1092483,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 16101463,
+              "afterUsed": 456472543
+            },
+            {
+              "team": 5,
+              "player": "S11T2D10",
+              "replacement": null,
+              "oldSalary": 14493392,
+              "replacementSalary": 0,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 14493392,
+              "afterUsed": 441979151
+            },
+            {
+              "team": 5,
+              "player": "8136",
+              "replacement": "S11T4U44",
+              "oldSalary": 14304161,
+              "replacementSalary": 1496174,
+              "deadNow": 0,
+              "deadFuture": 0,
+              "salaryAfterRelease": null,
+              "netRelief": 12807987,
+              "afterUsed": 429171164
+            }
+          ]
+        }
+      ],
+      "legalAll": true,
+      "failedYear": null,
+      "trades": 4,
+      "cuts": 67
+    }
+  ],
+  "summary": {
+    "paths": 3,
+    "legal": 3,
+    "byMode": [
+      {
+        "mode": "none",
+        "paths": 1,
+        "legal": 1,
+        "trades": 4,
+        "cuts": 67
+      },
+      {
+        "mode": "retained_cycle",
+        "paths": 2,
+        "legal": 2,
+        "trades": 11,
+        "cuts": 148
+      },
+      {
+        "mode": "guaranteed_vintage",
+        "paths": 0,
+        "legal": 0,
+        "trades": 0,
+        "cuts": 0
+      }
+    ]
+  },
+  "validation": {
+    "invariantsPassed": true,
+    "p0ExactlyEqualsP1ResetFirst": true,
+    "sourceBlob": "09cdcc3bf7fe2401be7a317d081af76e6a02312b",
+    "originalSourceBlob": "3005ac081215f04eb62812961511d178cfacdf53",
+    "coreBlob": "d874d24f3d109ec6711f39e9145ec7a98fa81425",
+    "cutProbeBlob": "053c027050339255e3f3df013fb16d4e09ca9ab2",
+    "archivedPlayerBlob": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489",
+    "independentNodeCI": false,
+    "trades": 15,
+    "cuts": 215,
+    "futureRows": 30
+  }
+}
