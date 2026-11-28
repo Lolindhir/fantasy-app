@@ -1,0 +1,1518 @@
+{
+  "schemaVersion": 1,
+  "scope": "AC6A classified reader manifest: Python and pwsh fixtures, real historical four-product chain, candidate current/context, schedule-outlook, injury-impact, PWF/TWP batch and App delivery read sites. Expanded rules pending Deep runtime evidence, not exhaustive.",
+  "rules": [
+    {
+      "id": "recaps-pwf",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/historical_pregame_inputs.py:_pwf_projections",
+      "role": "input",
+      "note": "Conditional player projection for historical team-range assembly. Shared historical adapter for Stats and Recaps; stable rule ID retained."
+    },
+    {
+      "id": "recaps-roster",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/historical_pregame_inputs.py:_weekly_roster_rows",
+      "role": "input",
+      "note": "Weekly identity and position evidence. Shared historical adapter for Stats and Recaps; stable rule ID retained."
+    },
+    {
+      "id": "recaps-matchups",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/historical_pregame_inputs.py:_load_matchup_rows",
+      "role": "input",
+      "note": "Recorded matchup facts. Shared historical adapter for Stats and Recaps; stable rule ID retained."
+    },
+    {
+      "id": "stats-twp",
+      "root": "derived",
+      "pattern": "team-week-performance/*/*/*.json",
+      "reader": "tools/derived_data_lib/season_statistics.py:_efficiency_actual",
+      "caller": null,
+      "role": "input",
+      "note": "Persisted actual lineup efficiency, not a new computation."
+    },
+    {
+      "id": "recaps-noop",
+      "root": "derived",
+      "pattern": "weekly-recaps/*/*.json",
+      "reader": "tools/weekly_recaps_materialize.py:materialize_season",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing bytes checked only after computing candidate."
+    },
+    {
+      "id": "recaps-app-delivery",
+      "root": "derived",
+      "pattern": "weekly-recaps/*/*.json",
+      "reader": "tools/weekly_recaps_materialize.py:read_model",
+      "caller": "tools/weekly_recaps_app_publish.py:_model",
+      "role": "delivery",
+      "note": "Read persisted Recap model at App adaptation boundary."
+    },
+    {
+      "id": "pwf-app-noop",
+      "root": "app",
+      "pattern": "PlayerWeekFantasy.json",
+      "reader": "tools/player_week_fantasy_app_publish.py:write_json_if_changed",
+      "caller": null,
+      "role": "comparison",
+      "note": "N3: compare App candidate after calculation, never a forecast input."
+    },
+    {
+      "id": "pwsh-league-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "public/requests/utils/LeagueMetadataUtils.psm1:Get-LeagueMetadata",
+      "caller": null,
+      "role": "input",
+      "note": "Actual pwsh module reader for versioned league model configuration; missing paths rejected before read."
+    },
+    {
+      "id": "players-pwf-delivery",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_projections",
+      "caller": null,
+      "role": "delivery",
+      "note": "N1: PWF GameHistory projection in independently published Players read model."
+    },
+    {
+      "id": "dw-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Canonical current league settings."
+    },
+    {
+      "id": "dw-canonical-rosters",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/rosters.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Canonical fantasy roster membership."
+    },
+    {
+      "id": "dw-raw-rosters",
+      "root": "source",
+      "pattern": "providers/sleeper/leagues/*/rosters.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_ordered_starter_slots",
+      "role": "input",
+      "note": "N2: raw slot ordering cross-checked against canonical starters."
+    },
+    {
+      "id": "dw-identities",
+      "root": "source",
+      "pattern": "nfl/identities/players.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Canonical player identity bridge."
+    },
+    {
+      "id": "dw-espn-availability",
+      "root": "source",
+      "pattern": "nfl/player-availability/espn.json",
+      "reader": "tools/derived_data_lib/decision_windows.py:_read",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "N2: current availability observation; absent or unreadable stays unknown."
+    },
+    {
+      "id": "population-nfl-rosters",
+      "root": "source",
+      "pattern": "nfl/rosters/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:roster_basis",
+      "role": "input",
+      "note": "N2: season roster membership incl explicit previous-season fallback."
+    },
+    {
+      "id": "population-weekly-rosters",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:roster_basis",
+      "role": "input",
+      "note": "N2: weekly roster evidence in current player population."
+    },
+    {
+      "id": "population-nfl-draft",
+      "root": "source",
+      "pattern": "nfl/draft/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:draft_basis",
+      "role": "input",
+      "note": "N2: NFL draft evidence in current player population."
+    },
+    {
+      "id": "dw-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
+      "role": "input",
+      "note": "Selected repairability model for league and season."
+    },
+    {
+      "id": "standings-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:manifest",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-members",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/members.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-rosters",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/rosters.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-winners-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/winners-bracket.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-losers-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/losers-bracket.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-matchups",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:weekly_matchups",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-structure",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_structure",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-games",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_games_final_rows",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_playing_teams",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_stats_complete",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-stats-build",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data.py:build_season_statistics",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-standings-build",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data.py:build_league_standings",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-stats-resolve",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/season_statistics.py:resolve",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-recaps",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "stats-lineup-slots",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/season_statistics.py:_lineup_slots",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/derived_data.py:read_season_statistics",
+      "caller": "tools/derived_data.py:build_league_standings",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-standings",
+      "root": "derived",
+      "pattern": "league-standings/*/*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:standings_product",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-twp",
+      "root": "derived",
+      "pattern": "team-week-performance/*/*/*.json",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:team_awards_and_performance",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/historical_pregame_inputs.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "schedule-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/derived_data_lib/nfl_schedule_games.py:build_schedule",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "schedule-finality",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/derived_data_lib/nfl_schedule_games.py:build_schedule",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "schedule-teams",
+      "root": "source",
+      "pattern": "nfl/teams.json",
+      "reader": "tools/derived_data_lib/nfl_schedule_games.py:__init__",
+      "caller": "tools/derived_data_lib/nfl_schedule_games.py:build_schedule",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "registry-teams",
+      "root": "source",
+      "pattern": "nfl/teams.json",
+      "reader": "tools/nfl_source_data_lib/common.py:load_json",
+      "caller": "tools/nfl_source_data_lib/teams.py:load",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "historical-position-weekly",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/team_week_performance_sources.py:_read_json",
+      "caller": "tools/team_week_performance_sources.py:resolve_week_positions",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "historical-position-season",
+      "root": "source",
+      "pattern": "nfl/rosters/*.json",
+      "reader": "tools/team_week_performance_sources.py:_read_json",
+      "caller": "tools/team_week_performance_sources.py:resolve_week_positions",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "records-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/league_records_materialize.py:resolve",
+      "caller": "tools/league_records_materialize.py:materialize",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "stats-noop",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/derived_data.py:materialize_season_statistics",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output byte comparison after calculation."
+    },
+    {
+      "id": "standings-noop",
+      "root": "derived",
+      "pattern": "league-standings/*/*.json",
+      "reader": "tools/derived_data.py:materialize_league_standings",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output byte comparison after calculation."
+    },
+    {
+      "id": "records-noop",
+      "root": "derived",
+      "pattern": "league-records/*.json",
+      "reader": "tools/league_records_materialize.py:materialize",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output byte comparison after calculation."
+    },
+    {
+      "id": "recaps-scope-completed-season",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/matchup_context_materialize.py:completed_seasons",
+      "caller": "tools/weekly_recaps_materialize.py:seasons_for_scope",
+      "role": "input",
+      "note": "Historical/current recap season selection from canonical completion, not previous output."
+    },
+    {
+      "id": "context-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:build_matchups_model",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-resolve-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:resolve_matchups",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-weeks",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:build_matchups_model",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-current-rows",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:current_matchup_rows",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:schedule_games",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-finality",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:finality_map",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-weekly-rosters",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:weekly_assignment_map",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-fg-history-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/fantasy_game_context.py:resolve_historical_season",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-fg-history-matchups",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/fantasy_game_context.py:resolve_historical_season",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-fg-current-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/fantasy_game_context.py:resolve_current_context",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-nfl-market",
+      "root": "derived",
+      "pattern": "nfl-games/*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/fantasy_game_context.py:resolve_current_context",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-winners-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/winners-bracket.json",
+      "reader": "tools/derived_data_lib/playoff_brackets.py:read",
+      "caller": "tools/derived_data_lib/playoff_brackets.py:load_season_brackets",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-losers-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/losers-bracket.json",
+      "reader": "tools/derived_data_lib/playoff_brackets.py:read",
+      "caller": "tools/derived_data_lib/playoff_brackets.py:load_season_brackets",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "lifecycle-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/league_lifecycle.py:_read",
+      "caller": "tools/derived_data_lib/league_lifecycle.py:load_facts",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "lifecycle-drafts",
+      "root": "derived",
+      "pattern": "league-drafts/*/*.json",
+      "reader": "tools/derived_data_lib/league_lifecycle.py:_read",
+      "caller": "tools/derived_data_lib/league_lifecycle.py:load_facts",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "metadata-lifecycle",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/league_lifecycle.py:load_facts",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "metadata-matchup-projections",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/matchup_projection.py:compute_matchup_projections",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "metadata-outlook-model",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/league_schedule_outlook_materialize.py:selected_model_id",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "metadata-outlook-odds",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/league_schedule_outlook_materialize.py:selected_odds_model_id",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "metadata-injury",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/team_injury_impact.py:resolve",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-view-pwf",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/derived_data_lib/player_week_fantasy_view.py:_read_json",
+      "caller": "tools/derived_data_lib/player_week_fantasy_view.py:load_sleeper_keyed_view",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-view-identities",
+      "root": "source",
+      "pattern": "nfl/identities/players.json",
+      "reader": "tools/derived_data_lib/player_week_fantasy_view.py:_read_json",
+      "caller": "tools/derived_data_lib/player_week_fantasy_view.py:load_sleeper_keyed_view",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-view-sleeper",
+      "root": "source",
+      "pattern": "nfl/platform/sleeper/players.json",
+      "reader": "tools/derived_data_lib/player_week_fantasy_view.py:_read_json",
+      "caller": "tools/derived_data_lib/player_week_fantasy_view.py:load_sleeper_keyed_view",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-projected-fallback",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/derived_data_lib/matchup_projection.py:_read_season_statistics",
+      "caller": "tools/derived_data_lib/matchup_projection.py:compute_matchup_projections",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "population-snapshot",
+      "root": "source",
+      "pattern": "nfl/platform/sleeper/players.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:load_snapshot",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "population-identity",
+      "root": "source",
+      "pattern": "nfl/identities/players.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:provider_ids_by_canonical",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "population-profiles",
+      "root": "source",
+      "pattern": "nfl/player-profiles/nflverse.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_population.py:load_profiles",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "population-owned",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/rosters.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:league_owned_sleeper_ids",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "population-resolver-mappings",
+      "root": "source",
+      "pattern": "nfl/identities/provider-mappings.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:from_repo",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "population-resolver-players",
+      "root": "source",
+      "pattern": "nfl/identities/players.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:from_repo",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-members",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/members.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-rosters",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/rosters.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-pairings",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:pairings",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-results",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:results",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-previous-points",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:previous_points",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-previous-points-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:previous_points",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-previous-strengths-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:previous_strengths",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-stats-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:stats",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-previous-strengths-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:previous_strengths",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-winners-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/winners-bracket.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:brackets",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "outlook-losers-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/losers-bracket.json",
+      "reader": "tools/league_schedule_outlook_preview.py:_document",
+      "caller": "tools/league_schedule_outlook_preview.py:brackets",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "injury-availability",
+      "root": "derived",
+      "pattern": "nfl-player-availability/*.json",
+      "reader": "tools/derived_data_lib/team_injury_impact.py:_read",
+      "caller": "tools/derived_data_lib/team_injury_impact.py:availability_index",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "injury-pwf",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/derived_data_lib/team_injury_impact.py:_read",
+      "caller": "tools/derived_data_lib/team_injury_impact.py:projection_partition",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "twp-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/team_week_performance_sources.py:_read_json",
+      "caller": "tools/team_week_performance_sources.py:_league_source",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "twp-matchups",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/team_week_performance_sources.py:_read_json",
+      "caller": "tools/team_week_performance_sources.py:load_verified_week_inputs",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-finality",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-scope",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/matchup_context_materialize.py:completed_seasons",
+      "caller": "tools/matchup_context_materialize.py:seasons_for_scope",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "injury-scope",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/matchup_context_materialize.py:completed_seasons",
+      "caller": "tools/team_injury_impact_materialize.py:seasons_for_scope",
+      "role": "input",
+      "note": "Reviewed existing production read boundary; runtime coverage pending."
+    },
+    {
+      "id": "context-noop",
+      "root": "derived",
+      "pattern": "matchup-context/*/*/*.json",
+      "reader": "tools/matchup_context_materialize.py:materialize_season",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output comparison after candidate computation."
+    },
+    {
+      "id": "injury-noop",
+      "root": "derived",
+      "pattern": "team-injury-impact/*/*.json",
+      "reader": "tools/team_injury_impact_materialize.py:materialize_season",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output comparison after candidate computation."
+    },
+    {
+      "id": "outlook-existing-snapshot",
+      "root": "derived",
+      "pattern": "league-schedule-outlook/*/*/after-week-*.json",
+      "reader": "tools/league_schedule_outlook_materialize.py:_read_existing",
+      "caller": "tools/league_schedule_outlook_materialize.py:materialize_season",
+      "role": "comparison",
+      "note": "Existing legacy incremental cache/no-op or full-mode compare. Full-mode replay must not derive values from cached bytes; incremental cache validity is a separate witness."
+    },
+    {
+      "id": "outlook-existing-index",
+      "root": "derived",
+      "pattern": "league-schedule-outlook/*/*/index.json",
+      "reader": "tools/league_schedule_outlook_materialize.py:_read_existing",
+      "caller": "tools/league_schedule_outlook_materialize.py:materialize_season",
+      "role": "comparison",
+      "note": "Existing legacy incremental cache/no-op or full-mode compare. Full-mode replay must not derive values from cached bytes; incremental cache validity is a separate witness."
+    },
+    {
+      "id": "pwf-batch-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/historical_pwf_batch.py:discover_scored_weeks",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-batch-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/historical_pwf_batch.py:discover_scored_weeks",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "twp-batch-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/team_week_performance_materialize.py:discover_finalized_weeks",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "twp-batch-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/team_week_performance_materialize.py:discover_finalized_weeks",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-batch-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/historical_pwf_batch.py:discover_scored_weeks",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-scoring",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-roster",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-events",
+      "root": "source",
+      "pattern": "nfl/special-teams-fumble-events/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-fit-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/historical_projection_backtest.py:_require_finalized_partition",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-fit-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/historical_projection_backtest.py:_require_finalized_partition",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-fit-events",
+      "root": "source",
+      "pattern": "nfl/special-teams-fumble-events/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/historical_projection_backtest.py:_require_finalized_partition",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-batch-noop",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/historical_pwf_batch.py:materialize_historical",
+      "caller": null,
+      "role": "comparison",
+      "note": "Historical PWF writer compares previous candidate bytes only after computation."
+    },
+    {
+      "id": "pwf-writer-noop",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/player_week_fantasy_materialize.py:write_dataset",
+      "caller": null,
+      "role": "comparison",
+      "note": "PWF writer compares prior output bytes only after calculation."
+    },
+    {
+      "id": "twp-scoring-policy",
+      "root": "meta",
+      "pattern": "*/scoring-divergences.json",
+      "reader": "tools/player_scoring_reconciliation.py:_policy",
+      "caller": "tools/player_scoring_reconciliation.py:reconcile",
+      "role": "comparison",
+      "note": "Optional parity validation policy; cannot change official TWP model bytes when require_pwf is false."
+    },
+    {
+      "id": "twp-pwf-parity",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/player_scoring_reconciliation.py:reconcile",
+      "caller": "tools/team_week_performance_materialize.py:verify_pwf_actual_parity",
+      "role": "comparison",
+      "note": "Optional PWF actual-points reconciliation; not a calculation input of official TWP."
+    },
+    {
+      "id": "twp-noop",
+      "root": "derived",
+      "pattern": "team-week-performance/*/*/*.json",
+      "reader": "tools/team_week_performance.py:save_team_week_performance",
+      "caller": null,
+      "role": "comparison",
+      "note": "Previous TWP bytes compared after canonical calculation."
+    },
+    {
+      "id": "app-context",
+      "root": "derived",
+      "pattern": "matchup-context/*/*/*.json",
+      "reader": "tools/matchup_context_materialize.py:read_document",
+      "caller": "tools/matchup_context_app_publish.py:_product",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-recaps-awards",
+      "root": "derived",
+      "pattern": "weekly-recaps/*/*.json",
+      "reader": "tools/weekly_recaps_materialize.py:read_model",
+      "caller": "tools/weekly_recaps_app_publish.py:product_models",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/season_statistics_app_publish.py:persisted_documents",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-stats-comprehension",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/season_statistics_app_publish.py:<dictcomp>",
+      "caller": "tools/season_statistics_app_publish.py:persisted_documents",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-records",
+      "root": "derived",
+      "pattern": "league-records/*.json",
+      "reader": "tools/league_records_materialize.py:read_persisted",
+      "caller": "tools/season_statistics_app_publish.py:publish",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-outlook-index",
+      "root": "derived",
+      "pattern": "league-schedule-outlook/*/*/index.json",
+      "reader": "tools/league_schedule_outlook_app_publish.py:latest_snapshot",
+      "caller": "tools/league_schedule_outlook_app_publish.py:publish",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-outlook-snapshot",
+      "root": "derived",
+      "pattern": "league-schedule-outlook/*/*/after-week-*.json",
+      "reader": "tools/league_schedule_outlook_app_publish.py:latest_snapshot",
+      "caller": "tools/league_schedule_outlook_app_publish.py:publish",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-injury",
+      "root": "derived",
+      "pattern": "team-injury-impact/*/*.json",
+      "reader": "tools/injury_impact_app_publish.py:render",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-injury-profiles",
+      "root": "source",
+      "pattern": "nfl/player-profiles/nflverse.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/injury_impact_app_publish.py:load_profiles",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-history-scope",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:history_matchup_seasons",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-awards-profiles",
+      "root": "source",
+      "pattern": "nfl/player-profiles/nflverse.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/derived_data_lib/league_player_refs.py:from_repo",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-awards-sleeper",
+      "root": "source",
+      "pattern": "nfl/platform/sleeper/players.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/derived_data_lib/league_player_refs.py:from_repo",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "app-compare-Matchups",
+      "root": "app",
+      "pattern": "Matchups.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-FantasyGameContext",
+      "root": "app",
+      "pattern": "FantasyGameContext.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-FantasyGameContextHistory",
+      "root": "app",
+      "pattern": "FantasyGameContextHistory.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-MatchupProjections",
+      "root": "app",
+      "pattern": "MatchupProjections.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-WeeklyRecaps",
+      "root": "app",
+      "pattern": "WeeklyRecaps.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-PlayerAwardHistory",
+      "root": "app",
+      "pattern": "PlayerAwardHistory.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-SeasonStatistics",
+      "root": "app",
+      "pattern": "SeasonStatistics.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-ScheduleOutlook",
+      "root": "app",
+      "pattern": "ScheduleOutlook.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-compare-InjuryImpact",
+      "root": "app",
+      "pattern": "InjuryImpact.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Semantic delivery compare only after rendering."
+    },
+    {
+      "id": "app-history-compare-Matchups",
+      "root": "app",
+      "pattern": "past_seasons/Matchups/Matchups_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-history-compare-FantasyGameContext",
+      "root": "app",
+      "pattern": "past_seasons/FantasyGameContext/FantasyGameContext_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-history-compare-WeeklyRecaps",
+      "root": "app",
+      "pattern": "past_seasons/WeeklyRecaps/WeeklyRecaps_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-history-compare-SeasonStatistics",
+      "root": "app",
+      "pattern": "past_seasons/SeasonStatistics/SeasonStatistics_*.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:put",
+      "role": "comparison",
+      "note": "Historical delivery compare only."
+    },
+    {
+      "id": "app-timestamps",
+      "root": "app",
+      "pattern": "Timestamps.json",
+      "reader": "tools/app_delivery.py:load_json",
+      "caller": "tools/app_delivery.py:finish",
+      "role": "comparison",
+      "note": "Preserve unrelated timestamp keys; publication bookkeeping."
+    },
+    {
+      "id": "players-app-compare",
+      "root": "app",
+      "pattern": "Players.json",
+      "reader": "tools/players_app_publish.py:write",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing Players content compare and backup."
+    },
+    {
+      "id": "players-app-stamp",
+      "root": "app",
+      "pattern": "Timestamps.json",
+      "reader": "tools/players_app_publish.py:write",
+      "caller": null,
+      "role": "comparison",
+      "note": "Preserve unrelated delivery timestamps."
+    },
+    {
+      "id": "players-app-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/players_app_publish.py:write",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_valuation_sources.py:league_manifest",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-byes",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_valuation_sources.py:team_bye_weeks",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-valuation",
+      "root": "derived",
+      "pattern": "player-valuation/*/*/week-*.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_inputs",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-salary-history",
+      "root": "derived",
+      "pattern": "player-valuation/*/*/week-*.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_salary_seasons",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-depth-chart",
+      "root": "source",
+      "pattern": "nfl/platform/sleeper/players.json",
+      "reader": "tools/derived_data_lib/players_read_model.py:load_inputs",
+      "caller": null,
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-settings",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:league_scoring_settings",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:build_weekly_scores",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:build_weekly_scores",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-scoring-events",
+      "root": "source",
+      "pattern": "nfl/special-teams-fumble-events/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_league_scoring.py:build_weekly_scores",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_index_games",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-finality",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_week_final",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_partition_records",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-qbr",
+      "root": "source",
+      "pattern": "nfl/qbr-week/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_qbr_index",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-long-gains",
+      "root": "source",
+      "pattern": "nfl/player-game-long-gains/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:_long_gain_index",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "players-history-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/players_game_history.py:build_game_histories",
+      "role": "delivery",
+      "note": "Reviewed existing App delivery boundary; actual Deep witness pending."
+    },
+    {
+      "id": "fm-scoring-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "fantasy-management/_ai/scripts/canonical_league_ownership.py:_read_json",
+      "caller": "fantasy-management/_ai/scripts/canonical_league_ownership.py:resolve_current_canonical_season",
+      "role": "delivery",
+      "note": "FM external-season projection adapter selects the canonical current league, not an App projection."
+    },
+    {
+      "id": "fm-scoring-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "fantasy-management/_ai/scripts/canonical_league_ownership.py:_read_json",
+      "caller": "fantasy-management/_ai/scripts/canonical_league_ownership.py:load_canonical_league_scoring_settings",
+      "role": "delivery",
+      "note": "Canonical scoring settings reconcile external provider season stats; not internal weekly team forecasts."
+    }
+  ]
+}

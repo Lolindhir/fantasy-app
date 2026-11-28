@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import sys
 import unittest
+import tempfile
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
@@ -14,6 +15,9 @@ from derived_data_lib.models.season_stats import v1  # noqa: E402
 from derived_data_lib.models.team_range import v1 as team_range  # noqa: E402
 from derived_data_lib.models.win_prob import v1 as win_prob  # noqa: E402
 from derived_data_lib import season_statistics as ss  # noqa: E402
+from derived_data_lib import weekly_recaps as wr  # noqa: E402
+from derived_data_lib import historical_pregame_inputs as inputs  # noqa: E402
+from data_roots import DATA_SOURCE_ROOT, DATA_DERIVED_ROOT  # noqa: E402
 from season_statistics_app_publish import with_team_abbreviations  # noqa: E402
 from derived_data_lib.league_teams import team_abbreviation  # noqa: E402
 
@@ -38,6 +42,39 @@ def week(number, *games):
 
 def team(result, team_id):
     return next(t for t in result["Teams"] if t["TeamID"] == team_id)
+
+
+class SharedHistoricalInputTests(unittest.TestCase):
+    def test_stats_and_recaps_use_the_same_adapters_and_legacy_errors(self):
+        for name in ("_load_matchup_rows", "_pwf_projections", "_weekly_roster_rows",
+                     "roster_identity_map", "EvidenceGap"):
+            self.assertIs(getattr(ss, name), getattr(inputs, name))
+            self.assertIs(getattr(wr, name), getattr(inputs, name))
+        self.assertIs(wr.WeeklyRecapsError, inputs.WeeklyRecapsError)
+        self.assertTrue(issubclass(wr.EvidenceGap, wr.WeeklyRecapsError))
+
+    def test_missing_and_malformed_evidence_preserve_legacy_behavior(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            season_dir = root / DATA_SOURCE_ROOT / "leagues" / "test" / "seasons" / "2025"
+            self.assertIsNone(inputs._load_matchup_rows(season_dir, 1))
+            self.assertEqual({}, inputs._pwf_projections(root, "test", 2025, 1))
+            with self.assertRaises(wr.EvidenceGap):
+                inputs._weekly_roster_rows(root, 2025, 1)
+            target = root / DATA_DERIVED_ROOT / "player-week-fantasy" / "test" / "2025" / "01.json"
+            target.parent.mkdir(parents=True)
+            target.write_text("{", encoding="utf-8")
+            with self.assertRaises(wr.WeeklyRecapsError) as caught:
+                inputs._pwf_projections(root, "test", 2025, 1)
+            self.assertNotIsInstance(caught.exception, wr.EvidenceGap)
+
+    def test_identity_keeps_both_provider_and_canonical_keys(self):
+        rows = [{"CanonicalPlayerID": " c ", "SourceIDs": {"Sleeper": " 123 "},
+                 "Team": "dal", "Position": "k"}]
+        identity = inputs.roster_identity_map(rows)
+        expected = {"CanonicalPlayerID": "c", "PlayerID": "123",
+                    "TeamAbbr": "DAL", "Position": "K"}
+        self.assertEqual({"ByCanonical": {"c": expected}, "ByPlayer": {"123": expected}}, identity)
 
 
 class BestBallTests(unittest.TestCase):
@@ -245,6 +282,55 @@ class WeekGamesTests(unittest.TestCase):
         self.assertIsNone(missing[0]["WinProbability"])
         self.assertIsNone(missing[0]["Teams"][1]["PregameProjection"])
 
+
+    def test_historical_recap_and_statistics_legacy_projection_parity(self) -> None:
+        z = team_range.z_for_level(0.9)
+
+        def projection(points, sigma):
+            return {"Status": "available", "Points": points,
+                    "PredictionRanges": [{"Level": 0.9, "Lower": points - sigma * z,
+                                          "Upper": points + sigma * z}]}
+
+        facts = [{"FantasyMatchupID": "m", "Teams": [
+            {"FantasyTeamID": "1", "FinalScore": 90, "Players": [
+                {"PlayerID": " p1 ", "CanonicalPlayerID": " c1 ", "IsStarter": True},
+                {"PlayerID": "bench", "IsStarter": False},
+            ]},
+            {"FantasyTeamID": "2", "FinalScore": 100, "Players": [
+                {"PlayerID": "p2", "CanonicalPlayerID": "", "IsStarter": True},
+            ]},
+        ]}]
+        identity = {"ByPlayer": {
+            "p1": {"CanonicalPlayerID": "wrong"},
+            "p2": {"CanonicalPlayerID": " c2 "},
+        }, "ByCanonical": {}}
+        team_values = {"1": 1, "2": 2}
+        cases = [
+            ({"c1": projection(120, 10), "c2": projection(100, 10)}, 120.0, 100.0,
+             win_prob.win_probability(120, 10, 100, 10)),
+            ({"c1": projection(-5, 0), "c2": projection(-5, 0)}, -5.0, -5.0, 0.5),
+            ({"c1": projection(0, 0), "c2": projection(-5, 0)}, 0.0, -5.0, 1.0),
+            ({"c1": projection(100, 10)}, 100.0, None, None),
+            ({"c1": projection(100, 10), "c2": {"Status": "insufficient-history"}}, 100.0, None, None),
+            ({}, None, None, None),
+        ]
+        for projections, a, b, raw in cases:
+            with self.subTest(projections=projections):
+                # The identity embedded in the matchup takes precedence over
+                # conflicting fallback evidence, and unknown bench players do not count.
+                projections = {**projections, "wrong": projection(999, 0)}
+                stats = ss.week_games(facts, identity, projections, team_range, win_prob)[0]
+                recap = wr.pregame_win_probabilities(
+                    facts, team_values, identity, projections, team_range, win_prob,
+                )[0]
+                self.assertEqual([a, b], [t["PregameProjection"] for t in stats["Teams"]])
+                self.assertEqual(raw, stats["WinProbability"])
+                pair = win_prob.percent_pair(raw)
+                self.assertEqual(list(pair) if pair else [None, None],
+                                 [t["PregameWinProbability"] for t in recap["Teams"]])
+                winner_probability = 1.0 - raw if raw is not None else None
+                self.assertEqual(win_prob.is_upset(winner_probability), recap["Upset"])
+                self.assertEqual(win_prob.upset_level(winner_probability), recap["UpsetLevel"])
 
 class TeamAbbreviationTests(unittest.TestCase):
     """Issue #1621: the season-specific abbreviation follows the rule of League.json TeamAbbr (tools/derived_data_lib/league_teams.py team_abbreviation)."""

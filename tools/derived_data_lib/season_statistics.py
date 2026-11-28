@@ -17,9 +17,10 @@ from team_week_performance_sources import WeekSourceNotReady, resolve_slots_from
 from weekly_lineup_optimizer import ScoredPlayer, maximize_lineup
 
 from .fantasy_game_context import canonical_matchup_facts
+from .historical_pregame import historical_team_projection, raw_matchup_probability
 from .models.registry import get_model
 from .week_finality import resolve_week_finality
-from .weekly_recaps import (
+from .historical_pregame_inputs import (
     EvidenceGap,
     _load_matchup_rows,
     _pwf_projections,
@@ -87,27 +88,13 @@ def week_games(
     for matchup in facts:
         if len(matchup["Teams"]) != 2:
             continue
-        projected: list[dict[str, Any]] = []
-        for team in matchup["Teams"]:
-            starters: dict[str, dict[str, Any]] = {}
-            projections: dict[str, Any] = {}
-            for player in team["Players"]:
-                if not player["IsStarter"]:
-                    continue
-                player_id = _text(player["PlayerID"])
-                starters[player_id] = {"final": False, "points": None, "bye": False}
-                canonical_id = _text(player.get("CanonicalPlayerID"))
-                if not canonical_id and identity_map:
-                    canonical_id = _text(identity_map["ByPlayer"].get(player_id, {}).get("CanonicalPlayerID"))
-                if canonical_id in projections_by_canonical:
-                    projections[player_id] = projections_by_canonical[canonical_id]
-            projected.append(team_range_model.build_team_projection(team["FantasyTeamID"], starters, projections))
+        projected = [
+            historical_team_projection(team, identity_map, projections_by_canonical, team_range_model)
+            for team in matchup["Teams"]
+        ]
         chance = None
         if all(item["State"] == "available" for item in projected):
-            chance = win_prob_model.win_probability(
-                projected[0]["ProjectedFinalScore"], projected[0]["StandardDeviation"],
-                projected[1]["ProjectedFinalScore"], projected[1]["StandardDeviation"],
-            )
+            chance = raw_matchup_probability(projected[0], projected[1], win_prob_model)
         games.append({
             "FantasyMatchupID": matchup["FantasyMatchupID"],
             "Teams": [
