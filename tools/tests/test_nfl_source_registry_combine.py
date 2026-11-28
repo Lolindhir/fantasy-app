@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO_ROOT = TOOLS.parent
@@ -24,6 +25,7 @@ from nfl_source_data_lib.common import (
     planned_dataset_ids,
 )
 from nfl_source_data_lib.lifecycle import effective_partition_payload
+from nfl_source_data_lib.materialize import materialize, _materialize
 
 
 COMBINE_FIELDS = [
@@ -163,6 +165,106 @@ class CombineAdmissionTests(unittest.TestCase):
         self.meta.write_bytes(self.meta.read_bytes() + b" ")
         with self.assertRaisesRegex(ValueError, "accepted Git blob"):
             plan.revalidate_inputs()
+
+
+    def seed_full_shadow(self):
+        # Exercise the actual full materializer, not mocked identities or Draft.
+        source = self.root / DATA_SOURCE_ROOT
+        registry = load_registry_manifest(REPO_ROOT)
+        ids = {"nflverse.players", "nflverse.ff-player-ids",
+               "nflverse.draft-picks", "nflverse.combine"}
+        entries = [dict(item, minimumRows=1) for item in registry["datasets"]
+                   if item["id"] in ids]
+        (source / "registry.json").write_text(json.dumps({
+            "schemaVersion": REGISTRY_SCHEMA_VERSION, "datasets": entries,
+        }))
+        datasets = {item.id: item for item in load_registry(self.root)}
+
+        write_csv(datasets["nflverse.players"].raw_path, [
+            {"gsis_id": "00-1", "display_name": "Old", "pfr_id": "OldPfr",
+             "position": "WR"},
+            {"gsis_id": "00-2", "display_name": "New", "pfr_id": "NewPfr",
+             "position": "RB"},
+        ], list(datasets["nflverse.players"].required_columns))
+        write_csv(datasets["nflverse.ff-player-ids"].raw_path, [
+            {"mfl_id": "1", "gsis_id": "00-1", "sleeper_id": "S1",
+             "pfr_id": "OldPfr", "name": "Old", "draft_year": "2024",
+             "draft_round": "1", "draft_pick": "1", "draft_ovr": "1"},
+            {"mfl_id": "2", "gsis_id": "00-2", "sleeper_id": "S2",
+             "pfr_id": "NewPfr", "name": "New", "draft_year": "2027",
+             "draft_round": "1", "draft_pick": "1", "draft_ovr": "1"},
+        ], list(datasets["nflverse.ff-player-ids"].required_columns))
+        write_csv(datasets["nflverse.draft-picks"].raw_path, [
+            {"season": "2024", "round": "1", "pick": "1", "team": "ABC",
+             "gsis_id": "00-1", "pfr_player_id": "OldPfr",
+             "pfr_player_name": "Old", "position": "WR"},
+            {"season": "2027", "round": "1", "pick": "1", "team": "ABC",
+             "gsis_id": "00-2", "pfr_player_id": "NewPfr",
+             "pfr_player_name": "New", "position": "RB"},
+        ], list(datasets["nflverse.draft-picks"].required_columns))
+        players = self.root / "public/data/Players.json"
+        players.parent.mkdir(parents=True)
+        players.write_text(json.dumps([
+            {"ID": "S1", "Name": "Old", "Position": "WR"},
+            {"ID": "S2", "Name": "New", "Position": "RB"},
+        ]))
+        self.old.unlink()
+        with mock.patch("nfl_source_data_lib.materialize._observation_season",
+                        return_value=2027):
+            materialize(self.root, datasets)
+            baseline = materialize(self.root, datasets)
+        self.assert_noop(baseline)
+        self.base = self.commit()
+        legacy = source / "nfl/combine/2024.json"
+        original = legacy.read_bytes()
+        legacy.rename(self.old)
+        self.base = self.commit()
+        self.assertEqual(original, self.old.read_bytes())
+        return datasets, FamilyRouting(RouteMode.TRANSITION, frozenset({2027})), legacy
+
+    def assert_noop(self, result):
+        for key in ("identityChanged", "providerMappingsChanged", "auditChanged"):
+            self.assertIs(result[key], False, key)
+        for key in ("draftFilesChanged", "combineFilesChanged", "phase1FilesChanged"):
+            self.assertEqual(0, result[key], key)
+
+    def test_full_shadow_materializer_byte_parity_and_second_pass(self):
+        datasets, routing, legacy = self.seed_full_shadow()
+        before = self.old.read_bytes()
+        with mock.patch("nfl_source_data_lib.materialize._observation_season",
+                        return_value=2027):
+            for _ in range(2):
+                result = _materialize(self.root, datasets, shadow_commit=self.base,
+                                      shadow_routing=routing)
+                self.assert_noop(result)
+                self.assertEqual(1, result["combinePartitionsPreserved"])
+                self.assertEqual("", self.git("status", "--porcelain"))
+                self.assertEqual(before, self.old.read_bytes())
+                self.assertFalse(legacy.exists())
+
+    def test_full_shadow_missing_partition_fails_before_any_write_even_force(self):
+        datasets, routing, legacy = self.seed_full_shadow()
+        self.old.unlink()
+        before = self.git("status", "--porcelain")
+        with mock.patch("nfl_source_data_lib.materialize.write_json_if_changed") as writer:
+            for force in (False, True):
+                with self.assertRaises(FileNotFoundError):
+                    _materialize(self.root, datasets, shadow_commit=self.base,
+                                 shadow_routing=routing, force=force)
+            writer.assert_not_called()
+        self.assertEqual(before, self.git("status", "--porcelain"))
+        self.assertFalse(self.old.exists())
+        self.assertFalse(legacy.exists())
+
+    def test_full_shadow_rejects_dirty_audit_input_before_any_write(self):
+        datasets, routing, _ = self.seed_full_shadow()
+        players = self.root / "public/data/Players.json"
+        players.write_bytes(players.read_bytes() + b" ")
+        with mock.patch("nfl_source_data_lib.materialize.write_json_if_changed") as writer:
+            with self.assertRaisesRegex(ValueError, "clean pinned worktree"):
+                _materialize(self.root, datasets, shadow_commit=self.base,
+                             shadow_routing=routing)
+            writer.assert_not_called()
 
 
 class RegistryCombineTests(unittest.TestCase):

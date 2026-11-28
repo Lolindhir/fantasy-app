@@ -19,7 +19,7 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 from canonical_routing import (
-    AcceptedSnapshot, COMBINE_DATASET, FamilyRouting, preflight_accepted_combine,
+    AcceptedSnapshot, COMBINE_DATASET, FamilyRouting, _git, preflight_accepted_combine,
 )
 from data_roots import DATA_SOURCE_ROOT
 from .combine import build_combine_files
@@ -45,6 +45,18 @@ class CombineAdmissionPlan:
             self.snapshot.root, self.snapshot.commit, self.snapshot.routing,
         )
         _verify_source(self.snapshot, self.dataset)
+
+
+def require_clean_combine_shadow(
+    repo_root: Path, base_commit: str, routing: FamilyRouting,
+) -> AcceptedSnapshot:
+    """Full-scope shadow must start from a coherent, pinned, clean worktree."""
+    snapshot = preflight_accepted_combine(repo_root, base_commit, routing)
+    if _git(snapshot.root, "status", "--porcelain=v1", "-z", "--untracked-files=all"):
+        raise ValueError("Combine shadow requires a clean pinned worktree")
+    # Players is only audit evidence; pin it, not a canonical business input.
+    snapshot.read_tracked_file(Path("public/data/Players.json"))
+    return snapshot
 
 
 def _verify_source(snapshot: AcceptedSnapshot, dataset: Dataset) -> tuple[Counter[int], str, int]:
