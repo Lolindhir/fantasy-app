@@ -94,6 +94,8 @@ def classify_reads(
     """
     classified = []
     for event in events:
+        if event["kind"] == "violation":
+            raise TraceError(f"Blocked data access (even if caller caught the exception): {event}")
         if event["kind"] != "open" or not event["read"]:
             continue
         matches = [rule for rule in rules if rule.matches(event)]
@@ -155,17 +157,22 @@ def install_from_environment() -> None:
         if os.write(fd, data) != len(data):
             raise TraceError("Incomplete trace record")
 
+    def blocked(message: str, value: Any) -> None:
+        emit({"kind": "violation", "message": message,
+              "path": os.fsdecode(value), "sites": _reader_sites()})
+        raise TraceError(f"{message}: {value}")
+
     def guard_path(value: Any, *, write: bool) -> None:
         # Keep traced Python data operations inside the scratch namespace.
         # Linked upstream roots are read-only; never follow them for writes.
         if _data_path(CODE_ROOT, value) is not None:
-            raise TraceError(f"Direct checkout data access outside scratch namespace: {value}")
+            blocked("Direct checkout data access outside scratch namespace", value)
         scoped = _data_path(root, value)
         if write and scoped is not None:
             target = Path(os.path.abspath(os.fsdecode(value)))
             if (scoped[0] not in {"derived", "app"}
                     or not target.resolve().is_relative_to(root)):
-                raise TraceError(f"Write outside writable scratch data: {value}")
+                blocked("Write outside writable scratch data", value)
 
     def hook(event: str, args: tuple[Any, ...]) -> None:
         if event == "subprocess.Popen":
