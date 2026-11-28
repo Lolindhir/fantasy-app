@@ -1089,7 +1089,7 @@
         {
           "FantasyTeamID": 5,
           "AffectedRosteredPlayerCount": 13,
-          "AffectedStarterCount": 5,
+          "AffectedStarterCount": 6,
           "Players": [
             {
               "PlayerID": "11576",
@@ -1101,7 +1101,7 @@
               "PlayerID": "12522",
               "NFLTeamID": "TEN",
               "GameID": "20261129_TEN@JAX",
-              "IsStarter": false
+              "IsStarter": true
             },
             {
               "PlayerID": "13268",
@@ -1338,13 +1338,13 @@
         {
           "FantasyTeamID": 5,
           "AffectedRosteredPlayerCount": 1,
-          "AffectedStarterCount": 1,
+          "AffectedStarterCount": 0,
           "Players": [
             {
               "PlayerID": "6797",
               "NFLTeamID": "LAC",
               "GameID": "20261129_NE@LAC",
-              "IsStarter": true
+              "IsStarter": false
             }
           ]
         },
@@ -3333,7 +3333,7 @@
       "GameID": "20261129_TEN@JAX",
       "DecisionWindowID": "2026-11-29T18:00:00Z",
       "StartsAtUtc": "2026-11-29T18:00:00Z",
-      "IsStarter": false
+      "IsStarter": true
     },
     {
       "FantasyTeamID": 5,
@@ -3493,7 +3493,7 @@
       "GameID": "20261129_NE@LAC",
       "DecisionWindowID": "2026-11-29T21:05:00Z",
       "StartsAtUtc": "2026-11-29T21:05:00Z",
-      "IsStarter": true
+      "IsStarter": false
     },
     {
       "FantasyTeamID": 5,
@@ -8341,7 +8341,7 @@
         "BenchCount": 16,
         "IRCount": 3,
         "TaxiCount": 0,
-        "UnlockedStarterCount": 8,
+        "UnlockedStarterCount": 9,
         "LockedActiveStarterCount": 0,
         "CompletedStarterCount": 4,
         "EligibleBenchCandidateCount": 12,
@@ -8371,26 +8371,19 @@
             "SlotType": "QB",
             "SlotOrdinal": 2,
             "SlotIndex": 1,
-            "CurrentStarterID": "6797",
+            "CurrentStarterID": "12522",
             "State": "unlocked",
-            "GameID": "20261129_NE@LAC",
-            "DecisionWindowID": "2026-11-29T21:05:00Z",
-            "StartsAtUtc": "2026-11-29T21:05:00Z",
+            "GameID": "20261129_TEN@JAX",
+            "DecisionWindowID": "2026-11-29T18:00:00Z",
+            "StartsAtUtc": "2026-11-29T18:00:00Z",
             "ScoringAvailability": {
-              "State": "out",
-              "ProviderStatus": "OUT",
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
               "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-11-27T22:21:29Z",
-              "ObservedAtUtc": "2026-11-27T22:21:29Z"
+              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+              "ObservedAtUtc": "2026-10-06T21:33:37Z"
             },
-            "Repairability": {
-              "ProblemCode": "STARTER_UNAVAILABLE",
-              "State": "repairable",
-              "Path": "internal-roster",
-              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 20,
-              "ExternalCandidateCount": 417
-            }
+            "Repairability": null
           },
           {
             "SlotID": "RB-1",
@@ -8681,31 +8674,6 @@
             }
           },
           {
-            "PlayerID": "12522",
-            "Placement": "bench",
-            "Position": "QB",
-            "GameState": "unlocked",
-            "GameID": "20261129_TEN@JAX",
-            "DecisionWindowID": "2026-11-29T18:00:00Z",
-            "StartsAtUtc": "2026-11-29T18:00:00Z",
-            "LineupSlotID": null,
-            "LineupSlotType": null,
-            "EligibleUnlockedSlotIDs": [
-              "QB-1",
-              "QB-2"
-            ],
-            "IsBenchCandidate": true,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": true,
-            "ScoringAvailability": {
-              "State": "unknown",
-              "ProviderStatus": null,
-              "Source": "ESPN",
-              "FirstObservedAtUtc": null,
-              "ObservedAtUtc": null
-            }
-          },
-          {
             "PlayerID": "13268",
             "Placement": "bench",
             "Position": "WR",
@@ -8908,6 +8876,31 @@
               "FLEX-1",
               "FLEX-3",
               "FLEX-4"
+            ],
+            "IsBenchCandidate": true,
+            "HasDirectScoringPath": false,
+            "HasAlternativePath": true,
+            "ScoringAvailability": {
+              "State": "unknown",
+              "ProviderStatus": null,
+              "Source": "ESPN",
+              "FirstObservedAtUtc": null,
+              "ObservedAtUtc": null
+            }
+          },
+          {
+            "PlayerID": "6797",
+            "Placement": "bench",
+            "Position": "QB",
+            "GameState": "unlocked",
+            "GameID": "20261129_NE@LAC",
+            "DecisionWindowID": "2026-11-29T21:05:00Z",
+            "StartsAtUtc": "2026-11-29T21:05:00Z",
+            "LineupSlotID": null,
+            "LineupSlotType": null,
+            "EligibleUnlockedSlotIDs": [
+              "QB-1",
+              "QB-2"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -9152,6 +9145,28 @@
             }
           },
           {
+            "PlayerID": "12522",
+            "Placement": "starter",
+            "Position": "QB",
+            "GameState": "unlocked",
+            "GameID": "20261129_TEN@JAX",
+            "DecisionWindowID": "2026-11-29T18:00:00Z",
+            "StartsAtUtc": "2026-11-29T18:00:00Z",
+            "LineupSlotID": "QB-2",
+            "LineupSlotType": "QB",
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": true,
+            "HasAlternativePath": false,
+            "ScoringAvailability": {
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+              "ObservedAtUtc": "2026-10-06T21:33:37Z"
+            }
+          },
+          {
             "PlayerID": "12527",
             "Placement": "starter",
             "Position": "RB",
@@ -9259,28 +9274,6 @@
               "Source": "ESPN",
               "FirstObservedAtUtc": "2026-11-13T20:41:35Z",
               "ObservedAtUtc": "2026-11-13T20:41:35Z"
-            }
-          },
-          {
-            "PlayerID": "6797",
-            "Placement": "starter",
-            "Position": "QB",
-            "GameState": "unlocked",
-            "GameID": "20261129_NE@LAC",
-            "DecisionWindowID": "2026-11-29T21:05:00Z",
-            "StartsAtUtc": "2026-11-29T21:05:00Z",
-            "LineupSlotID": "QB-2",
-            "LineupSlotType": "QB",
-            "EligibleUnlockedSlotIDs": [],
-            "IsBenchCandidate": false,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": false,
-            "ScoringAvailability": {
-              "State": "out",
-              "ProviderStatus": "OUT",
-              "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-11-27T22:21:29Z",
-              "ObservedAtUtc": "2026-11-27T22:21:29Z"
             }
           },
           {
@@ -10618,15 +10611,6 @@
       "ObservedAtUtc": "2026-10-22T20:26:03Z"
     },
     {
-      "PlayerID": "6797",
-      "ESPNPlayerID": "4038941",
-      "State": "out",
-      "ProviderStatus": "OUT",
-      "Source": "ESPN",
-      "FirstObservedAtUtc": "2026-11-27T22:21:29Z",
-      "ObservedAtUtc": "2026-11-27T22:21:29Z"
-    },
-    {
       "PlayerID": "6801",
       "ESPNPlayerID": "4239993",
       "State": "uncertain",
@@ -11061,6 +11045,15 @@
     {
       "PlayerID": "9228",
       "ESPNPlayerID": "4685720",
+      "State": "available",
+      "ProviderStatus": "ACTIVE",
+      "Source": "ESPN",
+      "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+      "ObservedAtUtc": "2026-10-06T21:33:37Z"
+    },
+    {
+      "PlayerID": "12522",
+      "ESPNPlayerID": "4688380",
       "State": "available",
       "ProviderStatus": "ACTIVE",
       "Source": "ESPN",
