@@ -1,12 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
-import { catchError, forkJoin, map, of } from 'rxjs';
-
-import type { Player } from '../../../../core/models/player.models';
+import { catchError, map, of, switchMap } from 'rxjs';
 import { DataService } from '../../../../core/services/data.service';
-import { PlayerDetailDialogComponent } from '../../../../shared/components/player-detail-dialog/player-detail-dialog';
+import { PlayerDetailDialogService } from '../../../../shared/services/player-detail-dialog.service';
 import { PositionStylePipe } from '../../../../shared/pipes/position-style.pipe';
 import { ALL_TIME, AWARD_COLUMNS, buildPlayerAwardsView, type PlayerAwardRow } from './player-awards-view.util';
 
@@ -22,7 +19,10 @@ const INITIAL_ROWS = 15;
 })
 export class PlayerAwardsTabComponent {
   private readonly dataService = inject(DataService);
-  private readonly dialog = inject(MatDialog);
+  private readonly playerDetail = inject(PlayerDetailDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly openingPlayerId = signal<string | null>(null);
+  readonly playerOpenError = signal(false);
 
   readonly allTime = ALL_TIME;
   readonly columns = AWARD_COLUMNS;
@@ -31,11 +31,18 @@ export class PlayerAwardsTabComponent {
 
   /** undefined while loading, null when the award file is unavailable. */
   private readonly base = toSignal(
-    forkJoin({
-      data: this.dataService.getLeagueWithPlayers(),
-      history: this.dataService.getPlayerAwardHistory()
-    }).pipe(
-      map(({ data, history }) => ({ view: history ? buildPlayerAwardsView(history, data.players) : null })),
+    this.dataService.getPlayerAwardHistory().pipe(
+      switchMap(history => {
+        if (!history) return of({ view: null });
+        const ids = [...new Set([
+          ...history.Players.filter(player => player.Total > 0).map(player => player.PlayerID),
+          ...history.Seasons.flatMap(season => (season.Players ?? []).map(player => player.PlayerID))
+        ])];
+        return this.dataService.getPlayerIdentitySummaries(ids).pipe(
+          catchError(() => of([])),
+          map(players => ({ view: buildPlayerAwardsView(history, players) }))
+        );
+      }),
       catchError(() => of(null))
     ),
     { initialValue: undefined }
@@ -57,9 +64,18 @@ export class PlayerAwardsTabComponent {
     this.expanded.update(value => !value);
   }
 
-  openPlayer(player: Player | null): void {
-    if (!player) return;
-    this.dialog.open(PlayerDetailDialogComponent, { data: player, width: '800px', maxHeight: '90vh', panelClass: 'player-dialog' });
+  async openPlayer(row: PlayerAwardRow): Promise<void> {
+    if (!row.interactive || this.openingPlayerId() !== null) return;
+    this.openingPlayerId.set(row.playerId);
+    this.playerOpenError.set(false);
+    try {
+      const opened = await this.playerDetail.open(row.playerId, () => !this.destroyRef.destroyed);
+      if (!opened && !this.destroyRef.destroyed) this.playerOpenError.set(true);
+    } catch {
+      if (!this.destroyRef.destroyed) this.playerOpenError.set(true);
+    } finally {
+      this.openingPlayerId.set(null);
+    }
   }
 
   trackRow = (_: number, row: PlayerAwardRow): string => row.playerId;

@@ -1,5 +1,5 @@
 import type { PlayerAwardHistoryPlayer, PlayerAwardHistoryReadModel, PlayerAwardKey } from '../../../../core/models/player-award-history.models';
-import type { Player } from '../../../../core/models/player.models';
+import type { PlayerIdentitySummary } from '../../../../core/models/player.models';
 import { PLAYER_AWARD_DISPLAY } from '../../../../shared/utils/player-award-view.util';
 
 export const ALL_TIME = 'all-time';
@@ -15,8 +15,8 @@ export interface PlayerAwardRow {
   teamAbbr: string | null;
   counts: Record<PlayerAwardKey, number>;
   total: number;
-  /** Current player record, used to open the player detail. */
-  player: Player | null;
+  /** Current identity exists; full details are resolved only on an explicit click. */
+  interactive: boolean;
 }
 
 export interface PlayerAwardsView {
@@ -29,7 +29,7 @@ export interface PlayerAwardsView {
  * Joins the generator's rankings (all-time Players, per-season Seasons[].Players) with the current player records.
  * Nothing is counted or ranked here: order and counts come from the generator; ties share a rank number by equal totals.
  */
-export function buildPlayerAwardsView(history: PlayerAwardHistoryReadModel | null | undefined, players: readonly Player[]): PlayerAwardsView {
+export function buildPlayerAwardsView(history: PlayerAwardHistoryReadModel | null | undefined, players: readonly PlayerIdentitySummary[]): PlayerAwardsView {
   const currentById = new Map(players.map(player => [String(player.ID), player]));
   const refById = new Map<string, PlayerAwardHistoryPlayer>((history?.Players ?? []).map(player => [String(player.PlayerID), player]));
 
@@ -54,7 +54,7 @@ export function buildPlayerAwardsView(history: PlayerAwardHistoryReadModel | nul
         teamAbbr: current?.TeamNFL?.ID || null,
         counts: item.Counts,
         total: item.Total,
-        player: current
+        interactive: current !== null
       }];
     });
   };

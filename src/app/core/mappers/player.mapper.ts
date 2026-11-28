@@ -39,11 +39,13 @@ const FREE_AGENT_TEAM: NFLTeam = {
 
 /** Shared NFL identity resolution for both lightweight and complete player contexts. */
 export function mapRawPlayerIdentity(
-  raw: Pick<RawPlayer, 'ID' | 'Picture' | 'IsFreeAgent' | 'TeamID'>,
+  raw: Pick<RawPlayer, 'ID' | 'Name' | 'Position' | 'Picture' | 'IsFreeAgent' | 'TeamID'>,
   nflTeams: readonly RawNFLTeam[]
 ): PlayerIdentitySummary {
   return {
     ID: raw.ID,
+    Name: raw.Name,
+    Position: raw.Position,
     Picture: raw.Picture,
     TeamNFL: raw.IsFreeAgent
       ? FREE_AGENT_TEAM
