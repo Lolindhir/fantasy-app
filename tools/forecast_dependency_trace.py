@@ -155,22 +155,42 @@ def install_from_environment() -> None:
         if os.write(fd, data) != len(data):
             raise TraceError("Incomplete trace record")
 
+    def guard_path(value: Any, *, write: bool) -> None:
+        # Keep traced Python data operations inside the scratch namespace.
+        # Linked upstream roots are read-only; never follow them for writes.
+        if _data_path(CODE_ROOT, value) is not None:
+            raise TraceError(f"Direct checkout data access outside scratch namespace: {value}")
+        scoped = _data_path(root, value)
+        if write and scoped is not None:
+            target = Path(os.path.abspath(os.fsdecode(value)))
+            if (scoped[0] not in {"derived", "app"}
+                    or not target.resolve().is_relative_to(root)):
+                raise TraceError(f"Write outside writable scratch data: {value}")
+
     def hook(event: str, args: tuple[Any, ...]) -> None:
         if event == "subprocess.Popen":
             executable = os.path.basename(os.fsdecode(args[0])).lower()
             python = bool(re.fullmatch(r"python(?:[0-9]+(?:\.[0-9]+)*)?(?:\.exe)?", executable))
             emit({"kind": "spawn", "python": python, "executable": executable})
         elif event == "open":
-            scoped = _data_path(root, args[0])
-            if scoped is None:
-                return
             flags = args[2]
             access = flags & os.O_ACCMODE
             fresh = (flags & os.O_CREAT) and (flags & os.O_EXCL)
             read = access != os.O_WRONLY and not fresh and not (flags & os.O_TRUNC)
             write = access != os.O_RDONLY or bool(flags & (os.O_CREAT | os.O_TRUNC))
+            guard_path(args[0], write=write)
+            scoped = _data_path(root, args[0])
+            if scoped is None:
+                return
             emit({"kind": "open", "root": scoped[0], "path": scoped[1],
                   "read": bool(read), "write": write, "sites": _reader_sites()})
+        elif event in {"os.mkdir", "os.remove", "os.rmdir", "os.chmod", "os.truncate", "os.utime"}:
+            guard_path(args[0], write=True)
+        elif event in {"os.rename", "os.link"}:
+            guard_path(args[0], write=True)
+            guard_path(args[1], write=True)
+        elif event == "os.symlink":
+            guard_path(args[1], write=True)
 
     sys.addaudithook(hook)
     emit({"kind": "start", "parent": os.getppid()})
