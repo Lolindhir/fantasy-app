@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "AC6A checkpoint 2: bounded call-site rules for fixture-tested Python historical reads, delivery/comparison, transitive Decision Windows readers and PowerShell metadata reader. Not a complete dependency inventory. Expand on actual runtime evidence; unknown/ambiguous reads fail closed.",
+  "scope": "AC6A: bounded call-site manifest for historical and current reader fixtures, PowerShell metadata, and historical Stats/Standings/Records/Recaps materializer chain. Not complete current/history end-to-end coverage; unknown reads fail closed.",
   "rules": [
     {
       "id": "recaps-pwf",
@@ -163,6 +163,285 @@
       "caller": "tools/derived_data_lib/decision_windows.py:_inputs",
       "role": "input",
       "note": "Selected repairability model for league and season."
+    },
+    {
+      "id": "standings-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:manifest",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-members",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/members.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-rosters",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/rosters.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-winners-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/winners-bracket.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-losers-bracket",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/losers-bracket.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:load_season_inputs",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-matchups",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/matchups/week-*.json",
+      "reader": "tools/league_standings_sources.py:_read",
+      "caller": "tools/league_standings_sources.py:weekly_matchups",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-structure",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_structure",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-games",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_games_final_rows",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_playing_teams",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "finality-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/derived_data_lib/week_finality.py:_read",
+      "caller": "tools/derived_data_lib/week_finality.py:_stats_complete",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-stats-build",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data.py:build_season_statistics",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-standings-build",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data.py:build_league_standings",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-stats-resolve",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/season_statistics.py:resolve",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "metadata-recaps",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "stats-lineup-slots",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/season_statistics.py:_lineup_slots",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "standings-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/derived_data.py:read_season_statistics",
+      "caller": "tools/derived_data.py:build_league_standings",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-standings",
+      "root": "derived",
+      "pattern": "league-standings/*/*.json",
+      "reader": "tools/derived_data_lib/matchup_context.py:_read",
+      "caller": "tools/derived_data_lib/matchup_context.py:standings_product",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-twp",
+      "root": "derived",
+      "pattern": "team-week-performance/*/*/*.json",
+      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:team_awards_and_performance",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "recaps-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/derived_data_lib/weekly_recaps.py:_read",
+      "caller": "tools/derived_data_lib/weekly_recaps.py:resolve_with_skips",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "schedule-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/derived_data_lib/nfl_schedule_games.py:build_schedule",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "schedule-finality",
+      "root": "source",
+      "pattern": "nfl/game-finality/*.json",
+      "reader": "tools/derived_data_lib/nfl_schedule_games.py:build_schedule",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "schedule-teams",
+      "root": "source",
+      "pattern": "nfl/teams.json",
+      "reader": "tools/derived_data_lib/nfl_schedule_games.py:__init__",
+      "caller": "tools/derived_data_lib/nfl_schedule_games.py:build_schedule",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "registry-teams",
+      "root": "source",
+      "pattern": "nfl/teams.json",
+      "reader": "tools/nfl_source_data_lib/common.py:load_json",
+      "caller": "tools/nfl_source_data_lib/teams.py:load",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "historical-position-weekly",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/team_week_performance_sources.py:_read_json",
+      "caller": "tools/team_week_performance_sources.py:resolve_week_positions",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "historical-position-season",
+      "root": "source",
+      "pattern": "nfl/rosters/*.json",
+      "reader": "tools/team_week_performance_sources.py:_read_json",
+      "caller": "tools/team_week_performance_sources.py:resolve_week_positions",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "records-stats",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/league_records_materialize.py:resolve",
+      "caller": "tools/league_records_materialize.py:materialize",
+      "role": "input",
+      "note": "Reviewed existing historical materializer input."
+    },
+    {
+      "id": "stats-noop",
+      "root": "derived",
+      "pattern": "season-statistics/*/*.json",
+      "reader": "tools/derived_data.py:materialize_season_statistics",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output byte comparison after calculation."
+    },
+    {
+      "id": "standings-noop",
+      "root": "derived",
+      "pattern": "league-standings/*/*.json",
+      "reader": "tools/derived_data.py:materialize_league_standings",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output byte comparison after calculation."
+    },
+    {
+      "id": "records-noop",
+      "root": "derived",
+      "pattern": "league-records/*.json",
+      "reader": "tools/league_records_materialize.py:materialize",
+      "caller": null,
+      "role": "comparison",
+      "note": "Existing output byte comparison after calculation."
     }
   ]
 }
