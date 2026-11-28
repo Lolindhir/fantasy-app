@@ -276,6 +276,97 @@ path = Path.cwd() / ROOTS['derived'] / 'linked-product' / 'seed.json'
             self.assertEqual("unchanged", original.read_text(encoding="utf-8"))
             self.assertFalse((linked / "renamed.json").exists())
 
+    def test_swallowed_scratch_violation_still_fails_classification(self):
+        external = tempfile.TemporaryDirectory()
+        self.addCleanup(external.cleanup)
+        original = Path(external.name) / "seed.json"
+        original.write_text("unchanged", encoding="utf-8")
+        derived = self.root / ROOTS["derived"]
+        derived.mkdir()
+        (derived / "linked-product").symlink_to(original.parent, target_is_directory=True)
+        result = self.run_code("""
+from pathlib import Path
+from forecast_dependency_trace import ROOTS
+path = Path.cwd() / ROOTS['derived'] / 'linked-product' / 'seed.json'
+try:
+    path.write_text('mutated')
+except ValueError:
+    pass
+""")
+        self.assertEqual("unchanged", original.read_text(encoding="utf-8"))
+        with self.assertRaisesRegex(TraceError, "Blocked data access"):
+            classify_reads(result.events, self.rules)
+
+    def test_context_and_injury_persistence_comparisons(self):
+        # Actual writers, deterministic mocked calculations: cheap Fast
+        # counterpart to the real-source Deep replay.
+        code = """
+from pathlib import Path
+from unittest.mock import patch
+from datetime import datetime, timezone
+from data_roots import data_derived_dir
+import matchup_context_materialize as c
+import team_injury_impact_materialize as i
+root = Path.cwd()
+out = data_derived_dir(root)
+with patch.object(c, 'build_documents', return_value={c.MATCHUPS: lambda: {'Week': 1}}):
+    args = (root, out, 'league-a', 2025, 2025, datetime(2025, 11, 28, tzinfo=timezone.utc))
+    assert c.materialize_season(*args)['Written'] == 1
+    assert c.materialize_season(*args)['Written'] == 0
+with patch.object(i, 'resolve_team_injury_impact', return_value={'Season': 2025}):
+    args = (root, out, 'league-a', 2025)
+    assert i.materialize_season(*args)['Written'] == 1
+    assert i.materialize_season(*args)['Written'] == 0
+"""
+        result = self.run_code(code)
+        rows = classify_reads(result.events, self.rules)
+        self.assertEqual(["context-noop", "injury-noop"], [row["rule"] for row in rows])
+        self.assertTrue(all(row["role"] == "comparison" for row in rows))
+
+    def test_outlook_full_rebuild_ignores_poisoned_legacy_cache(self):
+        # Reuse the repository's existing synthetic season inputs, while
+        # exercising the real model, materializer, index and cache reader.
+        code = f"""
+from pathlib import Path
+import sys
+from unittest.mock import patch
+from data_roots import data_derived_dir
+sys.path.insert(0, {str(TOOLS / "tests")!r})
+import test_league_schedule_outlook_materialize as f
+import league_schedule_outlook_materialize as m
+root = Path.cwd()
+out = data_derived_dir(root)
+folder = m.product_dir(out, f.LEAGUE, f.SEASON)
+with patch.object(m.source, 'load_season_inputs', side_effect=lambda *a: f.inputs_from(f.facts())):
+    args = (root, out, f.LEAGUE, f.SEASON, f.MODEL)
+    first = m.materialize_season(*args, odds_model_id=f.ODDS, mode='full')
+    second = m.materialize_season(*args, odds_model_id=f.ODDS)
+    assert first['Written'] == 7 and second['Written'] == 0, (first, second)
+"""
+        # Split harness reads/writes from the actual producer trace: obtain the
+        # initial bytes in the parent and poison them between invocations.
+        initial = code
+        first = self.run_code(initial)
+        rows = classify_reads(first.events, self.rules, own_product="league-schedule-outlook")
+        self.assertTrue(rows)
+        self.assertTrue(all(row["role"] == "comparison" for row in rows))
+        folder = self.root / ROOTS["derived"] / "league-schedule-outlook"
+        paths = sorted(folder.rglob("*.json"))
+        expected = {path: path.read_bytes() for path in paths}
+        self.assertEqual(7, len(expected))
+        path = next(p for p in paths if p.name == "after-week-00.json")
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        doc["Poison"] = True
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        repair_code = initial.split("    first =")[0] + """
+    repair = m.materialize_season(*args, odds_model_id=f.ODDS, mode='full')
+    assert repair['Written'] >= 1, repair
+"""
+        repaired = self.run_code(repair_code)
+        rows = classify_reads(repaired.events, self.rules, own_product="league-schedule-outlook")
+        self.assertTrue(all(row["role"] == "comparison" for row in rows))
+        self.assertEqual(expected, {p: p.read_bytes() for p in paths})
+
     @deep_only("Real multi-season materializer replay belongs to consumer restore")
     def test_real_historical_materializer_chain_without_prior_outputs(self):
         # Actual configured leagues and all their manifest seasons, no mocks
