@@ -56,6 +56,7 @@ export interface LeagueWithPlayers {
   players: Player[];
   teams: FantasyTeam[];
   drafts: RawDraft[];
+  nflTeams: NFLTeam[];
 }
 
 export interface PlayerJourneySources {
@@ -66,7 +67,6 @@ export interface PlayerJourneySources {
 
 export interface LeagueWithPlayersAndTransactions extends LeagueWithPlayers {
   transactions: Transaction[];
-  nflTeams: NFLTeam[];
 }
 
 function buildProjectionByPlayerID(
@@ -320,14 +320,33 @@ export class DataService {
     return this.dataApiService.getMatchupProjectionsRaw();
   }
 
-  getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
+  /** Published context and membership without optional projection enrichment. */
+  getFantasyGameContextBase(): Observable<FantasyGameContextReadModel> {
+    return this.dataApiService.getFantasyGameContextRaw();
+  }
+
+  private getFantasyContextProjectionSources() {
     return forkJoin({
-      context: this.dataApiService.getFantasyGameContextRaw(),
       playerWeekFantasy: this.getPlayerWeekFantasy().pipe(catchError(() => of(null))),
       matchupProjections: this.getMatchupProjections().pipe(catchError(() => of(null)))
-    }).pipe(
-      map(({ context, playerWeekFantasy, matchupProjections }) =>
+    });
+  }
+
+  /** Enrich an already loaded active context using the same published projection join. */
+  getFantasyGameContextWithProjections(context: FantasyGameContextReadModel): Observable<FantasyGameContextReadModel> {
+    return this.getFantasyContextProjectionSources().pipe(
+      map(({ playerWeekFantasy, matchupProjections }) =>
         enrichFantasyGameContextWithProjections(context, playerWeekFantasy, matchupProjections))
+    );
+  }
+
+  getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
+    return forkJoin({
+      context: this.getFantasyGameContextBase(),
+      projections: this.getFantasyContextProjectionSources()
+    }).pipe(
+      map(({ context, projections }) =>
+        enrichFantasyGameContextWithProjections(context, projections.playerWeekFantasy, projections.matchupProjections))
     );
   }
 
@@ -486,7 +505,6 @@ export class DataService {
 
         return {
           ...mappedLeagueData,
-          nflTeams: data.nflTeamsRaw,
           transactions
         };
       })
@@ -538,7 +556,8 @@ export class DataService {
       league,
       players: sortPlayers(players, sortFields),
       teams,
-      drafts
+      drafts,
+      nflTeams: data.nflTeamsRaw
     };
   }
 }

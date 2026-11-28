@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
 import type { FantasyTeam } from '../../core/models/league.models';
 import type { FantasyGameContextReadModel, HistoricalFantasyGameContextSeason } from '../../core/models/fantasy-game-context.models';
@@ -110,6 +111,8 @@ describe('WeeksPageComponent', () => {
       'getPastMatchupsRaw',
       'getPastWeeklyRecapsRaw',
       'getFantasyGameContext',
+      'getFantasyGameContextBase',
+      'getFantasyGameContextWithProjections',
       'getPastFantasyGameContextRaw',
       'getFantasyGameContextHistory',
       'getTeamSeasons'
@@ -119,7 +122,8 @@ describe('WeeksPageComponent', () => {
     }));
     dataService.getLeagueWithPlayers.and.returnValue(of({
       league: { Season: '2026' },
-      teams: [team(1), team(2)]
+      teams: [team(1), team(2)],
+      nflTeams: []
     } as unknown as LeagueWithPlayers));
     dataService.getPastSeasonsIndex.and.returnValue(of(index));
     dataService.getNflTeams.and.returnValue(of([]));
@@ -134,7 +138,8 @@ describe('WeeksPageComponent', () => {
       { week: 2, stage: 'playoffs', state: 'final' }
     ])));
     dataService.getPastWeeklyRecapsRaw.and.returnValue(of(recaps('2025', [1])));
-    dataService.getFantasyGameContext.and.returnValue(throwError(() => new Error('missing')));
+    dataService.getFantasyGameContextBase.and.returnValue(throwError(() => new Error('missing')));
+    dataService.getFantasyGameContextWithProjections.and.callFake(context => of(context));
     dataService.getFantasyGameContextHistory.and.returnValue(throwError(() => new Error('missing')));
     dataService.getPastFantasyGameContextRaw.and.returnValue(throwError(() => new Error('missing')));
   });
@@ -376,14 +381,58 @@ describe('WeeksPageComponent', () => {
     const context = (week: number) => ({
       Season: '2026', Week: week, FantasyMatchups: [{ FantasyMatchupID: `2026-${week}` }]
     }) as unknown as FantasyGameContextReadModel;
-    dataService.getFantasyGameContext.and.returnValue(of(context(3)));
+    dataService.getFantasyGameContextBase.and.returnValue(of(context(3)));
     dataService.getFantasyGameContextHistory.and.returnValue(of({ Weeks: [context(2)] } as unknown as HistoricalFantasyGameContextSeason));
     const host = await create({}, 'overview');
 
     expect((host.querySelector('.schedule-upcoming .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
+    expect(dataService.getFantasyGameContext).not.toHaveBeenCalled();
+    expect(dataService.getFantasyGameContextWithProjections).not.toHaveBeenCalled();
+    expect(dataService.getNflTeams).not.toHaveBeenCalled();
     (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect((host.querySelector('.schedule-played .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
+  });
+
+  it('enriches only the active context on explicit detail opening, without reloading membership', async () => {
+    const active = { Season: '2026', Week: 3, FantasyMatchups: [{ FantasyMatchupID: '2026-3' }] } as unknown as FantasyGameContextReadModel;
+    const finished = { Season: '2026', Week: 2, FantasyMatchups: [{ FantasyMatchupID: '2026-2' }] } as unknown as FantasyGameContextReadModel;
+    dataService.getFantasyGameContextBase.and.returnValue(of(active));
+    dataService.getFantasyGameContextHistory.and.returnValue(of({ Weeks: [finished] } as unknown as HistoricalFantasyGameContextSeason));
+    const enriched = { ...active };
+    dataService.getFantasyGameContextWithProjections.and.returnValue(of(enriched));
+    await create({}, 'overview');
+    const open = spyOn(TestBed.inject(MatDialog), 'open').and.stub();
+    await fixture.componentInstance.openWeekMatchup(3, 'missing');
+    expect(open).not.toHaveBeenCalled();
+    await fixture.componentInstance.openWeekMatchup(2, '2026-2');
+    expect(dataService.getFantasyGameContextWithProjections).not.toHaveBeenCalled();
+    expect(open.calls.mostRecent().args[1]?.data.context).toBe(finished);
+    await fixture.componentInstance.openWeekMatchup(3, '2026-3');
+    expect(dataService.getFantasyGameContextWithProjections).toHaveBeenCalledOnceWith(active);
+    expect(open.calls.mostRecent().args[1]?.data.context).toBe(enriched);
+    expect(dataService.getFantasyGameContextBase).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not open a stale active matchup after changing seasons during projection loading', async () => {
+    const active = { Season: '2026', Week: 3, FantasyMatchups: [{ FantasyMatchupID: '2026-3' }] } as unknown as FantasyGameContextReadModel;
+    dataService.getFantasyGameContextBase.and.returnValue(of(active));
+    const pending = new Subject<FantasyGameContextReadModel>();
+    dataService.getFantasyGameContextWithProjections.and.returnValue(pending);
+    await create({}, 'overview');
+    const open = spyOn(TestBed.inject(MatDialog), 'open').and.stub();
+    const component = fixture.componentInstance;
+    const request = component.openWeekMatchup(3, '2026-3');
+    await component.openWeekMatchup(3, '2026-3');
+    expect(dataService.getFantasyGameContextWithProjections).toHaveBeenCalledTimes(1);
+    component.selectSeason('2025');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    pending.next(active);
+    pending.complete();
+    await request;
+    expect(open).not.toHaveBeenCalled();
+    expect(component.openingMatchup()).toBeNull();
   });
 
   it('opens the last completed week of the current season with scores and a recap', async () => {
@@ -470,7 +519,7 @@ describe('WeeksPageComponent', () => {
       Week: week,
       FantasyMatchups: [{ FantasyMatchupID: `2026-${week}` }]
     }) as unknown as FantasyGameContextReadModel;
-    dataService.getFantasyGameContext.and.returnValue(of(context(3)));
+    dataService.getFantasyGameContextBase.and.returnValue(of(context(3)));
     dataService.getFantasyGameContextHistory.and.returnValue(of({ Weeks: [context(2)] } as unknown as HistoricalFantasyGameContextSeason));
     const host = await create();
 
