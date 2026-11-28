@@ -402,15 +402,19 @@ describe('WeeksPageComponent', () => {
     const enriched = { ...active };
     dataService.getFantasyGameContextWithProjections.and.returnValue(of(enriched));
     await create({}, 'overview');
-    const open = spyOn(TestBed.inject(MatDialog), 'open').and.stub();
+    const open = spyOn(fixture.debugElement.injector.get(MatDialog), 'open').and.stub();
     await fixture.componentInstance.openWeekMatchup(3, 'missing');
     expect(open).not.toHaveBeenCalled();
     await fixture.componentInstance.openWeekMatchup(2, '2026-2');
     expect(dataService.getFantasyGameContextWithProjections).not.toHaveBeenCalled();
-    expect(open.calls.mostRecent().args[1]?.data.context).toBe(finished);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open.calls.mostRecent()?.args[1]?.data.context).toBe(finished);
+    expect(fixture.componentInstance.matchupOpenError()).toBeFalse();
     await fixture.componentInstance.openWeekMatchup(3, '2026-3');
     expect(dataService.getFantasyGameContextWithProjections).toHaveBeenCalledOnceWith(active);
-    expect(open.calls.mostRecent().args[1]?.data.context).toBe(enriched);
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(open.calls.mostRecent()?.args[1]?.data.context).toBe(enriched);
+    expect(fixture.componentInstance.matchupOpenError()).toBeFalse();
     expect(dataService.getFantasyGameContextBase).toHaveBeenCalledTimes(1);
   });
 
@@ -420,7 +424,7 @@ describe('WeeksPageComponent', () => {
     const pending = new Subject<FantasyGameContextReadModel>();
     dataService.getFantasyGameContextWithProjections.and.returnValue(pending);
     await create({}, 'overview');
-    const open = spyOn(TestBed.inject(MatDialog), 'open').and.stub();
+    const open = spyOn(fixture.debugElement.injector.get(MatDialog), 'open').and.stub();
     const component = fixture.componentInstance;
     const request = component.openWeekMatchup(3, '2026-3');
     await component.openWeekMatchup(3, '2026-3');
