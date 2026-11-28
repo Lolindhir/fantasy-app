@@ -95,6 +95,35 @@ class AcceptedPartition:
 class AcceptedSnapshot:
     commit: str
     partitions: Mapping[int, AcceptedPartition]
+    root: Path
+    routing: FamilyRouting
+
+    def read_tracked_file(self, relative: Path) -> bytes:
+        """Verify an input against the same immutable commit, not the index."""
+        if (relative.is_absolute() or not relative.parts
+                or any(part in ("..", ".") for part in relative.parts)):
+            raise ValueError(f"Invalid relative input: {relative}")
+        if _git(self.root, "rev-parse", "--verify", "HEAD").decode().strip() != self.commit:
+            raise ValueError("Checkout does not match pinned commit")
+        path = _real_route(self.root, relative)
+        if not path.is_file():
+            raise FileNotFoundError(f"Expected accepted input absent: {path}")
+        name = relative.as_posix()
+        listing = _git(self.root, "ls-tree", "-z", self.commit, "--", name)
+        entries = [item for item in listing.split(b"\0") if item]
+        if len(entries) != 1:
+            raise ValueError(f"Expected exactly one accepted input: {relative}")
+        header, raw_name = entries[0].split(b"\t", 1)
+        mode, kind, blob = header.decode("ascii").split()
+        if mode != "100644" or kind != "blob" or raw_name.decode("utf-8") != name:
+            raise ValueError(f"Invalid accepted input: {relative}")
+        content = path.read_bytes()
+        if content != _git(self.root, "cat-file", "blob", blob):
+            raise ValueError(f"Input differs from accepted Git blob: {path}")
+        if _git(self.root, "diff", "--cached", "--name-only", "-z",
+                self.commit, "--", name):
+            raise ValueError(f"Staged input differs from accepted Git tree: {path}")
+        return content
 
     def path_for(self, season: int) -> Path:
         _season(season)
@@ -185,4 +214,4 @@ def preflight_accepted_combine(
                   *(path.as_posix() for path in directories))
     if staged:
         raise ValueError("Staged Combine changes differ from the accepted Git tree")
-    return AcceptedSnapshot(base_commit, MappingProxyType(accepted))
+    return AcceptedSnapshot(base_commit, MappingProxyType(accepted), root, routing)

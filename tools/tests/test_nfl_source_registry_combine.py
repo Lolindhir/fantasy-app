@@ -1,5 +1,7 @@
 import csv
+import hashlib
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -9,7 +11,10 @@ TOOLS = Path(__file__).resolve().parents[1]
 REPO_ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 
+from canonical_routing import FamilyRouting, RouteMode
+from data_roots import DATA_CANONICAL_ROOT, DATA_SOURCE_ROOT
 from nfl_source_data_lib.combine import build_combine_files
+from nfl_source_data_lib.combine_admission import plan_combine_shadow
 from nfl_source_data_lib.common import (
     CANONICAL_SCHEMA_VERSION,
     Dataset,
@@ -56,6 +61,108 @@ def combine_dataset(raw_path: Path) -> Dataset:
         "freeze-prior-seasons",
         "explicit-force",
     )
+
+
+class CombineAdmissionTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name).resolve()
+        self.git("init", "-q")
+        self.git("config", "user.name", "Fixture")
+        self.git("config", "user.email", "fixture@example.invalid")
+        self.git("config", "commit.gpgsign", "false")
+        source = self.root / DATA_SOURCE_ROOT
+        registry = load_registry_manifest(REPO_ROOT)
+        entry = next(item for item in registry["datasets"] if item["id"] == "nflverse.combine")
+        entry = dict(entry, minimumRows=1)
+        self.raw = source / entry["rawPath"]
+        self.meta = source / entry["metadataPath"]
+        self.rows = [
+            {"season": "2024", "pfr_id": "OldPfr", "player_name": "Old"},
+            {"season": "2027", "pfr_id": "NewPfr", "player_name": "New"},
+        ]
+        self.metadata = {
+            key: entry[key] for key in ("provider", "upstream", "sourceUrl", "sourceFormat",
+                                       "kind", "refreshPolicy", "retentionPolicy", "lifecycle")
+        }
+        self.metadata.update(dataset=entry["id"], retrievedAtUtc="2027-03-01T00:00:00Z")
+        self.write_source()
+        (source / "registry.json").write_text(json.dumps({
+            "schemaVersion": REGISTRY_SCHEMA_VERSION, "datasets": [entry],
+        }))
+        self.old = self.root / DATA_CANONICAL_ROOT / "nfl/combine/2024.json"
+        self.old.parent.mkdir(parents=True)
+        self.old.write_text(json.dumps({"Season": 2024, "Finalized": True, "Records": []}))
+        self.base = self.commit()
+
+    def git(self, *args):
+        return subprocess.check_output(["git", "-C", str(self.root), *args]).decode().strip()
+
+    def commit(self):
+        self.git("add", "-A")
+        self.git("commit", "-qm", "fixture")
+        return self.git("rev-parse", "HEAD")
+
+    def write_source(self):
+        write_csv(self.raw, self.rows)
+        self.metadata.update(contentHashSha256=hashlib.sha256(self.raw.read_bytes()).hexdigest(),
+                             rowCount=len(self.rows), columns=COMBINE_FIELDS)
+        self.meta.write_text(json.dumps(self.metadata))
+
+    def plan(self, approved=frozenset({2027})):
+        return plan_combine_shadow(
+            self.root, self.base, FamilyRouting(RouteMode.TRANSITION),
+            [{"CanonicalPlayerID": "NFLP-new", "IDs": {"PFR": "NewPfr"}}], {},
+            approved_new_seasons=approved,
+        )
+
+    def test_verified_new_partition_plan_is_read_only(self):
+        plan = self.plan()
+        self.assertEqual(frozenset({2027}), plan.new_seasons)
+        self.assertEqual(self.old, plan.paths[2024])
+        self.assertEqual(self.old.with_name("2027.json"), plan.paths[2027])
+        self.assertEqual("NFLP-new", plan.grouped[2027][0]["CanonicalPlayerID"])
+        self.assertEqual("unresolved", plan.grouped[2024][0]["IdentityResolution"]["Status"])
+        self.assertFalse(plan.paths[2027].exists())
+        self.assertEqual("", self.git("status", "--porcelain"))
+
+    def test_scope_and_missing_accepted_partition_rejected(self):
+        with self.assertRaisesRegex(ValueError, "exact approved shadow scope"):
+            self.plan(frozenset())
+        self.old.unlink()
+        with self.assertRaises(FileNotFoundError):
+            self.plan()
+        self.assertFalse(self.old.exists())
+
+    def test_untracked_revision_or_bad_digest_rejected(self):
+        self.raw.write_bytes(self.raw.read_bytes() + b"\n")
+        with self.assertRaisesRegex(ValueError, "accepted Git blob"):
+            self.plan()
+        self.metadata["contentHashSha256"] = "0" * 64
+        self.meta.write_text(json.dumps(self.metadata))
+        self.base = self.commit()
+        with self.assertRaisesRegex(ValueError, "does not attest"):
+            self.plan()
+
+    def test_missing_source_coverage_and_future_season_rejected(self):
+        self.rows = self.rows[1:]
+        self.write_source()
+        self.base = self.commit()
+        with self.assertRaisesRegex(ValueError, "missing from source candidates"):
+            self.plan()
+        self.rows.append({"season": "2024", "pfr_id": "OldPfr"})
+        self.metadata["retrievedAtUtc"] = "2026-03-01T00:00:00Z"
+        self.write_source()
+        self.base = self.commit()
+        with self.assertRaisesRegex(ValueError, "later than the source observation"):
+            self.plan()
+
+    def test_revalidate_detects_source_race(self):
+        plan = self.plan()
+        self.meta.write_bytes(self.meta.read_bytes() + b" ")
+        with self.assertRaisesRegex(ValueError, "accepted Git blob"):
+            plan.revalidate_inputs()
 
 
 class RegistryCombineTests(unittest.TestCase):
