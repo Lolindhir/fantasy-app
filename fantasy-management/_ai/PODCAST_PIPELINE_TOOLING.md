@@ -145,6 +145,17 @@ python fantasy-management/_ai/scripts/podcast_semantic_claims.py check \
   --takes "/private/episode/takes/items"
 ```
 
+For a locally prepared work package, assign `segment_id` to every claim, reconcile the segment's `substantive_claims` with stable source claim IDs and its `planned_outputs.take_ids` with the authored take files. Then run the explicit **source→Content Map→Take** guard:
+
+```bash
+python fantasy-management/_ai/scripts/podcast_semantic_claims.py check \
+  "/private/episode.srt" "/private/reconciled/reconciled.json" \
+  --require-reviewed \
+  --work-dir "/private/work-package"
+```
+
+This enforces reviewed substantive claim coverage (or a reasoned `context_only` disposition), Content Map placement, planned authored Takes and reciprocal `claim_ids`. It does **not** detect source statements absent from the inventory; the independent full raw-SRT reviewer remains mandatory. It is an **explicit local CLI step** and does not insert private SRT processing into the production publishing workflow.
+
 The last check requires an editorially reviewed status plus, for substantive verified claims, an existing take with reciprocal `claim_ids`. Intermediate `check` without `--require-reviewed` is **source-span and structure only**. It **cannot establish that every source claim exists**. The existing `validate_podcast_work.py` and publication builder are not altered; do not report these preflight checks as a publication-ready verdict or an independent recall score. No model provider, automatic scheduling, raw upload, identity registry modification or novel GitHub writer is enabled.
 
 ## Operational tracking
