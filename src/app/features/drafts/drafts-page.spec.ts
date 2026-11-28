@@ -10,9 +10,23 @@ import { DraftsViewModelService } from './services/drafts-view-model.service';
 
 describe('DraftsPageComponent archive loading', () => {
   const path = (season: string) => 'data/past_seasons/Drafts/Drafts_' + season + '.json';
-  const draft = (season: string) => ({
-    DraftKey: season + '-1', Season: season, DraftNo: 1, Picks: [], Status: 'Completed'
-  } as RawDraft);
+  const draft = (season: string): RawDraft => ({
+    DraftKey: season + '-1',
+    DisplayDraftKey: season + ' Rookie',
+    DisplayAbrDraftKey: season + ' R',
+    Season: season,
+    DraftType: 'Rookie',
+    DraftInstance: 1,
+    DisplayDraftType: 'Rookie',
+    DraftNo: 1,
+    SleeperStatus: 'complete',
+    SleeperStartTime: null,
+    DraftStartTimeUtc: null,
+    Status: 'Complete',
+    DisplayStatus: 'Complete',
+    Settings: { Rounds: 3, Type: 'linear' },
+    Picks: []
+  });
   const index: PastSeasonsIndex = {
     GeneratedAt: null,
     Seasons: ['2024', '2025', '2026', '2027'].map(Season => ({
