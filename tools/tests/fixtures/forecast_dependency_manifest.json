@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "AC6A classified reader manifest: bounded Python and pwsh fixtures, real historical four-product chain, and reviewed current/context, schedule-outlook and injury-impact materializer call sites. Newly declared rules are candidates pending actual Deep runtime evidence; not exhaustive.",
+  "scope": "AC6A classified reader manifest: Python and pwsh fixtures, real historical four-product chain, candidate current/context, schedule-outlook, injury-impact and PWF/TWP batch read sites; expanded rules pending Deep runtime evidence, not exhaustive.",
   "rules": [
     {
       "id": "recaps-pwf",
@@ -928,6 +928,177 @@
       "caller": "tools/league_schedule_outlook_materialize.py:materialize_season",
       "role": "comparison",
       "note": "Existing legacy incremental cache/no-op or full-mode compare. Full-mode replay must not derive values from cached bytes; incremental cache validity is a separate witness."
+    },
+    {
+      "id": "pwf-batch-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/historical_pwf_batch.py:discover_scored_weeks",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-batch-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/historical_pwf_batch.py:discover_scored_weeks",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "twp-batch-manifest",
+      "root": "source",
+      "pattern": "leagues/*/manifest.json",
+      "reader": "tools/team_week_performance_materialize.py:discover_finalized_weeks",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "twp-batch-metadata",
+      "root": "meta",
+      "pattern": "*/metadata.json",
+      "reader": "tools/league_metadata.py:load_league_metadata",
+      "caller": "tools/team_week_performance_materialize.py:discover_finalized_weeks",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-batch-league",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/historical_pwf_batch.py:discover_scored_weeks",
+      "caller": null,
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-scoring",
+      "root": "source",
+      "pattern": "leagues/*/seasons/*/league.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-roster",
+      "root": "source",
+      "pattern": "nfl/weekly-rosters/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-schedule",
+      "root": "source",
+      "pattern": "nfl/schedules/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-required-events",
+      "root": "source",
+      "pattern": "nfl/special-teams-fumble-events/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/player_week_fantasy_materialize.py:_require_object",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-fit-stats",
+      "root": "source",
+      "pattern": "nfl/player-stats/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/historical_projection_backtest.py:_require_finalized_partition",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-fit-snaps",
+      "root": "source",
+      "pattern": "nfl/snap-counts/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/historical_projection_backtest.py:_require_finalized_partition",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-fit-events",
+      "root": "source",
+      "pattern": "nfl/special-teams-fumble-events/*/*.json",
+      "reader": "tools/historical_fantasy_scoring.py:read_json",
+      "caller": "tools/historical_projection_backtest.py:_require_finalized_partition",
+      "role": "input",
+      "note": "Reviewed existing historical PWF/TWP read boundary; runtime coverage pending."
+    },
+    {
+      "id": "pwf-batch-noop",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/historical_pwf_batch.py:materialize_historical",
+      "caller": null,
+      "role": "comparison",
+      "note": "Historical PWF writer compares previous candidate bytes only after computation."
+    },
+    {
+      "id": "pwf-writer-noop",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/player_week_fantasy_materialize.py:write_dataset",
+      "caller": null,
+      "role": "comparison",
+      "note": "PWF writer compares prior output bytes only after calculation."
+    },
+    {
+      "id": "twp-scoring-policy",
+      "root": "meta",
+      "pattern": "*/scoring-divergences.json",
+      "reader": "tools/player_scoring_reconciliation.py:_policy",
+      "caller": "tools/player_scoring_reconciliation.py:reconcile",
+      "role": "comparison",
+      "note": "Optional parity validation policy; cannot change official TWP model bytes when require_pwf is false."
+    },
+    {
+      "id": "twp-pwf-parity",
+      "root": "derived",
+      "pattern": "player-week-fantasy/*/*/*.json",
+      "reader": "tools/player_scoring_reconciliation.py:reconcile",
+      "caller": "tools/team_week_performance_materialize.py:verify_pwf_actual_parity",
+      "role": "comparison",
+      "note": "Optional PWF actual-points reconciliation; not a calculation input of official TWP."
+    },
+    {
+      "id": "twp-noop",
+      "root": "derived",
+      "pattern": "team-week-performance/*/*/*.json",
+      "reader": "tools/team_week_performance.py:save_team_week_performance",
+      "caller": null,
+      "role": "comparison",
+      "note": "Previous TWP bytes compared after canonical calculation."
     }
   ]
 }
