@@ -15,6 +15,7 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
+from ci_tier import deep_only  # noqa: E402
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT  # noqa: E402
 from forecast_dependency_trace import (  # noqa: E402
     ROOTS, TraceError, classify_reads, load_rules, trace_python,
@@ -275,6 +276,7 @@ path = Path.cwd() / ROOTS['derived'] / 'linked-product' / 'seed.json'
             self.assertEqual("unchanged", original.read_text(encoding="utf-8"))
             self.assertFalse((linked / "renamed.json").exists())
 
+    @deep_only("Real multi-season materializer replay belongs to consumer restore")
     def test_real_historical_materializer_chain_without_prior_outputs(self):
         # Actual configured leagues and all their manifest seasons, no mocks
         # of the four materializers. PWF/TWP are fixed, accepted upstream
@@ -400,6 +402,148 @@ print('AC6A_WRITES=' + json.dumps(summaries))
                                   or (published / path).read_bytes() != content
                                   for path, content in expected.items())
                 print(f"AC6A historical {product}: files={len(expected)} "
+                      f"reads={len(first_reads)}/{len(second_reads)}/{len(repair_reads)} "
+                      f"published_differences={differences}", flush=True)
+
+    @deep_only("Real current/historical projection materializers and cache replay")
+    def test_real_context_outlook_and_injury_materializer_chain(self):
+        # The actual upstream products are held fixed. No App data is linked.
+        # Full Source-only restoration is a different, existing Deep gate.
+        from league_metadata import list_league_ids
+        from league_standings_sources import manifest, manifest_seasons, current_season
+
+        checkout = TOOLS.parent
+        leagues = list_league_ids(checkout / ROOTS["meta"])
+        self.assertTrue(leagues)
+        seasons = {}
+        for league in leagues:
+            lineage = manifest(checkout, league)
+            current = current_season(lineage)
+            seasons[league] = [year for year in manifest_seasons(lineage) if year <= current]
+            self.assertIn(current, seasons[league])
+        for key in ("source", "canonical", "meta"):
+            upstream = checkout / ROOTS[key]
+            if upstream.is_dir():
+                (self.root / ROOTS[key]).symlink_to(upstream, target_is_directory=True)
+        out = self.root / ROOTS["derived"]
+        out.mkdir()
+        for product in ("player-week-fantasy", "team-week-performance", "season-statistics",
+                        "league-standings", "league-drafts", "nfl-games", "nfl-player-availability"):
+            upstream = checkout / ROOTS["derived"] / product
+            self.assertTrue(upstream.is_dir(), product)
+            (out / product).symlink_to(upstream, target_is_directory=True)
+        for name in ("Matchups.json", "FantasyGameContext.json", "MatchupProjections.json",
+                     "SeasonStatistics.json", "PlayerWeekFantasy.json", "League.json"):
+            self.put(ROOTS["app"] / name, {"poison": True})
+
+        def snapshot(product):
+            folder = out / product
+            return {p.relative_to(folder).as_posix(): p.read_bytes()
+                    for p in sorted(folder.rglob("*.json"))}
+
+        def run_stage(product, mode):
+            code = f"""
+from pathlib import Path
+from datetime import datetime, timezone
+import json
+from data_roots import data_derived_dir
+import matchup_context_materialize as c
+import league_schedule_outlook_materialize as o
+import team_injury_impact_materialize as i
+root = Path.cwd()
+out = data_derived_dir(root)
+summaries = []
+for league, years in {seasons!r}.items():
+    current = max(years)
+    product = {product!r}
+    if product == 'matchup-context':
+        # Explicit deterministic observation clock, not a reconstruction of
+        # an actually observed historic forecast or the published clock.
+        clock = datetime(current, 11, 28, 12, tzinfo=timezone.utc)
+        rows = c.materialize(root, out, league, 'all', clock, fail_on_error=True)
+        assert sorted(row['Season'] for row in rows) == years, rows
+        assert all(not row['Skipped'] for row in rows), rows
+    elif product == 'league-schedule-outlook':
+        rows = [o.materialize_season(root, out, league, year,
+                    o.selected_model_id(root, league, year), mode={mode!r})
+                for year in years]
+    else:
+        rows = [i.materialize_season(root, out, league, year) for year in years]
+    summaries.extend(row['Written'] for row in rows)
+print('AC6A_WRITES=' + json.dumps(summaries))
+"""
+            result = trace_python(self.root, ["-c", code], timeout=480)
+            self.assertEqual(0, result.process.returncode,
+                             result.process.stdout + result.process.stderr)
+            uncovered = {}
+            for event in result.events:
+                if event["kind"] == "open" and event["read"]:
+                    matches = [rule.id for rule in self.rules if rule.matches(event)]
+                    if len(matches) != 1:
+                        key = (event["root"], tuple(event["sites"][:2]), tuple(matches))
+                        uncovered.setdefault(key, event["path"])
+            self.assertFalse(uncovered, repr(uncovered))
+            classified = classify_reads(result.events, self.rules, own_product=product)
+            self.assertTrue(any(row["role"] == "input" for row in classified))
+            self.assertFalse(any(row["root"] == "app" for row in classified))
+            writes = [event for event in result.events if event.get("write")]
+            self.assertTrue(all(event["root"] == "derived"
+                                and event["path"].split("/")[0] == product
+                                for event in writes), writes[:10])
+            summary = next(line.split("=", 1)[1] for line in result.process.stdout.splitlines()
+                           if line.startswith("AC6A_WRITES="))
+            return sum(json.loads(summary)), len(writes), classified
+
+        for product in ("matchup-context", "league-schedule-outlook", "team-injury-impact"):
+            with self.subTest(product=product):
+                self.assertEqual({}, snapshot(product))
+                first, attempts, first_reads = run_stage(product, "full")
+                expected = snapshot(product)
+                self.assertTrue(expected)
+                self.assertEqual(len(expected), first)
+                self.assertGreater(attempts, 0)
+                for league, years in seasons.items():
+                    if product == "matchup-context":
+                        for year in years:
+                            self.assertIn(f"{league}/{year}/matchups.json", expected)
+                        current_path = f"{league}/{max(years)}/current.json"
+                        self.assertIn(current_path, expected)
+                        current_doc = json.loads(expected[current_path])
+                        self.assertIsNotNone(current_doc["FantasyGameContext"],
+                                             "Current context did not exercise active-week path")
+                        self.assertIsNotNone(current_doc["MatchupProjections"],
+                                             "Current projection did not exercise PWF path")
+                    elif product == "league-schedule-outlook":
+                        for year in years:
+                            index_path = f"{league}/{year}/index.json"
+                            self.assertIn(index_path, expected)
+                            index = json.loads(expected[index_path])
+                            self.assertEqual(index["LeagueScoredWeek"] + 1, len(index["Snapshots"]))
+                            for row in index["Snapshots"]:
+                                self.assertIn(f"{league}/{year}/{row['File']}", expected)
+                    else:
+                        for year in years:
+                            self.assertIn(f"{league}/{year}.json", expected)
+                # Check the real incremental/no-op path, then force a full
+                # candidate computation on intentionally wrong prior output.
+                second, attempts, second_reads = run_stage(product, "incremental")
+                self.assertEqual((0, 0), (second, attempts))
+                self.assertEqual(expected, snapshot(product))
+                for path in expected:
+                    (out / product / path).write_text('{"poison": true}', encoding="utf-8")
+                repaired, attempts, repair_reads = run_stage(product, "full")
+                self.assertEqual(len(expected), repaired)
+                self.assertGreater(attempts, 0)
+                self.assertEqual(expected, snapshot(product))
+                self.assertTrue(any(row["role"] == "comparison" for row in second_reads))
+                self.assertTrue(any(row["role"] == "comparison" for row in repair_reads))
+                # Published current context is clock-dependent. Report, not
+                # assert, differences to the persisted clock's snapshot.
+                published = checkout / ROOTS["derived"] / product
+                differences = sum(not (published / path).is_file()
+                                  or (published / path).read_bytes() != content
+                                  for path, content in expected.items())
+                print(f"AC6A current/history {product}: files={len(expected)} "
                       f"reads={len(first_reads)}/{len(second_reads)}/{len(repair_reads)} "
                       f"published_differences={differences}", flush=True)
 
