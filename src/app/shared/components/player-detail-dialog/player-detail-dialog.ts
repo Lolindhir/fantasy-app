@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { catchError, forkJoin, of } from 'rxjs';
-import { Component, Inject, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { catchError, map, of, switchMap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, Inject, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -63,6 +64,7 @@ export class PlayerDetailDialogComponent implements OnInit {
   };
 
   private readonly dataService = inject(DataService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Published projection of the current App week; null while loading or when the player has no record. */
   weekProjection: PlayerWeekProjectionView | null = null;
@@ -93,19 +95,30 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.prepareChart();
-    this.dataService.getPlayerAwardHistory().subscribe(history => {
+    this.dataService.getPlayerAwardHistory().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(history => {
       this.weeklyAwards = findPlayerAwards(history, this.player.ID);
       this.weeklyAwardGroups = this.weeklyAwards ? groupPlayerAwardEntries(this.weeklyAwards.Entries) : [];
     });
-    forkJoin({
-      projections: this.dataService.getPlayerWeekProjections(),
-      context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null)))
-    }).subscribe(({ projections, context }) => {
-      this.weekProjection = projections.get(String(this.player.ID)) ?? null;
-      const matchupPoints = this.weekProjection
-        ? matchupPointsForPlayer(context, this.weekProjection.season, this.weekProjection.week, this.player.ID)
-        : null;
-      this.weekResult = resolveWeekResult(this.weekProjection, this.player.GameHistory, matchupPoints);
+    this.dataService.getPlayerWeekProjections().pipe(
+      switchMap(projections => {
+        const projection = projections.get(String(this.player.ID)) ?? null;
+        const result = resolveWeekResult(projection, this.player.GameHistory);
+        // Actual and Game Log already take precedence. Only an unresolved record needs
+        // raw matchup points; projection enrichment cannot contribute to this lookup.
+        if (!projection || result) return of({ projection, result });
+        return this.dataService.getFantasyGameContextBase().pipe(
+          catchError(() => of(null)),
+          map(context => ({
+            projection,
+            result: resolveWeekResult(projection, this.player.GameHistory,
+              matchupPointsForPlayer(context, projection.season, projection.week, this.player.ID))
+          }))
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(({ projection, result }) => {
+      this.weekProjection = projection;
+      this.weekResult = result;
     });
   }
 
@@ -117,7 +130,7 @@ export class PlayerDetailDialogComponent implements OnInit {
   private loadInjuryHistory(): void {
     if (this.injuryHistoryState !== 'idle') return;
     this.injuryHistoryState = 'loading';
-    this.dataService.getPlayerInjuryHistory().subscribe(history => {
+    this.dataService.getPlayerInjuryHistory().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(history => {
       this.injuryHistory = buildInjuryHistoryView(findPlayerInjuryHistory(history, this.player.ID));
       this.injuryCurrentSeason = history?.Coverage.length ? Math.max(...history.Coverage.map(c => c.Season)) : null;
       this.injuryHistoryState = history ? 'ready' : 'unavailable';
@@ -127,7 +140,7 @@ export class PlayerDetailDialogComponent implements OnInit {
   private loadJourney(): void {
     if (this.journeyState !== 'idle' && this.journeyState !== 'error') return;
     this.journeyState = 'loading';
-    this.dataService.getPlayerJourneySources().subscribe({
+    this.dataService.getPlayerJourneySources().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: ({ transactions, drafts, teams }) => {
         this.journey = buildPlayerJourney(this.player.ID, transactions, drafts, teams);
         this.journeyState = 'ready';
