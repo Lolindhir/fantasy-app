@@ -253,6 +253,156 @@ with ExitStack() as stack:
         self.assertEqual({"dw-league", "dw-canonical-rosters", "dw-raw-rosters"},
                          {row["rule"] for row in classify_reads(rejected.events, self.rules)})
 
+    def test_scratch_guard_rejects_linked_output_mutations(self):
+        external = tempfile.TemporaryDirectory()
+        self.addCleanup(external.cleanup)
+        linked = Path(external.name)
+        original = linked / "seed.json"
+        original.write_text("unchanged", encoding="utf-8")
+        derived = self.root / ROOTS["derived"]
+        derived.mkdir()
+        (derived / "linked-product").symlink_to(linked, target_is_directory=True)
+        for action in ("path.write_text('mutated')", "path.unlink()",
+                       "path.rename(path.with_name('renamed.json'))"):
+            code = f"""
+from pathlib import Path
+from forecast_dependency_trace import ROOTS
+path = Path.cwd() / ROOTS['derived'] / 'linked-product' / 'seed.json'
+{action}
+"""
+            result = self.run_code(code, rc=1)
+            self.assertIn("Write outside writable scratch data", result.process.stderr)
+            self.assertEqual("unchanged", original.read_text(encoding="utf-8"))
+            self.assertFalse((linked / "renamed.json").exists())
+
+    def test_real_historical_materializer_chain_without_prior_outputs(self):
+        # Actual configured leagues and all their manifest seasons, no mocks
+        # of the four materializers. PWF/TWP are fixed, accepted upstream
+        # products here, not rebuilt. This is a partial clean-root proof
+        # (target-output independence), not a full Source-only restore.
+        from league_metadata import list_league_ids
+        from league_standings_sources import manifest, manifest_seasons, current_season
+
+        checkout = TOOLS.parent
+        leagues = list_league_ids(checkout / ROOTS["meta"])
+        self.assertTrue(leagues)
+        seasons = {}
+        for league in leagues:
+            lineage = manifest(checkout, league)
+            current = current_season(lineage)
+            seasons[league] = [year for year in manifest_seasons(lineage) if year <= current]
+            self.assertIn(current, seasons[league])
+        self.assertTrue(any(len(years) > 1 for years in seasons.values()),
+                        "Need at least one current and completed-season configuration")
+
+        # Like the existing clean-root audit, keep Source and metadata linked
+        # for disk efficiency. The trace guard prohibits Python mutation of
+        # those roots and linked upstream products; generated targets are real
+        # scratch directories. No repository publisher is invoked.
+        for key in ("source", "canonical", "meta"):
+            upstream = checkout / ROOTS[key]
+            if upstream.is_dir():
+                (self.root / ROOTS[key]).symlink_to(upstream, target_is_directory=True)
+        out = self.root / ROOTS["derived"]
+        out.mkdir()
+        for product in ("player-week-fantasy", "team-week-performance"):
+            upstream = checkout / ROOTS["derived"] / product
+            self.assertTrue(upstream.is_dir(), product)
+            (out / product).symlink_to(upstream, target_is_directory=True)
+
+        def snapshot(product):
+            folder = out / product
+            return {p.relative_to(folder).as_posix(): p.read_bytes()
+                    for p in sorted(folder.rglob("*.json"))}
+
+        def run_stage(product):
+            code = f"""
+from pathlib import Path
+import json
+from data_roots import data_derived_dir
+import derived_data as d
+import weekly_recaps_materialize as w
+import league_records_materialize as records
+root = Path.cwd()
+out = data_derived_dir(root)
+summaries = []
+for league, years in {seasons!r}.items():
+    product = {product!r}
+    if product == 'season-statistics':
+        rows = d.materialize_season_statistics(root, out, league, years, False)['Seasons']
+    elif product == 'league-standings':
+        rows = d.materialize_league_standings(root, out, league, years, False)['Seasons']
+    elif product == 'league-records':
+        rows = [records.materialize(root, out, league, write=True)]
+    else:
+        rows = w.materialize(root, out, league, 'all', fail_on_error=True)
+    if product != 'league-records':
+        assert sorted(row['Season'] for row in rows) == years, (league, product, rows)
+    summaries.extend(row['Written'] for row in rows)
+print('AC6A_WRITES=' + json.dumps(summaries))
+"""
+            result = trace_python(self.root, ["-c", code], timeout=240)
+            self.assertEqual(0, result.process.returncode,
+                             result.process.stdout + result.process.stderr)
+            # List all distinct missing/ambiguous call sites before failing;
+            # never automatically promote an observed access to an input rule.
+            uncovered = {}
+            for event in result.events:
+                if event["kind"] == "open" and event["read"]:
+                    matches = [rule.id for rule in self.rules if rule.matches(event)]
+                    if len(matches) != 1:
+                        key = (event["root"], tuple(event["sites"][:2]), tuple(matches))
+                        uncovered.setdefault(key, event["path"])
+            self.assertFalse(uncovered, repr(uncovered))
+            classified = classify_reads(result.events, self.rules, own_product=product)
+            self.assertTrue(classified, product)
+            self.assertTrue(any(row["role"] == "input" for row in classified))
+            self.assertFalse(any(row["root"] == "app" for row in classified))
+            writes = [event for event in result.events if event.get("write")]
+            self.assertTrue(all(event["root"] == "derived"
+                                and event["path"].split("/")[0] == product
+                                for event in writes), writes[:10])
+            summary = next(line.split("=", 1)[1] for line in result.process.stdout.splitlines()
+                           if line.startswith("AC6A_WRITES="))
+            return sum(json.loads(summary)), len(writes), classified
+
+        for product in ("season-statistics", "league-standings", "league-records", "weekly-recaps"):
+            with self.subTest(product=product):
+                self.assertEqual({}, snapshot(product))
+                first, attempts, first_reads = run_stage(product)
+                expected = snapshot(product)
+                self.assertTrue(expected)
+                wanted = (set(f"{league}.json" for league in leagues)
+                          if product == "league-records" else
+                          set(f"{league}/{year}.json" for league, years in seasons.items() for year in years))
+                self.assertEqual(wanted, set(expected))
+                self.assertEqual(len(expected), first)
+                self.assertGreater(attempts, 0)
+                second, attempts, second_reads = run_stage(product)
+                self.assertEqual((0, 0), (second, attempts))
+                self.assertEqual(expected, snapshot(product))
+                # An incorrect existing document, plus poisoned App copies,
+                # must not influence the rebuilt model.
+                for path in expected:
+                    (out / product / path).write_text('{"poison": true}', encoding="utf-8")
+                for name in ("SeasonStatistics.json", "Standings.json", "WeeklyRecaps.json"):
+                    self.put(ROOTS["app"] / name, {"poison": True})
+                repaired, attempts, repair_reads = run_stage(product)
+                self.assertEqual(len(expected), repaired)
+                self.assertGreater(attempts, 0)
+                self.assertEqual(expected, snapshot(product))
+                self.assertTrue(any(row["role"] == "comparison" for row in second_reads))
+                self.assertTrue(any(row["role"] == "comparison" for row in repair_reads))
+                # Published files may be stale; report the count, but never
+                # mistake target-output independence for publication freshness.
+                published = checkout / ROOTS["derived"] / product
+                differences = sum(not (published / path).is_file()
+                                  or (published / path).read_bytes() != content
+                                  for path, content in expected.items())
+                print(f"AC6A historical {product}: files={len(expected)} "
+                      f"reads={len(first_reads)}/{len(second_reads)}/{len(repair_reads)} "
+                      f"published_differences={differences}", flush=True)
+
     def test_real_powershell_metadata_read_boundary(self):
         pwsh = shutil.which("pwsh")
         if pwsh is None:
