@@ -638,6 +638,125 @@ print('AC6A_WRITES=' + json.dumps(summaries))
                       f"reads={len(first_reads)}/{len(second_reads)}/{len(repair_reads)} "
                       f"published_differences={differences}", flush=True)
 
+    @deep_only("Real PWF historical batch across seasons and independent official TWP replay")
+    def test_real_pwf_batch_and_twp_optional_parity(self):
+        # The PWF witness covers the first and last finalized week of each
+        # actual league-season, including actual scoring and fitted state.
+        # The existing full Restore Gate is responsible for all PWF weeks.
+        # TWP is fully rebuilt with no PWF, then with PWF for optional parity.
+        from historical_pwf_batch import discover_scored_weeks
+        from league_metadata import list_league_ids
+
+        checkout = TOOLS.parent
+        targets = discover_scored_weeks(checkout)
+        by_season = {}
+        for league, year, week in targets:
+            by_season.setdefault((league, year), []).append(week)
+        self.assertTrue(by_season)
+        selections = [(league, year, sorted({min(weeks), max(weeks)}))
+                      for (league, year), weeks in sorted(by_season.items())]
+        leagues = list_league_ids(checkout / ROOTS["meta"])
+        for key in ("source", "canonical", "meta"):
+            upstream = checkout / ROOTS[key]
+            if upstream.is_dir():
+                (self.root / ROOTS[key]).symlink_to(upstream, target_is_directory=True)
+        out = self.root / ROOTS["derived"]
+        out.mkdir()
+        for name in ("PlayerWeekFantasy.json", "League.json", "Players.json"):
+            self.put(ROOTS["app"] / name, {"poison": True})
+
+        def snapshot(product):
+            folder = out / product
+            return {p.relative_to(folder).as_posix(): p.read_bytes()
+                    for p in sorted(folder.rglob("*.json"))}
+
+        def run_batch(product):
+            code = f"""
+from pathlib import Path
+import json
+from historical_pwf_batch import materialize_historical
+from player_week_fantasy_materialize import memoized_model_state
+from team_week_performance_materialize import materialize_all_finalized
+root = Path.cwd()
+reports = []
+if {product!r} == 'player-week-fantasy':
+    # The existing refresh memo is process-local, keyed by immutable source
+    # and scoring settings. No persisted fitted state or output is used.
+    with memoized_model_state():
+        for league, year, weeks in {selections!r}:
+            reports.append(materialize_historical(root, league_id=league,
+                           seasons=[year], weeks=weeks, write=True))
+else:
+    for league in {leagues!r}:
+        reports.append(materialize_all_finalized(root, league_id=league,
+                       write=True, require_pwf=False))
+for report in reports:
+    assert report['BlockedCount'] == 0, report
+    assert report['ReadyCount'] == report['TargetCount'] > 0, report
+print('AC6A_WRITES=' + json.dumps([r['ChangedCount'] for r in reports]))
+"""
+            result = trace_python(self.root, ["-c", code], timeout=480)
+            self.assertEqual(0, result.process.returncode,
+                             result.process.stdout + result.process.stderr)
+            uncovered = {}
+            for event in result.events:
+                if event["kind"] == "open" and event["read"]:
+                    matches = [rule.id for rule in self.rules if rule.matches(event)]
+                    if len(matches) != 1:
+                        key = (event["root"], tuple(event["sites"][:2]), tuple(matches))
+                        uncovered.setdefault(key, event["path"])
+            self.assertFalse(uncovered, repr(uncovered))
+            classified = classify_reads(result.events, self.rules, own_product=product)
+            self.assertTrue(any(row["role"] == "input" for row in classified))
+            self.assertFalse(any(row["root"] == "app" for row in classified))
+            writes = [event for event in result.events if event.get("write")]
+            self.assertTrue(all(event["root"] == "derived"
+                                and event["path"].split("/")[0] == product
+                                for event in writes), writes[:10])
+            summary = next(line.split("=", 1)[1] for line in result.process.stdout.splitlines()
+                           if line.startswith("AC6A_WRITES="))
+            return sum(json.loads(summary)), len(writes), classified
+
+        # No PWF is present: the official Sleeper-derived TWP product must
+        # build independently of the optional cross-check.
+        twp = "team-week-performance"
+        first, writes, reads = run_batch(twp)
+        official = snapshot(twp)
+        self.assertTrue(official)
+        self.assertEqual(len(official), first)
+        self.assertGreater(writes, 0)
+        self.assertFalse(any(row["rule"] == "twp-pwf-parity" for row in reads))
+
+        pwf = "player-week-fantasy"
+        first, writes, reads = run_batch(pwf)
+        calculated = snapshot(pwf)
+        wanted = {f"{league}/{year}/{week:02d}.json"
+                  for league, year, weeks in selections for week in weeks}
+        self.assertEqual(wanted, set(calculated))
+        self.assertEqual(len(calculated), first)
+        self.assertGreater(writes, 0)
+        self.assertFalse(any(row["root"] == "derived" for row in reads))
+        # Confirm newly calculated partitions agree byte-for-byte with the
+        # accepted historical PWF (no activation or model correction).
+        published = checkout / ROOTS["derived"] / pwf
+        self.assertEqual(calculated, {path: (published / path).read_bytes() for path in wanted})
+        # The actual batch writer must be a no-op on a second calculation.
+        second, writes, reads = run_batch(pwf)
+        self.assertEqual((0, 0), (second, writes))
+        self.assertEqual(calculated, snapshot(pwf))
+        self.assertTrue(any(row["rule"] == "pwf-batch-noop" for row in reads))
+
+        # With actual PWF available in the scratch root, optional parity may
+        # report differences, but cannot alter any official TWP result.
+        second, writes, reads = run_batch(twp)
+        self.assertEqual((0, 0), (second, writes))
+        self.assertEqual(official, snapshot(twp))
+        self.assertTrue(any(row["rule"] == "twp-pwf-parity" for row in reads))
+        published_twp = checkout / ROOTS["derived"] / twp
+        self.assertEqual(official, {path: (published_twp / path).read_bytes() for path in official})
+        print(f"AC6A PWF/TWP: PWF sample partitions={len(calculated)}, "
+              f"official TWP partitions={len(official)}, byte parity=true", flush=True)
+
     def test_real_powershell_metadata_read_boundary(self):
         pwsh = shutil.which("pwsh")
         if pwsh is None:
